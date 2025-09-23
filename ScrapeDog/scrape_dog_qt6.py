@@ -176,6 +176,66 @@ class Scraper:
 		soup = BeautifulSoup(html, 'html.parser')
 		results: List[BaseModel] = []
 
+		# Special parsing for Python API (classes) pages which often use multiple
+		# tables per category. We scan tables and use the nearest heading as the
+		# category name. Each category is processed only once.
+		if self.mode and self.mode.lower() == 'python':
+			seen_categories = set()
+			# Find all tables which usually contain class lists
+			tables = soup.find_all('table')
+			for table in tables:
+				if self.cancel_check() or self._is_cancelled:
+					break
+				# Determine category by finding the nearest preceding heading
+				heading = table.find_previous(lambda tag: tag.name in ['h1', 'h2', 'h3', 'h4'] and tag.get_text(strip=True))
+				if heading:
+					category = heading.get_text().strip().split('\n')[0].strip()
+					# sanitize category text (remove pilcrow and NBSP and control chars)
+					category = re.sub(r'[\u00b6\u00a0\r\t]+', ' ', category).strip()
+				else:
+					# fallback to caption or a nearby paragraph
+					cap = table.find_previous('caption')
+					if cap and cap.get_text(strip=True):
+						category = cap.get_text().strip()
+					else:
+						category = 'Uncategorized'
+				# Skip empty or irrelevant categories
+				if not category or category.lower() in ['contents', 'table of contents']:
+					continue
+				# Ensure we only visit each category once
+				if category in seen_categories:
+					continue
+				seen_categories.add(category)
+				self._report(f"Processing category: {category}")
+				# Iterate over rows; assume first column is name (with optional link),
+				# second column is description when present.
+				rows = table.find_all('tr')
+				for tr in rows:
+					if self.max_results > 0 and len(results) >= self.max_results:
+						self._report(f"Reached maximum limit of {self.max_results} items")
+						return results
+					# Skip header rows
+					if tr.find_all('th'):
+						continue
+					tds = tr.find_all('td')
+					if not tds:
+						continue
+					# Name and optional link
+					a = tds[0].find('a')
+					if a:
+						name = a.get_text().strip()
+						name = re.sub(r'[\u00b6\u00a0\r\t]+', ' ', name).strip()
+						href = a.get('href')
+					else:
+						name = tds[0].get_text().strip()
+						name = re.sub(r'[\u00b6\u00a0\r\t]+', ' ', name).strip()
+						href = None
+					description = tds[1].get_text().strip() if len(tds) > 1 else ''
+					url = urljoin(self.target_url, href) if href else ''
+					results.append(NodeEntry(name=name, description=description, category=category, url=url))
+					
+			return results
+
 		# For node mode try to detect a top-level category (page title) so we don't produce
 		# multiple files for subsections (e.g. 'Object network' vs 'Object types').
 		top_category = None
@@ -496,6 +556,19 @@ class ScraperMainWindow(QMainWindow):
 		# Prefer explicit version input, fallback to settings
 		input_version = self.version_input.text().strip() if hasattr(self, 'version_input') else ''
 		houdini_version = input_version or self.settings.get(mode, 'houdini_version', fallback='')
+		# Special-case for Python mode: use qgis_version from settings or derive from URL
+		if mode and mode.lower() == 'python' and not houdini_version:
+			# try qgis_version from ini first
+			qv = self.settings.get('python', 'qgis_version', fallback='') if self.settings.has_section('python') else ''
+			if qv:
+				houdini_version = qv
+			else:
+				# try to extract version from URL like /pyqgis/3.40/
+				m = re.search(r'/pyqgis/(\d+\.\d+)', target_url)
+				if m:
+					houdini_version = m.group(1)
+				else:
+					houdini_version = 'pyqgis'
 		
 		if not target_url:
 			QMessageBox.warning(self, "Warning", "Please enter a target URL")
@@ -592,7 +665,7 @@ class ScraperMainWindow(QMainWindow):
 					self.output_text.append(f"      - {usage}")
 			self.output_text.append("")
 
-		# Auto-save results into the script folder
+			# Auto-save results into the script folder
 		try:
 			script_dir = Path(__file__).parent
 			if mode == 'vex':
@@ -616,12 +689,14 @@ class ScraperMainWindow(QMainWindow):
 					})
 				for cat, items in by_cat.items():
 					safe_cat = re.sub(r"[^A-Za-z0-9_]+", "_", cat).strip('_')
+					# Use pyqgis label for python mode outputs
+					label = 'pyqgis' if mode and mode.lower() == 'python' else 'Nodes'
 					out = {
-						"houdini_version": hv,
+						label + "_version": hv,
 						"category": cat,
 						"nodes": items
 					}
-					out_path = script_dir / f"Houdini_Nodes_{safe_cat}_{hv}.json"
+					out_path = script_dir / f"{label}_{safe_cat}_{hv}.json"
 					with open(out_path, 'w') as f:
 						json.dump(out, f, indent=2)
 					self.output_text.append(f"\n✓ Auto-saved nodes to: {out_path}")

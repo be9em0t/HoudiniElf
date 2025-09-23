@@ -9,3 +9,4 @@ venv/
 .venv/
 *.json
 .pytest_cache/
+images_temp/*

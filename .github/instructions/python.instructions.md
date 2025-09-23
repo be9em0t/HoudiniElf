@@ -3,6 +3,7 @@ applyTo: "**/*.py"
 ---
 # Project coding standards for Python
 - Always follow user directions and newer make changes that were not requested or explicitly allowed
+- use the python environment devined in the repository .python-version file
 - Follow the PEP 8 style guide for Python.
 - Always prioritize readability and clarity.
 - Write clear and concise comments for each function.
