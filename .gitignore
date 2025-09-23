@@ -9,4 +9,14 @@ venv/
 .venv/
 *.json
 .pytest_cache/
-images_temp/*
+images_temp/**
+
+# Keep .github and .clinerules tracked
+!.github/
+!.github/**
+!.clinerules/
+!.clinerules/**
+!.continue/
+!.continue/**
+!.vscode/
+!.vscode/**
