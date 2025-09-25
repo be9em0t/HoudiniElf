@@ -17,7 +17,7 @@ import json
 import sys
 import re
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def load_json_safe(path: Path):
@@ -84,7 +84,7 @@ def merge_directory(directory: Path, out_path: Path, version_hint: str | None = 
         'module': 'pyqgis',
         'type': 'classes',
         'version': version,
-        'generated_at': datetime.utcnow().isoformat() + 'Z',
+        'generated_at': datetime.now(timezone.utc).isoformat(),
         'classes': merged
     }
 
