@@ -1,4 +1,5 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:pyenv",
-    "python-envs.pythonProjects": []
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": [],
+    "python.defaultInterpreterPath": "/Users/dunevv/.pyenv/versions/3.13.5/bin/python"
 }
