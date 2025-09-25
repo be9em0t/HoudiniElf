@@ -8,9 +8,8 @@ and from the command line.
 ## Package API
 
 - `scrape_dog.cli.main(argv=None)`
-  - The CLI/GUI entrypoint. When run with no adapter or with `--gui` it will
-    attempt to launch the optional GUI. Otherwise it expects arguments like:
-    `python -m scrape_dog <adapter> <url> [--max N]`.
+  - The CLI/GUI entrypoint. When run with no adapter it will attempt to launch
+    the GUI. Otherwise it expects arguments like: `python -m scrape_dog <adapter> <url> [--max N]`.
 
 - `scrape_dog.scrape_core.Scraper`
   - The async scraping core. Create and use it programmatically if you want
@@ -44,8 +43,9 @@ Example adapter path and symbol for `unity-shadergraph`:
 
 ## Running
 
-- CLI: `python -m scrape_dog unity_shadergraph <url> --max 10`
-- Script shim: `python scrape_dog.py unity_shadergraph <url>` (delegates to package)
+- Launch GUI (default when no adapter args provided): `python -m scrape_dog`
+- CLI adapter run: `python -m scrape_dog unity_shadergraph <url> --max 10`
+  
 
 ## Notes
 

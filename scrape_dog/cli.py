@@ -37,8 +37,8 @@ async def run_adapter(adapter_name, url, max_results=0):
 
 def main(argv=None):
     argv = argv or sys.argv
-    # prefer GUI when no adapter specified or when --gui passed
-    if len(argv) == 1 or '--gui' in argv:
+    # prefer GUI when no adapter specified (always start GUI by default)
+    if len(argv) == 1:
         try:
             from .gui import run_gui
             run_gui()
