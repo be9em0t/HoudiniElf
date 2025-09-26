@@ -39,7 +39,7 @@ async def run_unity_shadergraph(target_url: str, max_results: int = 0, concurren
         categories_data = []
         total_elements = 0
         
-        for topic_name, topic_url in topic_links[:3]:  # Limit to first 3 topics to avoid infinite loops
+        for topic_name, topic_url in topic_links:  # Process all topics now that logic is stable
             print(f"DEBUG: Processing topic: {topic_name} -> {topic_url}")
             
             # Fetch topic page
@@ -87,20 +87,15 @@ async def run_unity_shadergraph(target_url: str, max_results: int = 0, concurren
                     contents_tree[topic_name][category_name] = element_names
                     total_elements += len(element_names)
         
-        # Build the final document
+        # Build the final document (capture_date is already timezone aware via default)
         doc = DocumentModel(
             software="Unity ShaderGraph",
             version="",
-            capture_date=datetime.now(),
             root_url=target_url,
-            categories=categories_data
+            categories=categories_data,
+            contents_tree=contents_tree
         )
-        
-        # Add contents_tree to the document dict for JSON serialization
-        doc_dict = doc.model_dump()
-        doc_dict['contents_tree'] = contents_tree
-        
-        return DocumentModel.model_validate(doc_dict)
+        return doc
 
 
 async def _get_element_names_only(crawler: AsyncWebCrawler, category_name: str, category_url: str, max_elements: int = 0) -> List[str]:
@@ -129,8 +124,27 @@ async def _get_element_names_only(crawler: AsyncWebCrawler, category_name: str, 
             break
     
     if not category_table:
-        print(f"DEBUG: Could not find table for category '{category_name}'")
-        return element_names
+        print(f"DEBUG: Could not find table for category '{category_name}' via heading match -- attempting fallback scan")
+        # Fallback 1: any table containing links ending with Node.html
+        candidate_tables = []
+        for tbl in soup.find_all('table'):
+            links = tbl.find_all('a')
+            if any(('Node.html' in (a.get('href') or '')) for a in links):
+                candidate_tables.append(tbl)
+        if candidate_tables:
+            # Heuristic: choose the table with the most qualifying node links
+            best_tbl = max(candidate_tables, key=lambda t: sum(1 for a in t.find_all('a') if 'Node.html' in (a.get('href') or '')))
+            category_table = best_tbl
+            print(f"DEBUG: Fallback selected table with {len(category_table.find_all('a'))} total links")
+        else:
+            # Fallback 2: collect from main content all Node.html links when no table match
+            print(f"DEBUG: Fallback collecting direct Node.html links for '{category_name}'")
+            for a in soup.find_all('a'):
+                href = a.get('href', '')
+                text = a.get_text().strip()
+                if 'Node.html' in href and text and len(text) > 2:
+                    element_names.append(text)
+            return element_names
     
     # Extract links ONLY from this specific table
     table_links = category_table.find_all('a')
