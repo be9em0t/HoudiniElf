@@ -29,6 +29,7 @@ async def run_adapter(adapter_name, url, max_results=0):
         raise SystemExit(f'Adapter {adapter_name} does not expose run_{adapter_name}')
     doc = await func(url, max_results=max_results)
     print(json.dumps(doc.model_dump(), default=str, indent=2))
+    print("=== Finished ===", file=sys.stderr)
 
 
 # GUI code is intentionally omitted here; import it lazily in main() so tests

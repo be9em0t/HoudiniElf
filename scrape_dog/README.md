@@ -20,6 +20,7 @@ and from the command line.
   - Pydantic models that represent the universal export. Use
     `scrape_dog.models.from_nodeentry_list` to convert scraped node/function
     entries into a `DocumentModel` suitable for JSON export and saving.
+  - Extended with `contents_tree` and `problems` fields for hierarchical visualization.
 
 ## Adapter convention
 
@@ -36,10 +37,19 @@ The adapter should instantiate the `Scraper` (or perform its own parsing) and
 return a `DocumentModel` instance. The CLI uses dynamic importing to load the
 adapter module and calls the `run_<adapter>` function.
 
+### Adapter Implementation Guidelines
+
+Modern adapters (like `unity_shadergraph`) implement custom parsing logic to:
+- Handle complex hierarchical documentation structures (Topic → Category → Element)
+- Avoid duplication by parsing specific content sections rather than entire pages
+- Generate structured `contents_tree` for easy visualization and verification
+- Provide debug output for transparent parsing processes
+
 Example adapter path and symbol for `unity-shadergraph`:
 
-- Module: `scrape_dog.adapters.unity_shadergraph`
+- Module: `scrape_dog.adapters.unity_shadergraph`  
 - Function: `run_unity_shadergraph`
+- Structure: Parses Unity ShaderGraph Node Library into Topics (e.g., "Artistic", "Math") containing Categories (e.g., "Adjustment", "Blend") with precise Element extraction
 
 ## Running
 
@@ -53,3 +63,4 @@ Example adapter path and symbol for `unity-shadergraph`:
   PyQt6 imports. If you need the GUI, install `PyQt6` in your environment.
 - Adapters should not perform network calls in unit tests; tests in this repo
   use small fixtures and fake crawlers to remain deterministic.
+- Modern adapters include comprehensive debug logging to make parsing behavior transparent and debuggable.
