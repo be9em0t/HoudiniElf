@@ -10,6 +10,9 @@ venv/
 *.json
 .pytest_cache/
 images_temp/**
+*.code-workspace
+node_modules/
+backup/
 
 # Keep .github and .clinerules tracked
 !.github/
