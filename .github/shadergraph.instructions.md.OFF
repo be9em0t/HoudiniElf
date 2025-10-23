@@ -1,0 +1,11 @@
+---
+applyTo: '**/*.shadergraph'
+---
+
+Prioritize accuracy over creativity. Do not invent functions or nodes. 
+
+Verify Shader Graph nodes actually exist against #file:ref_shadergraph_nodes.json
+Access additional information about nodes by following URLs in this file. 
+
+
+
