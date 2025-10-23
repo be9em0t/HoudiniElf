@@ -1,5 +1,15 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": [],
-    "python.defaultInterpreterPath": "/Users/dunevv/.pyenv/versions/3.13.5/bin/python"
+	"python-envs.defaultEnvManager": "ms-python.python:system",
+	"python-envs.pythonProjects": [],
+	"python.defaultInterpreterPath": "/Users/dunevv/.pyenv/versions/3.13.5/bin/python",
+	"chat.agent.enabled": true,
+	"servers": {
+	"tomtom-mcp": {
+		"command": "npx",
+		"args": ["-y", "@tomtom-org/tomtom-mcp@latest"],
+			"env": {
+				"TOMTOM_API_KEY": "GgqZsRtAJ8ANAalBNGneVGqOzPUhjWKL"
+			}
+		}
+	}
 }
