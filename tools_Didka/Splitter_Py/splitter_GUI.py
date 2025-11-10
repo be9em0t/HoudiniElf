@@ -9,7 +9,8 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QSpinBox, QFileDialog, 
-    QTextEdit, QFrame, QRadioButton, QButtonGroup
+    QTextEdit, QFrame, QRadioButton, QButtonGroup, QProgressBar,
+    QGroupBox, QStackedWidget
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -19,6 +20,7 @@ class WorkerThread(QThread):
     """Worker thread for processing files without blocking the GUI."""
     finished = pyqtSignal(str)
     progress = pyqtSignal(str)
+    progress_percent = pyqtSignal(int)
     
     def __init__(self, mode, file_path=None, lines=3000, directory=None):
         super().__init__()
@@ -44,12 +46,19 @@ class WorkerThread(QThread):
             self.finished.emit(f"Error: File '{file_path}' not found.")
             return
         
+        # Count total lines
+        with open(file_path, 'r', encoding='utf-8') as f:
+            total_lines = sum(1 for _ in f)
+        
+        if total_lines == 0:
+            self.finished.emit("Error: File is empty.")
+            return
+        
+        self.progress_percent.emit(0)
+        
         with open(file_path, 'r', encoding='utf-8') as f:
             header = f.readline()
-            
-            if not header:
-                self.finished.emit("Error: File is empty.")
-                return
+            processed_lines = 1  # header
             
             file_count = 1
             line_count = 0
@@ -66,6 +75,8 @@ class WorkerThread(QThread):
                 
                 output_file.write(line)
                 line_count += 1
+                processed_lines += 1
+                self.progress_percent.emit(int((processed_lines / total_lines) * 100))
                 
                 if line_count >= lines_per_file:
                     output_file.close()
@@ -75,6 +86,7 @@ class WorkerThread(QThread):
             if output_file and not output_file.closed:
                 output_file.close()
             
+            self.progress_percent.emit(100)
             self.finished.emit(f"Split complete: Created {file_count} file(s)")
     
     def combine_csv(self, directory):
@@ -91,12 +103,15 @@ class WorkerThread(QThread):
             self.finished.emit(f"No CSV files found in '{directory}'")
             return
         
+        self.progress_percent.emit(0)
+        
         output_path = dir_path / "combined_output.csv"
         header_written = False
         total_lines = 0
+        total_files = len(csv_files)
         
         with open(output_path, 'w', encoding='utf-8') as outfile:
-            for csv_file in csv_files:
+            for i, csv_file in enumerate(csv_files):
                 self.progress.emit(f"Processing: {csv_file.name}")
                 with open(csv_file, 'r', encoding='utf-8') as infile:
                     header = infile.readline()
@@ -108,7 +123,10 @@ class WorkerThread(QThread):
                     for line in infile:
                         outfile.write(line)
                         total_lines += 1
+                
+                self.progress_percent.emit(int(((i + 1) / total_files) * 100))
         
+        self.progress_percent.emit(100)
         self.finished.emit(f"Combine complete: {len(csv_files)} file(s) merged into '{output_path.name}'\nTotal lines: {total_lines}")
 
 
@@ -120,7 +138,7 @@ class SplitterGUI(QMainWindow):
     
     def init_ui(self):
         self.setWindowTitle("CSV Splitter/Combiner")
-        self.setGeometry(100, 100, 600, 500)
+        self.setGeometry(100, 100, 700, 600)
         
         # Main widget and layout
         main_widget = QWidget()
@@ -128,33 +146,48 @@ class SplitterGUI(QMainWindow):
         self.setCentralWidget(main_widget)
         
         layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(30, 30, 30, 30)
         layout.setSpacing(20)
         main_widget.setLayout(layout)
         
         # Title
-        title = QLabel("File Splitter")
+        title = QLabel("CSV Splitter/Combiner")
         title_font = QFont()
-        title_font.setPointSize(42)
+        title_font.setPointSize(36)
         title_font.setBold(True)
         title.setFont(title_font)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
         
         layout.addSpacing(20)
         
         # Mode selection
+        mode_group = QGroupBox("Operation Mode")
+        mode_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 14pt;
+                font-weight: bold;
+                border: 2px solid #4a5f7a;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
         mode_layout = QHBoxLayout()
-        mode_label = QLabel("Mode:")
-        mode_label.setStyleSheet("font-size: 14pt;")
-        mode_layout.addWidget(mode_label)
+        mode_layout.setContentsMargins(10, 10, 10, 10)
         
         self.mode_group = QButtonGroup()
-        self.split_radio = QRadioButton("Split")
-        self.combine_radio = QRadioButton("Combine")
+        self.split_radio = QRadioButton("Split CSV File")
+        self.combine_radio = QRadioButton("Combine CSV Files")
         self.split_radio.setChecked(True)
-        self.split_radio.setStyleSheet("font-size: 14pt; outline: none;")
-        self.combine_radio.setStyleSheet("font-size: 14pt; outline: none;")
+        self.split_radio.setStyleSheet("font-size: 12pt; outline: none;")
+        self.combine_radio.setStyleSheet("font-size: 12pt; outline: none;")
         self.split_radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.combine_radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         
@@ -165,14 +198,26 @@ class SplitterGUI(QMainWindow):
         mode_layout.addWidget(self.combine_radio)
         mode_layout.addStretch()
         
-        layout.addLayout(mode_layout)
+        mode_group.setLayout(mode_layout)
+        layout.addWidget(mode_group)
+        
+        # Connect mode change
+        self.split_radio.toggled.connect(self.on_mode_changed)
+        self.combine_radio.toggled.connect(self.on_mode_changed)
         
         layout.addSpacing(15)
         
-        # Split controls
-        split_label = QLabel("File to split:")
-        split_label.setStyleSheet("font-size: 14pt;")
-        layout.addWidget(split_label)
+        # Stacked widget for controls
+        self.stacked_widget = QStackedWidget()
+        
+        # Split widget
+        split_widget = QWidget()
+        split_layout = QVBoxLayout()
+        split_layout.setSpacing(10)
+        
+        split_label = QLabel("Select CSV file to split:")
+        split_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(split_label)
         
         file_layout = QHBoxLayout()
         self.file_input = QLineEdit()
@@ -195,14 +240,14 @@ class SplitterGUI(QMainWindow):
             }
         """)
         self.browse_file_btn.clicked.connect(self.browse_file)
+        self.browse_file_btn.setToolTip("Select the CSV file to split")
         file_layout.addWidget(self.browse_file_btn)
         
-        layout.addLayout(file_layout)
+        split_layout.addLayout(file_layout)
         
-        # Lines per file
-        lines_label = QLabel("Lines per file:")
-        lines_label.setStyleSheet("padding-left: 0px; font-size: 14pt;")
-        layout.addWidget(lines_label)
+        lines_label = QLabel("Lines per split file:")
+        lines_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(lines_label)
         
         self.lines_input = QSpinBox()
         self.lines_input.setMinimum(1)
@@ -211,23 +256,21 @@ class SplitterGUI(QMainWindow):
         self.lines_input.setStyleSheet("background-color: white; color: black; font-size: 11pt;")
         self.lines_input.lineEdit().setStyleSheet("padding-left: 5px;")
         self.lines_input.setFixedHeight(self.file_input.sizeHint().height())
-        self.lines_input.setFixedWidth(100)
-        layout.addWidget(self.lines_input, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.lines_input.setFixedWidth(120)
+        self.lines_input.setToolTip("Number of lines per output file")
+        split_layout.addWidget(self.lines_input, alignment=Qt.AlignmentFlag.AlignLeft)
         
-        layout.addSpacing(10)
+        split_widget.setLayout(split_layout)
+        self.stacked_widget.addWidget(split_widget)
         
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #FDB200; min-height: 4px; max-height: 4px;")
-        layout.addWidget(separator)
+        # Combine widget
+        combine_widget = QWidget()
+        combine_layout = QVBoxLayout()
+        combine_layout.setSpacing(10)
         
-        layout.addSpacing(10)
-        
-        # Combine controls
-        dir_label = QLabel("Directory of files to combine:")
-        dir_label.setStyleSheet("font-size: 14pt;")
-        layout.addWidget(dir_label)
+        dir_label = QLabel("Select directory containing CSV files to combine:")
+        dir_label.setStyleSheet("font-size: 12pt;")
+        combine_layout.addWidget(dir_label)
         
         dir_layout = QHBoxLayout()
         self.dir_input = QLineEdit()
@@ -250,9 +293,17 @@ class SplitterGUI(QMainWindow):
             }
         """)
         self.browse_dir_btn.clicked.connect(self.browse_directory)
+        self.browse_dir_btn.setToolTip("Select directory with CSV files to combine")
         dir_layout.addWidget(self.browse_dir_btn)
         
-        layout.addLayout(dir_layout)
+        combine_layout.addLayout(dir_layout)
+        
+        combine_widget.setLayout(combine_layout)
+        self.stacked_widget.addWidget(combine_widget)
+        
+        self.stacked_widget.setCurrentIndex(0)
+        
+        layout.addWidget(self.stacked_widget)
         
         layout.addSpacing(20)
         
@@ -262,7 +313,7 @@ class SplitterGUI(QMainWindow):
             QPushButton {
                 background-color: #FDB200; 
                 color: #263543; 
-                padding: 10px; 
+                padding: 12px; 
                 font-size: 14pt;
                 font-weight: bold;
                 border: none;
@@ -277,16 +328,41 @@ class SplitterGUI(QMainWindow):
             }
         """)
         self.execute_btn.clicked.connect(self.execute)
-        layout.addWidget(self.execute_btn)
+        self.execute_btn.setToolTip("Start the selected operation")
+        layout.addWidget(self.execute_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid #4a5f7a;
+                border-radius: 5px;
+                text-align: center;
+                background-color: #1a2530;
+                color: white;
+            }
+            QProgressBar::chunk {
+                background-color: #FDB200;
+                width: 10px;
+            }
+        """)
+        self.progress_bar.setVisible(False)
+        layout.addWidget(self.progress_bar)
         
         # Output text area
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
-        self.output_text.setStyleSheet("background-color: #1a2530; color: #aaa; padding: 10px; font-size: 10pt; font-family: monospace;")
+        self.output_text.setStyleSheet("background-color: #1a2530; color: #aaa; padding: 10px; font-size: 10pt; font-family: monospace; border: 1px solid #4a5f7a;")
         self.output_text.setMaximumHeight(150)
         layout.addWidget(self.output_text)
         
         layout.addStretch()
+    
+    def on_mode_changed(self):
+        if self.split_radio.isChecked():
+            self.stacked_widget.setCurrentIndex(0)
+        else:
+            self.stacked_widget.setCurrentIndex(1)
     
     def browse_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -310,12 +386,15 @@ class SplitterGUI(QMainWindow):
         mode = 'split' if self.split_radio.isChecked() else 'combine'
         
         self.output_text.clear()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)
         self.execute_btn.setEnabled(False)
         
         if mode == 'split':
             file_path = self.file_input.text()
             if not file_path:
                 self.output_text.append("Error: Please select a file to split.")
+                self.progress_bar.setVisible(False)
                 self.execute_btn.setEnabled(True)
                 return
             
@@ -325,20 +404,26 @@ class SplitterGUI(QMainWindow):
             directory = self.dir_input.text()
             if not directory:
                 self.output_text.append("Error: Please select a directory to combine.")
+                self.progress_bar.setVisible(False)
                 self.execute_btn.setEnabled(True)
                 return
             
             self.worker = WorkerThread('combine', directory=directory)
         
         self.worker.progress.connect(self.update_progress)
+        self.worker.progress_percent.connect(self.update_progress_bar)
         self.worker.finished.connect(self.operation_finished)
         self.worker.start()
     
     def update_progress(self, message):
         self.output_text.append(message)
     
+    def update_progress_bar(self, value):
+        self.progress_bar.setValue(value)
+    
     def operation_finished(self, message):
         self.output_text.append(message)
+        self.progress_bar.setVisible(False)
         self.execute_btn.setEnabled(True)
 
 
