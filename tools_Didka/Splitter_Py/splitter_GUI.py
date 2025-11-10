@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-CSV Splitter/Combiner GUI
-Qt6-based graphical interface for splitting and combining CSV files.
+CSV/TSV Splitter/Combiner GUI
+Qt6-based graphical interface for splitting and combining CSV and TSV files.
 """
 
 import sys
 from pathlib import Path
+import re
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QSpinBox, QFileDialog, 
@@ -22,12 +23,13 @@ class WorkerThread(QThread):
     progress = pyqtSignal(str)
     progress_percent = pyqtSignal(int)
     
-    def __init__(self, mode, file_path=None, lines=3000, directory=None):
+    def __init__(self, mode, file_path=None, lines=3000, directory=None, output_path=None):
         super().__init__()
         self.mode = mode
         self.file_path = file_path
         self.lines = lines
         self.directory = directory
+        self.output_path = output_path
     
     def run(self):
         try:
@@ -68,7 +70,9 @@ class WorkerThread(QThread):
                 if line_count == 0:
                     base_name = file_path.stem
                     extension = file_path.suffix
-                    output_path = file_path.parent / f"{base_name}_part_{file_count:04d}{extension}"
+                    output_dir = Path(self.output_path) if self.output_path else file_path.parent
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    output_path = output_dir / f"{base_name}_part_{file_count:04d}{extension}"
                     output_file = open(output_path, 'w', encoding='utf-8')
                     output_file.write(header)
                     self.progress.emit(f"Creating: {output_path.name}")
@@ -97,15 +101,16 @@ class WorkerThread(QThread):
             self.finished.emit(f"Error: Directory '{directory}' not found.")
             return
         
-        csv_files = sorted(dir_path.glob('*.csv'))
+        csv_files = sorted(list(dir_path.glob('*.csv')) + list(dir_path.glob('*.tsv')))
         
         if not csv_files:
-            self.finished.emit(f"No CSV files found in '{directory}'")
+            self.finished.emit(f"No CSV/TSV files found in '{directory}'")
             return
         
         self.progress_percent.emit(0)
         
-        output_path = dir_path / "combined_output.csv"
+        output_path = Path(self.output_path) if self.output_path else dir_path / f"combined_output{csv_files[0].suffix}"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         header_written = False
         total_lines = 0
         total_files = len(csv_files)
@@ -137,7 +142,7 @@ class SplitterGUI(QMainWindow):
         self.init_ui()
     
     def init_ui(self):
-        self.setWindowTitle("CSV Splitter/Combiner")
+        self.setWindowTitle("CSV/TSV Splitter/Combiner")
         self.setGeometry(100, 100, 700, 600)
         
         # Main widget and layout
@@ -152,7 +157,7 @@ class SplitterGUI(QMainWindow):
         main_widget.setLayout(layout)
         
         # Title
-        title = QLabel("CSV Splitter/Combiner")
+        title = QLabel("CSV/TSV Splitter/Combiner")
         title_font = QFont()
         title_font.setPointSize(36)
         title_font.setBold(True)
@@ -183,8 +188,8 @@ class SplitterGUI(QMainWindow):
         mode_layout.setContentsMargins(10, 10, 10, 10)
         
         self.mode_group = QButtonGroup()
-        self.split_radio = QRadioButton("Split CSV File")
-        self.combine_radio = QRadioButton("Combine CSV Files")
+        self.split_radio = QRadioButton("Split CSV/TSV File")
+        self.combine_radio = QRadioButton("Combine CSV/TSV Files")
         self.split_radio.setChecked(True)
         self.split_radio.setStyleSheet("font-size: 12pt; outline: none;")
         self.combine_radio.setStyleSheet("font-size: 12pt; outline: none;")
@@ -215,7 +220,7 @@ class SplitterGUI(QMainWindow):
         split_layout = QVBoxLayout()
         split_layout.setSpacing(10)
         
-        split_label = QLabel("Select CSV file to split:")
+        split_label = QLabel("Select CSV/TSV file to split:")
         split_label.setStyleSheet("font-size: 12pt;")
         split_layout.addWidget(split_label)
         
@@ -240,10 +245,40 @@ class SplitterGUI(QMainWindow):
             }
         """)
         self.browse_file_btn.clicked.connect(self.browse_file)
-        self.browse_file_btn.setToolTip("Select the CSV file to split")
+        self.browse_file_btn.setToolTip("Select the CSV/TSV file to split")
         file_layout.addWidget(self.browse_file_btn)
         
         split_layout.addLayout(file_layout)
+        
+        output_dir_label = QLabel("Output directory:")
+        output_dir_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(output_dir_label)
+        
+        output_dir_layout = QHBoxLayout()
+        self.output_dir_input = QLineEdit()
+        self.output_dir_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.output_dir_input.setPlaceholderText("Output directory...")
+        output_dir_layout.addWidget(self.output_dir_input)
+        
+        self.browse_output_dir_btn = QPushButton("Browse...")
+        self.browse_output_dir_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_output_dir_btn.clicked.connect(self.browse_output_dir)
+        self.browse_output_dir_btn.setToolTip("Select output directory for split files")
+        output_dir_layout.addWidget(self.browse_output_dir_btn)
+        
+        split_layout.addLayout(output_dir_layout)
         
         lines_label = QLabel("Lines per split file:")
         lines_label.setStyleSheet("font-size: 12pt;")
@@ -268,7 +303,7 @@ class SplitterGUI(QMainWindow):
         combine_layout = QVBoxLayout()
         combine_layout.setSpacing(10)
         
-        dir_label = QLabel("Select directory containing CSV files to combine:")
+        dir_label = QLabel("Select directory containing CSV/TSV files to combine:")
         dir_label.setStyleSheet("font-size: 12pt;")
         combine_layout.addWidget(dir_label)
         
@@ -293,10 +328,40 @@ class SplitterGUI(QMainWindow):
             }
         """)
         self.browse_dir_btn.clicked.connect(self.browse_directory)
-        self.browse_dir_btn.setToolTip("Select directory with CSV files to combine")
+        self.browse_dir_btn.setToolTip("Select directory with CSV/TSV files to combine")
         dir_layout.addWidget(self.browse_dir_btn)
         
         combine_layout.addLayout(dir_layout)
+        
+        output_file_label = QLabel("Output file:")
+        output_file_label.setStyleSheet("font-size: 12pt;")
+        combine_layout.addWidget(output_file_label)
+        
+        output_file_layout = QHBoxLayout()
+        self.output_file_input = QLineEdit()
+        self.output_file_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.output_file_input.setPlaceholderText("Output file...")
+        output_file_layout.addWidget(self.output_file_input)
+        
+        self.browse_output_file_btn = QPushButton("Browse...")
+        self.browse_output_file_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_output_file_btn.clicked.connect(self.browse_output_file)
+        self.browse_output_file_btn.setToolTip("Select output file for combined CSV/TSV")
+        output_file_layout.addWidget(self.browse_output_file_btn)
+        
+        combine_layout.addLayout(output_file_layout)
         
         combine_widget.setLayout(combine_layout)
         self.stacked_widget.addWidget(combine_widget)
@@ -367,12 +432,13 @@ class SplitterGUI(QMainWindow):
     def browse_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select CSV File",
+            "Select CSV/TSV File",
             "",
-            "CSV Files (*.csv);;All Files (*)"
+            "CSV/TSV Files (*.csv *.tsv);;All Files (*)"
         )
         if file_path:
             self.file_input.setText(file_path)
+            self.update_split_output()
     
     def browse_directory(self):
         dir_path = QFileDialog.getExistingDirectory(
@@ -381,6 +447,45 @@ class SplitterGUI(QMainWindow):
         )
         if dir_path:
             self.dir_input.setText(dir_path)
+            self.update_combine_output()
+    
+    def browse_output_dir(self):
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Output Directory"
+        )
+        if dir_path:
+            self.output_dir_input.setText(dir_path)
+    
+    def browse_output_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Select Output File",
+            "",
+            "CSV/TSV Files (*.csv *.tsv);;All Files (*)"
+        )
+        if file_path:
+            self.output_file_input.setText(file_path)
+    
+    def update_split_output(self):
+        file_path = self.file_input.text()
+        if file_path:
+            input_path = Path(file_path)
+            output_dir = input_path.parent / 'split_output'
+            self.output_dir_input.setText(str(output_dir))
+    
+    def update_combine_output(self):
+        dir_path = self.dir_input.text()
+        if dir_path:
+            dir_path_obj = Path(dir_path)
+            csv_files = sorted(list(dir_path_obj.glob('*.csv')) + list(dir_path_obj.glob('*.tsv')))
+            if csv_files:
+                first_file = csv_files[0]
+                stem = first_file.stem
+                # Remove _part_xxxx if present
+                stem = re.sub(r'_part_\d{4}$', '', stem)
+                output_file = first_file.parent / f"{stem}_combined{first_file.suffix}"
+                self.output_file_input.setText(str(output_file))
     
     def execute(self):
         mode = 'split' if self.split_radio.isChecked() else 'combine'
@@ -399,7 +504,8 @@ class SplitterGUI(QMainWindow):
                 return
             
             lines = self.lines_input.value()
-            self.worker = WorkerThread('split', file_path=file_path, lines=lines)
+            output_path = self.output_dir_input.text() if self.output_dir_input.text() else None
+            self.worker = WorkerThread('split', file_path=file_path, lines=lines, output_path=output_path)
         else:
             directory = self.dir_input.text()
             if not directory:
@@ -408,7 +514,7 @@ class SplitterGUI(QMainWindow):
                 self.execute_btn.setEnabled(True)
                 return
             
-            self.worker = WorkerThread('combine', directory=directory)
+            self.worker = WorkerThread('combine', directory=directory, output_path=self.output_file_input.text() if self.output_file_input.text() else None)
         
         self.worker.progress.connect(self.update_progress)
         self.worker.progress_percent.connect(self.update_progress_bar)
