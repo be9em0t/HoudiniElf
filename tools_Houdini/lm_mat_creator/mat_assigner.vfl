@@ -1,0 +1,13 @@
+string matnetPath = chs("Matnet_full_path");
+// principled_irl_dub_006
+string oldMat = s@shop_materialpath;
+// string = "/mat/texture_irl_dub_001_png"
+
+// Split the string by underscores
+string parts[] = split(oldMat, "_");
+
+// Combine the necessary parts to get "irl_dub_001"
+string result = parts[1] + "_" + parts[2] + "_" + parts[3];
+result = tolower(result);
+
+s@shop_materialpath = matnetPath + "/principled_" + result;

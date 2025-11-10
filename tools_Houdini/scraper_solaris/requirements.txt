@@ -1,0 +1,10 @@
+# Requirements for scraper_solaris.py
+requests
+beautifulsoup4
+tqdm
+sentence-transformers
+chromadb
+# Optional (for JS-rendered pages)
+playwright
+# If you want faiss-backed sentence-transformers, install faiss-cpu
+# faiss-cpu

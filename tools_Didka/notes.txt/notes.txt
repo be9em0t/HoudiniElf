@@ -1,0 +1,5 @@
+# I need a python scipt that takes a .csv as input, gets its header, and splits it into multiple .csv files with given size, adding the header to each one.
+# The script has two modes, --split and --combine.
+# In  --split mode it takes --lines (default 3000) and --file (csv file)
+# In  --combine mode it takes --dir (directory containing csv files)
+# Although this shouldn't matter for the script code, we want to work with comma, tab, colon atc. separated files - but we actually care only for line count, not the contenet of the lines
