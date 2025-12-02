@@ -20,12 +20,7 @@ import sys
 from pathlib import Path
 import re
 import argparse
-
-try:
-    import pandas as pd
-except ImportError:
-    print("Error: pandas is required. Install with: pip install pandas", file=sys.stderr)
-    sys.exit(1)
+import csv
 
 # === Configuration ===
 # Two configurable lists control how characters are handled:
@@ -128,33 +123,45 @@ def main(argv):
 
     out = out_path_for(p)
     
-    # Read tab-delimited CSV as DataFrame
-    # Use on_bad_lines='warn' to handle rows with inconsistent column counts
+    # Process as tab-delimited CSV, normalizing only the specified column
+    # Important: read directly from file handle to preserve multiline cells
     try:
-        df = pd.read_csv(p, sep='\t', encoding='utf-8', encoding_errors='replace', 
-                        dtype=str, keep_default_na=False, on_bad_lines='warn')
+        with p.open('r', encoding='utf-8', errors='replace', newline='') as fh:
+            rows = list(csv.reader(fh, delimiter='\t'))
     except Exception as e:
-        print(f'Error reading CSV: {e}', file=sys.stderr)
+        print(f'Error parsing CSV: {e}', file=sys.stderr)
         return 4
 
-    if df.empty:
+    if not rows:
         print('Warning: empty input file', file=sys.stderr)
         return 5
 
-    # Check if target column exists
-    if args.column not in df.columns:
-        print(f"Error: column '{args.column}' not found. Available columns: {', '.join(df.columns)}", file=sys.stderr)
+    header = rows[0]
+    
+    # Find the target column (case-sensitive exact match)
+    try:
+        col_idx = header.index(args.column)
+    except ValueError:
+        print(f"Error: column '{args.column}' not found in header. Available columns: {', '.join(header)}", file=sys.stderr)
         return 6
 
-    # Normalize only the target column
-    original_values = df[args.column].copy()
-    df[args.column] = df[args.column].apply(normalize_text)
-    
-    # Count how many rows actually changed
-    changed_count = (df[args.column] != original_values).sum()
+    # Normalize only the target column for all data rows
+    new_rows = [header]
+    changed_count = 0
+    for r in rows[1:]:
+        # Ensure row has enough columns
+        if col_idx < len(r):
+            original = r[col_idx]
+            r[col_idx] = normalize_text(r[col_idx])
+            if r[col_idx] != original:
+                changed_count += 1
+        new_rows.append(r)
 
-    # Write back as tab-delimited CSV
-    df.to_csv(out, sep='\t', index=False, encoding='utf-8', lineterminator='\n')
+    # Write back using tab delimiter and minimal quoting
+    with out.open('w', encoding='utf-8', newline='') as fh:
+        writer = csv.writer(fh, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        for r in new_rows:
+            writer.writerow(r)
     
     print(f"Wrote: {out}")
     print(f"Normalized {changed_count} rows in column '{args.column}'")

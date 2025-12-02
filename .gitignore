@@ -14,6 +14,10 @@ images_temp/**
 *.code-workspace
 node_modules/
 backup/
+build/
+dist/
+work/
+*/work/
 
 # Keep .github and .clinerules tracked
 !.github/

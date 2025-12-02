@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-fix_nonprintable_spaces_column.py
+fix_nonprintable_spaces.py
 
 Usage:
-  python fix_nonprintable_spaces_column.py input.csv [--column COLNAME]
+  python fix_nonprintable_spaces.py input.txt
 
-This script normalizes spaces and non-printable characters in a single column of a tab-delimited CSV file.
-- Targets tab-delimited CSV files (TSV) with UTF-8 encoding (supports Arabic/RTL text)
-- By default processes the 'translation' column
-- Replaces any sequence of spaces and NBSP (U+00A0) with a single ASCII space
-- Replaces 2+ ASCII spaces with a single ASCII space
-- Replaces multiple NBSP characters with a single ASCII space
-- Preserves all other columns unchanged
+This script normalizes spaces and non-printable characters in a UTF-8 text file.
+- Configure `NPC_CHARS` near the top to control which non-printable characters are considered.
+- Replaces any sequence of spaces and configured non-printable characters with a single ASCII space.
+- Replaces 2+ ASCII spaces with a single ASCII space.
+- Replaces any run of configured non-printable characters (with no space between) with a single ASCII space.
 
 Writes output to the same directory with `_NPC_fixed` appended before the extension.
 """
@@ -20,12 +18,6 @@ import sys
 from pathlib import Path
 import re
 import argparse
-
-try:
-    import pandas as pd
-except ImportError:
-    print("Error: pandas is required. Install with: pip install pandas", file=sys.stderr)
-    sys.exit(1)
 
 # === Configuration ===
 # Two configurable lists control how characters are handled:
@@ -103,19 +95,27 @@ def main(argv):
             err = f"error: {message}. Use -h/--help for usage.\n"
             self.exit(2, err)
 
-    parser = HintingArgumentParser(description='Normalize spaces and configured non-printable characters in a single CSV column')
-    parser.add_argument('input', help='Input tab-delimited CSV file (UTF-8 encoding)')
-    parser.add_argument('-c', '--column', default='translation',
-                        help='Column name to normalize (default: translation)')
+    parser = HintingArgumentParser(description='Normalize spaces and configured non-printable characters')
+    parser.add_argument('input', help='Input UTF-8 text file (plain text or CSV/TSV)')
     parser.add_argument('-rd', '--remove-directional', action='store_true',
                         help='Also remove directional marks (U+200E/U+200F). Off by default to preserve RTL text')
+    parser.add_argument('-d', '--delimiter', help='Force delimiter: "," for CSV or "\t" for TSV. If not provided the script will try to detect it.')
     args = parser.parse_args(argv[1:])
 
     p = Path(args.input)
     if not p.exists():
         print('Input file not found:', p)
         return 3
-    
+    # Read file with robust encoding fallback: prefer UTF-8 strict, then UTF-8 with replacement, then latin-1
+    try:
+        data = p.read_text(encoding='utf-8')
+    except UnicodeDecodeError as e:
+        print('Warning: file not valid UTF-8 (strict). Retrying with replacement for invalid bytes.', file=sys.stderr)
+        try:
+            data = p.read_text(encoding='utf-8', errors='replace')
+        except Exception:
+            print('Warning: retry with UTF-8 replace failed; falling back to latin-1.', file=sys.stderr)
+            data = p.read_text(encoding='latin-1')
     # If requested, extend NPC_REMOVE to include directional marks
     if args.remove_directional:
         global NPC_REMOVE_CLASS, NPC_REMOVE_RE
@@ -126,38 +126,63 @@ def main(argv):
         NPC_REMOVE_CLASS = build_char_class(NPC_REMOVE)
         NPC_REMOVE_RE = re.compile(r'(?:' + NPC_REMOVE_CLASS + r')+')
 
+    fixed = normalize_text(data)
     out = out_path_for(p)
-    
-    # Read tab-delimited CSV as DataFrame
-    # Use on_bad_lines='warn' to handle rows with inconsistent column counts
+    # If file appears to be CSV/TSV, only normalize the 'translation' column
+    import csv
+
+    def is_probably_tab_separated(text: str) -> bool:
+        # Heuristic: if tabs occur more often than commas on first few lines, assume TSV
+        sample = '\n'.join(text.splitlines()[:10])
+        return sample.count('\t') > sample.count(',')
+
+    delim = None
+    if args.delimiter:
+        if args.delimiter == '\\t':
+            delim = '\t'
+        else:
+            delim = args.delimiter
+    else:
+        delim = '\t' if is_probably_tab_separated(data) else ','
+
+    # Try to parse CSV with detected delimiter. If header contains 'translation', operate per-column.
     try:
-        df = pd.read_csv(p, sep='\t', encoding='utf-8', encoding_errors='replace', 
-                        dtype=str, keep_default_na=False, on_bad_lines='warn')
-    except Exception as e:
-        print(f'Error reading CSV: {e}', file=sys.stderr)
-        return 4
+        rows = list(csv.reader(data.splitlines(), delimiter=delim))
+    except Exception:
+        # Fallback: write the normalized whole file
+        out.write_text(fixed, encoding='utf-8')
+        print('Wrote (normalized whole file):', out)
+        return 0
 
-    if df.empty:
-        print('Warning: empty input file', file=sys.stderr)
-        return 5
+    if not rows:
+        out.write_text(fixed, encoding='utf-8')
+        print('Wrote (empty input):', out)
+        return 0
 
-    # Check if target column exists
-    if args.column not in df.columns:
-        print(f"Error: column '{args.column}' not found. Available columns: {', '.join(df.columns)}", file=sys.stderr)
-        return 6
+    header = rows[0]
+    # Find the translation column (case-sensitive exact match)
+    try:
+        col_idx = header.index('translation')
+    except ValueError:
+        # No translation column: write normalized whole file
+        out.write_text(fixed, encoding='utf-8')
+        print("No 'translation' column found; wrote normalized whole file:", out)
+        return 0
 
-    # Normalize only the target column
-    original_values = df[args.column].copy()
-    df[args.column] = df[args.column].apply(normalize_text)
-    
-    # Count how many rows actually changed
-    changed_count = (df[args.column] != original_values).sum()
+    # Normalize only the translation column for all subsequent rows
+    new_rows = [header]
+    for r in rows[1:]:
+        # Ensure row has enough columns
+        if col_idx < len(r):
+            r[col_idx] = normalize_text(r[col_idx])
+        new_rows.append(r)
 
-    # Write back as tab-delimited CSV
-    df.to_csv(out, sep='\t', index=False, encoding='utf-8', lineterminator='\n')
-    
-    print(f"Wrote: {out}")
-    print(f"Normalized {changed_count} rows in column '{args.column}'")
+    # Write back using same delimiter and quoting minimal
+    with out.open('w', encoding='utf-8', newline='') as fh:
+        writer = csv.writer(fh, delimiter=delim, quoting=csv.QUOTE_MINIMAL)
+        for r in new_rows:
+            writer.writerow(r)
+    print('Wrote (column-normalized):', out)
     return 0
 
 

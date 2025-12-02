@@ -18,6 +18,7 @@ import os
 import importlib.util
 import subprocess
 import threading
+import csv
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import argparse
@@ -94,6 +95,7 @@ class ScriptLauncherGUI(QMainWindow):
         self.tools_dir = Path(__file__).parent / "tools"
         self.current_script_path: Optional[Path] = None
         self.current_parser: Optional[argparse.ArgumentParser] = None
+        self.current_module = None
         self.form_widgets: Dict[str, Any] = {}
         self.runner_thread: Optional[ScriptRunner] = None
         
@@ -228,16 +230,17 @@ class ScriptLauncherGUI(QMainWindow):
             self.log_output(f"Created tools directory: {self.tools_dir}\n", "gray")
             return
             
-        # Find Python scripts
-        scripts = sorted(self.tools_dir.glob("*.py"))
+        # Find Python scripts that start with tool_ or sample_
+        scripts = sorted([
+            script for script in self.tools_dir.glob("*.py")
+            if script.name.startswith(("tool_", "sample_"))
+        ])
         
         if not scripts:
             self.log_output("No scripts found in tools directory.\n", "gray")
             return
             
         for script in scripts:
-            if script.name.startswith("__"):
-                continue
             self.script_list.addItem(script.name)
             
         self.log_output(f"Loaded {len(scripts)} script(s) from {self.tools_dir}\n", "green")
@@ -282,6 +285,9 @@ class ScriptLauncherGUI(QMainWindow):
                     f"Script {script_path.name} must have a build_parser() function"
                 )
                 
+            # Store module reference for potential dynamic updates
+            self.current_module = module
+            
             # Get the parser
             self.current_parser = module.build_parser()
             
@@ -359,10 +365,25 @@ class ScriptLauncherGUI(QMainWindow):
             checkbox.setChecked(default_val)
             return checkbox
             
-        # Choice dropdown
-        if action.choices:
+        # Check for dynamic choices marker (custom attribute)
+        if hasattr(action, 'is_dynamic_choices') and action.is_dynamic_choices:
             combo = QComboBox()
-            combo.addItems([str(c) for c in action.choices])
+            combo.addItem("(Select file first)")
+            combo.setEnabled(False)
+            if action.default:
+                index = combo.findText(str(action.default))
+                if index >= 0:
+                    combo.setCurrentIndex(index)
+            return combo
+            
+        # Choice dropdown (check if choices attribute exists, even if empty)
+        if action.choices is not None:
+            combo = QComboBox()
+            if action.choices:  # Only add items if list is not empty
+                combo.addItems([str(c) for c in action.choices])
+            else:
+                combo.addItem("(Select file first)")
+                combo.setEnabled(False)
             if action.default:
                 index = combo.findText(str(action.default))
                 if index >= 0:
@@ -410,6 +431,11 @@ class ScriptLauncherGUI(QMainWindow):
             lambda: self.browse_for_file(line_edit, action)
         )
         
+        # Connect text change to handle dynamic updates
+        line_edit.textChanged.connect(
+            lambda text: self.on_file_path_changed(action.dest, text)
+        )
+        
         layout.addWidget(line_edit, stretch=3)
         layout.addWidget(browse_btn, stretch=1)
         
@@ -426,10 +452,62 @@ class ScriptLauncherGUI(QMainWindow):
         if 'dir' in name_lower or 'folder' in name_lower:
             path = QFileDialog.getExistingDirectory(self, f"Select {action.dest}")
         else:
-            path, _ = QFileDialog.getOpenFileName(self, f"Select {action.dest}")
+            # Add CSV filter for file arguments
+            if 'file' in name_lower:
+                path, _ = QFileDialog.getOpenFileName(
+                    self, f"Select {action.dest}",
+                    filter="CSV Files (*.csv);;All Files (*)"
+                )
+            else:
+                path, _ = QFileDialog.getOpenFileName(self, f"Select {action.dest}")
             
         if path:
             line_edit.setText(path)
+    
+    def on_file_path_changed(self, arg_name: str, file_path: str):
+        """Handle changes to file path inputs - update dependent widgets"""
+        # Only process if we have a valid file path
+        if not file_path or not os.path.exists(file_path):
+            return
+        
+        # Check if this is an input file for CSV processing
+        if arg_name == 'file' and file_path.lower().endswith('.csv'):
+            self.update_csv_dependent_widgets(file_path)
+    
+    def update_csv_dependent_widgets(self, csv_path: str):
+        """Update column dropdown and output path when CSV is selected"""
+        try:
+            # Check if module has read_csv_header function
+            if self.current_module and hasattr(self.current_module, 'read_csv_header'):
+                delimiter, headers = self.current_module.read_csv_header(csv_path)
+                
+                # Update column dropdown if it exists
+                if 'column' in self.form_widgets:
+                    action, widget = self.form_widgets['column']
+                    if isinstance(widget, QComboBox):
+                        current_text = widget.currentText()
+                        widget.clear()
+                        widget.addItems(headers)
+                        widget.setEnabled(True)  # Enable the combo box
+                        # Try to restore previous selection
+                        if current_text and current_text != "(Select file first)":
+                            index = widget.findText(current_text)
+                            if index >= 0:
+                                widget.setCurrentIndex(index)
+                
+                # Update output file path if it exists and is empty
+                if 'output' in self.form_widgets:
+                    action, widget = self.form_widgets['output']
+                    line_edit = widget.line_edit if hasattr(widget, 'line_edit') else widget
+                    
+                    # Only auto-populate if empty
+                    if isinstance(line_edit, QLineEdit) and not line_edit.text():
+                        base, ext = os.path.splitext(csv_path)
+                        default_output = f"{base}_numbered{ext}"
+                        line_edit.setText(default_output)
+                        
+        except Exception as e:
+            self.log_output(f"Warning: Could not update dependent widgets: {str(e)}\n", "gray")
             
     def collect_arguments(self) -> List[str]:
         """Collect arguments from form widgets"""
