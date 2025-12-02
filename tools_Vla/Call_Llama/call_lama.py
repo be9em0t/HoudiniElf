@@ -12,6 +12,8 @@ from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QTextCursor, QFont, QColor, QIcon, QTextCharFormat, QPixmap
 
 # Configuration - will be overridden by settings
+# DEFAULT_OLLAMA_HOST = "81.244.26.127"
+# DEFAULT_OLLAMA_PORT = "50200"
 DEFAULT_OLLAMA_HOST = "192.168.1.28"
 DEFAULT_OLLAMA_PORT = "11434"
 
