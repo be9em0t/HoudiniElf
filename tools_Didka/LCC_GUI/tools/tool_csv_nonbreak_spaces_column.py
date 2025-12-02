@@ -98,6 +98,56 @@ def read_csv_header(path: str):
         return delimiter, header
 
 
+def find_columns_with_nbsp(path: str):
+    """Find all columns that contain NBSP characters.
+    
+    Returns:
+        tuple: (delimiter, list of column names that contain NBSP)
+    """
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as fh:
+            sample = fh.read(4096)
+            sniffer = csv.Sniffer()
+            try:
+                delimiter = sniffer.sniff(sample, delimiters=',;\t').delimiter
+            except Exception:
+                delimiter = '\t'
+        
+        # Read file line by line
+        with open(path, 'r', encoding='utf-8', errors='replace', newline='') as fh:
+            lines = fh.readlines()
+        
+        if not lines:
+            return delimiter, []
+        
+        # Parse header
+        header_line = lines[0].rstrip('\n\r')
+        header = [h.strip().strip('"') for h in header_line.split(delimiter)]
+        
+        # Track which columns have NBSP
+        has_nbsp = [False] * len(header)
+        
+        # Check all data rows
+        for line in lines[1:]:
+            line = line.rstrip('\n\r')
+            if not line.strip():
+                continue
+            
+            fields = line.split(delimiter)
+            for i, field in enumerate(fields):
+                if i < len(has_nbsp) and '\u00A0' in field:
+                    has_nbsp[i] = True
+        
+        # Get column names that have NBSP
+        columns_with_nbsp = [header[i] for i in range(len(header)) if i < len(has_nbsp) and has_nbsp[i]]
+        
+        return delimiter, columns_with_nbsp
+        
+    except Exception as e:
+        print(f'Error finding columns with NBSP: {e}', file=sys.stderr)
+        return '\t', []
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build and return the argument parser.
@@ -228,6 +278,15 @@ def main(argv):
     
     print(f"Wrote: {out}")
     print(f"Normalized {changed_count} rows in column '{column_name}'")
+    
+    # Check if any columns still have NBSP after processing
+    _, remaining_cols = find_columns_with_nbsp(str(out))
+    if remaining_cols:
+        print(f"\nWarning: Columns still containing NBSP: {', '.join(remaining_cols)}")
+        print("(These were not processed - only the specified column was normalized)")
+    else:
+        print("\n✓ No NBSP characters remaining in output file")
+    
     return 0
 
 

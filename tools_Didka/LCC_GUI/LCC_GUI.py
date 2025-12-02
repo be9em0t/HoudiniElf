@@ -477,8 +477,34 @@ class ScriptLauncherGUI(QMainWindow):
     def update_csv_dependent_widgets(self, csv_path: str):
         """Update column dropdown and output path when CSV is selected"""
         try:
-            # Check if module has read_csv_header function
-            if self.current_module and hasattr(self.current_module, 'read_csv_header'):
+            # Check if module has find_columns_with_nbsp function (for NBSP scripts)
+            if self.current_module and hasattr(self.current_module, 'find_columns_with_nbsp'):
+                delimiter, columns_with_nbsp = self.current_module.find_columns_with_nbsp(csv_path)
+                
+                # Update column dropdown if it exists
+                if 'column' in self.form_widgets:
+                    action, widget = self.form_widgets['column']
+                    if isinstance(widget, QComboBox):
+                        widget.clear()
+                        
+                        if columns_with_nbsp:
+                            widget.addItems(columns_with_nbsp)
+                            widget.setEnabled(True)
+                            
+                            # If 'translation' column exists and has NBSP, select it as default
+                            if 'translation' in columns_with_nbsp:
+                                index = widget.findText('translation')
+                                if index >= 0:
+                                    widget.setCurrentIndex(index)
+                            
+                            self.log_output(f"Found {len(columns_with_nbsp)} column(s) with NBSP: {', '.join(columns_with_nbsp)}\n", "blue")
+                        else:
+                            widget.addItem("(No columns with NBSP found)")
+                            widget.setEnabled(False)
+                            self.log_output("No columns with NBSP characters found in file.\n", "gray")
+                
+            # Check if module has read_csv_header function (for general CSV scripts)
+            elif self.current_module and hasattr(self.current_module, 'read_csv_header'):
                 delimiter, headers = self.current_module.read_csv_header(csv_path)
                 
                 # Update column dropdown if it exists
@@ -495,24 +521,24 @@ class ScriptLauncherGUI(QMainWindow):
                             if index >= 0:
                                 widget.setCurrentIndex(index)
                 
-                # Update output file path if it exists and is empty
-                if 'output' in self.form_widgets:
-                    action, widget = self.form_widgets['output']
-                    line_edit = widget.line_edit if hasattr(widget, 'line_edit') else widget
+            # Update output file path if it exists and is empty
+            if 'output' in self.form_widgets:
+                action, widget = self.form_widgets['output']
+                line_edit = widget.line_edit if hasattr(widget, 'line_edit') else widget
+                
+                # Only auto-populate if empty
+                if isinstance(line_edit, QLineEdit) and not line_edit.text():
+                    base, ext = os.path.splitext(csv_path)
                     
-                    # Only auto-populate if empty
-                    if isinstance(line_edit, QLineEdit) and not line_edit.text():
-                        base, ext = os.path.splitext(csv_path)
-                        
-                        # Determine suffix based on script type
-                        script_name = self.current_script_path.name if self.current_script_path else ''
-                        if 'nonbreak' in script_name.lower() or 'npc' in script_name.lower():
-                            default_output = f"{base}_NPC_fixed{ext}"
-                        else:
-                            default_output = f"{base}_numbered{ext}"
-                        
-                        line_edit.setText(default_output)
-                        
+                    # Determine suffix based on script type
+                    script_name = self.current_script_path.name if self.current_script_path else ''
+                    if 'nonbreak' in script_name.lower() or 'npc' in script_name.lower():
+                        default_output = f"{base}_NPC_fixed{ext}"
+                    else:
+                        default_output = f"{base}_numbered{ext}"
+                    
+                    line_edit.setText(default_output)
+                    
         except Exception as e:
             self.log_output(f"Warning: Could not update dependent widgets: {str(e)}\n", "gray")
             
