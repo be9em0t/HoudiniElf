@@ -363,7 +363,7 @@ class ScriptLauncherGUI(QMainWindow):
         # Find Python scripts that start with tool_ or sample_
         scripts = sorted([
             script for script in self.tools_dir.glob("*.py")
-            if script.name.startswith(("tool_", "sample_"))
+            # if script.name.startswith(("lcc_", "tool_", "sample_"))
         ])
         
         if not scripts:
@@ -601,7 +601,7 @@ class ScriptLauncherGUI(QMainWindow):
             if 'file' in name_lower:
                 path, _ = QFileDialog.getOpenFileName(
                     self, f"Select {action.dest}",
-                    filter="CSV Files (*.csv);;All Files (*)"
+                    filter="CSV Files (*.csv *.tsv);;All Files (*)"
                 )
             else:
                 path, _ = QFileDialog.getOpenFileName(self, f"Select {action.dest}")

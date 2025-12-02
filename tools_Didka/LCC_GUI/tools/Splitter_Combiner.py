@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 import re
 import argparse
+import chardet
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QSpinBox, QFileDialog, 
@@ -41,6 +42,16 @@ class WorkerThread(QThread):
         except Exception as e:
             self.finished.emit(f"Error: {str(e)}")
     
+    def detect_encoding(self, file_path):
+        """Detect file encoding using chardet."""
+        with open(file_path, 'rb') as f:
+            raw_data = f.read(100000)  # Read first 100KB for detection
+            result = chardet.detect(raw_data)
+            encoding = result['encoding']
+            confidence = result['confidence']
+            self.progress.emit(f"Detected encoding: {encoding} (confidence: {confidence:.2%})")
+            return encoding if encoding else 'utf-8'
+    
     def split_csv(self, file_path, lines_per_file):
         """Split a CSV file into multiple files."""
         file_path = Path(file_path)
@@ -49,9 +60,16 @@ class WorkerThread(QThread):
             self.finished.emit(f"Error: File '{file_path}' not found.")
             return
         
-        # Count total lines
-        with open(file_path, 'r', encoding='utf-8') as f:
-            total_lines = sum(1 for _ in f)
+        # Detect encoding for info purposes only
+        encoding = self.detect_encoding(file_path)
+        
+        # Count total lines in binary mode to preserve exact bytes
+        try:
+            with open(file_path, 'rb') as f:
+                total_lines = sum(1 for _ in f)
+        except Exception as e:
+            self.finished.emit(f"Error reading file: {str(e)}")
+            return
         
         if total_lines == 0:
             self.finished.emit("Error: File is empty.")
@@ -59,7 +77,8 @@ class WorkerThread(QThread):
         
         self.progress_percent.emit(0)
         
-        with open(file_path, 'r', encoding='utf-8') as f:
+        # Read and write in binary mode - preserves exact bytes, encoding, and line endings
+        with open(file_path, 'rb') as f:
             header = f.readline()
             processed_lines = 1  # header
             
@@ -74,7 +93,7 @@ class WorkerThread(QThread):
                     output_dir = Path(self.output_path) if self.output_path else file_path.parent
                     output_dir.mkdir(parents=True, exist_ok=True)
                     output_path = output_dir / f"{base_name}_part_{file_count:04d}{extension}"
-                    output_file = open(output_path, 'w', encoding='utf-8')
+                    output_file = open(output_path, 'wb')
                     output_file.write(header)
                     self.progress.emit(f"Creating: {output_path.name}")
                 
@@ -110,16 +129,20 @@ class WorkerThread(QThread):
         
         self.progress_percent.emit(0)
         
+        # Detect encoding from first file (for info only)
+        encoding = self.detect_encoding(csv_files[0])
+        
         output_path = Path(self.output_path) if self.output_path else dir_path / f"combined_output{csv_files[0].suffix}"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         header_written = False
         total_lines = 0
         total_files = len(csv_files)
         
-        with open(output_path, 'w', encoding='utf-8') as outfile:
+        # Read and write in binary mode - preserves exact bytes, encoding, and line endings
+        with open(output_path, 'wb') as outfile:
             for i, csv_file in enumerate(csv_files):
                 self.progress.emit(f"Processing: {csv_file.name}")
-                with open(csv_file, 'r', encoding='utf-8') as infile:
+                with open(csv_file, 'rb') as infile:
                     header = infile.readline()
                     
                     if not header_written:
