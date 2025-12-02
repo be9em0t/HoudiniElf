@@ -1,0 +1,570 @@
+#!/usr/bin/env python3
+"""
+CSV/TSV Splitter/Combiner GUI
+Qt6-based graphical interface for splitting and combining CSV and TSV files.
+"""
+
+import sys
+from pathlib import Path
+import re
+import argparse
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QLineEdit, QSpinBox, QFileDialog, 
+    QTextEdit, QFrame, QRadioButton, QButtonGroup, QProgressBar,
+    QGroupBox, QStackedWidget
+)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QFont
+
+
+class WorkerThread(QThread):
+    """Worker thread for processing files without blocking the GUI."""
+    finished = pyqtSignal(str)
+    progress = pyqtSignal(str)
+    progress_percent = pyqtSignal(int)
+    
+    def __init__(self, mode, file_path=None, lines=3000, directory=None, output_path=None):
+        super().__init__()
+        self.mode = mode
+        self.file_path = file_path
+        self.lines = lines
+        self.directory = directory
+        self.output_path = output_path
+    
+    def run(self):
+        try:
+            if self.mode == 'split':
+                self.split_csv(self.file_path, self.lines)
+            elif self.mode == 'combine':
+                self.combine_csv(self.directory)
+        except Exception as e:
+            self.finished.emit(f"Error: {str(e)}")
+    
+    def split_csv(self, file_path, lines_per_file):
+        """Split a CSV file into multiple files."""
+        file_path = Path(file_path)
+        
+        if not file_path.exists():
+            self.finished.emit(f"Error: File '{file_path}' not found.")
+            return
+        
+        # Count total lines
+        with open(file_path, 'r', encoding='utf-8') as f:
+            total_lines = sum(1 for _ in f)
+        
+        if total_lines == 0:
+            self.finished.emit("Error: File is empty.")
+            return
+        
+        self.progress_percent.emit(0)
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            header = f.readline()
+            processed_lines = 1  # header
+            
+            file_count = 1
+            line_count = 0
+            output_file = None
+            
+            for line in f:
+                if line_count == 0:
+                    base_name = file_path.stem
+                    extension = file_path.suffix
+                    output_dir = Path(self.output_path) if self.output_path else file_path.parent
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    output_path = output_dir / f"{base_name}_part_{file_count:04d}{extension}"
+                    output_file = open(output_path, 'w', encoding='utf-8')
+                    output_file.write(header)
+                    self.progress.emit(f"Creating: {output_path.name}")
+                
+                output_file.write(line)
+                line_count += 1
+                processed_lines += 1
+                self.progress_percent.emit(int((processed_lines / total_lines) * 100))
+                
+                if line_count >= lines_per_file:
+                    output_file.close()
+                    line_count = 0
+                    file_count += 1
+            
+            if output_file and not output_file.closed:
+                output_file.close()
+            
+            self.progress_percent.emit(100)
+            self.finished.emit(f"Split complete: Created {file_count} file(s)")
+    
+    def combine_csv(self, directory):
+        """Combine all CSV files in a directory."""
+        dir_path = Path(directory)
+        
+        if not dir_path.exists() or not dir_path.is_dir():
+            self.finished.emit(f"Error: Directory '{directory}' not found.")
+            return
+        
+        csv_files = sorted(list(dir_path.glob('*.csv')) + list(dir_path.glob('*.tsv')))
+        
+        if not csv_files:
+            self.finished.emit(f"No CSV/TSV files found in '{directory}'")
+            return
+        
+        self.progress_percent.emit(0)
+        
+        output_path = Path(self.output_path) if self.output_path else dir_path / f"combined_output{csv_files[0].suffix}"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        header_written = False
+        total_lines = 0
+        total_files = len(csv_files)
+        
+        with open(output_path, 'w', encoding='utf-8') as outfile:
+            for i, csv_file in enumerate(csv_files):
+                self.progress.emit(f"Processing: {csv_file.name}")
+                with open(csv_file, 'r', encoding='utf-8') as infile:
+                    header = infile.readline()
+                    
+                    if not header_written:
+                        outfile.write(header)
+                        header_written = True
+                    
+                    for line in infile:
+                        outfile.write(line)
+                        total_lines += 1
+                
+                self.progress_percent.emit(int(((i + 1) / total_files) * 100))
+        
+        self.progress_percent.emit(100)
+        self.finished.emit(f"Combine complete: {len(csv_files)} file(s) merged into '{output_path.name}'\nTotal lines: {total_lines}")
+
+
+class SplitterGUI(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.worker = None
+        self.init_ui()
+    
+    def init_ui(self):
+        self.setWindowTitle("CSV/TSV Splitter/Combiner")
+        self.setGeometry(100, 100, 700, 600)
+        
+        # Main widget and layout
+        main_widget = QWidget()
+        main_widget.setStyleSheet("background-color: #263543; color: white;")
+        self.setCentralWidget(main_widget)
+        
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        main_widget.setLayout(layout)
+        
+        # Title
+        title = QLabel("CSV/TSV Splitter/Combiner")
+        title_font = QFont()
+        title_font.setPointSize(36)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+        
+        layout.addSpacing(20)
+        
+        # Mode selection
+        mode_group = QGroupBox("Operation Mode")
+        mode_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 14pt;
+                font-weight: bold;
+                border: 2px solid #4a5f7a;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        mode_layout = QHBoxLayout()
+        mode_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.mode_group = QButtonGroup()
+        self.split_radio = QRadioButton("Split CSV/TSV File")
+        self.combine_radio = QRadioButton("Combine CSV/TSV Files")
+        self.split_radio.setChecked(True)
+        self.split_radio.setStyleSheet("font-size: 12pt; outline: none;")
+        self.combine_radio.setStyleSheet("font-size: 12pt; outline: none;")
+        self.split_radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.combine_radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        
+        self.mode_group.addButton(self.split_radio)
+        self.mode_group.addButton(self.combine_radio)
+        
+        mode_layout.addWidget(self.split_radio)
+        mode_layout.addWidget(self.combine_radio)
+        mode_layout.addStretch()
+        
+        mode_group.setLayout(mode_layout)
+        layout.addWidget(mode_group)
+        
+        # Connect mode change
+        self.split_radio.toggled.connect(self.on_mode_changed)
+        self.combine_radio.toggled.connect(self.on_mode_changed)
+        
+        layout.addSpacing(15)
+        
+        # Stacked widget for controls
+        self.stacked_widget = QStackedWidget()
+        
+        # Split widget
+        split_widget = QWidget()
+        split_layout = QVBoxLayout()
+        split_layout.setSpacing(10)
+        
+        split_label = QLabel("Select CSV/TSV file to split:")
+        split_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(split_label)
+        
+        file_layout = QHBoxLayout()
+        self.file_input = QLineEdit()
+        self.file_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.file_input.setPlaceholderText("Select a CSV file...")
+        file_layout.addWidget(self.file_input)
+        
+        self.browse_file_btn = QPushButton("Browse...")
+        self.browse_file_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_file_btn.clicked.connect(self.browse_file)
+        self.browse_file_btn.setToolTip("Select the CSV/TSV file to split")
+        file_layout.addWidget(self.browse_file_btn)
+        
+        split_layout.addLayout(file_layout)
+        
+        output_dir_label = QLabel("Output directory:")
+        output_dir_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(output_dir_label)
+        
+        output_dir_layout = QHBoxLayout()
+        self.output_dir_input = QLineEdit()
+        self.output_dir_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.output_dir_input.setPlaceholderText("Output directory...")
+        output_dir_layout.addWidget(self.output_dir_input)
+        
+        self.browse_output_dir_btn = QPushButton("Browse...")
+        self.browse_output_dir_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_output_dir_btn.clicked.connect(self.browse_output_dir)
+        self.browse_output_dir_btn.setToolTip("Select output directory for split files")
+        output_dir_layout.addWidget(self.browse_output_dir_btn)
+        
+        split_layout.addLayout(output_dir_layout)
+        
+        lines_label = QLabel("Lines per split file:")
+        lines_label.setStyleSheet("font-size: 12pt;")
+        split_layout.addWidget(lines_label)
+        
+        self.lines_input = QSpinBox()
+        self.lines_input.setMinimum(1)
+        self.lines_input.setMaximum(1000000)
+        self.lines_input.setValue(3000)
+        self.lines_input.setStyleSheet("background-color: white; color: black; font-size: 11pt;")
+        self.lines_input.lineEdit().setStyleSheet("padding-left: 5px;")
+        self.lines_input.setFixedHeight(self.file_input.sizeHint().height())
+        self.lines_input.setFixedWidth(120)
+        self.lines_input.setToolTip("Number of lines per output file")
+        split_layout.addWidget(self.lines_input, alignment=Qt.AlignmentFlag.AlignLeft)
+        
+        split_widget.setLayout(split_layout)
+        self.stacked_widget.addWidget(split_widget)
+        
+        # Combine widget
+        combine_widget = QWidget()
+        combine_layout = QVBoxLayout()
+        combine_layout.setSpacing(10)
+        
+        dir_label = QLabel("Select directory containing CSV/TSV files to combine:")
+        dir_label.setStyleSheet("font-size: 12pt;")
+        combine_layout.addWidget(dir_label)
+        
+        dir_layout = QHBoxLayout()
+        self.dir_input = QLineEdit()
+        self.dir_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.dir_input.setPlaceholderText("Select a directory...")
+        dir_layout.addWidget(self.dir_input)
+        
+        self.browse_dir_btn = QPushButton("Browse...")
+        self.browse_dir_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_dir_btn.clicked.connect(self.browse_directory)
+        self.browse_dir_btn.setToolTip("Select directory with CSV/TSV files to combine")
+        dir_layout.addWidget(self.browse_dir_btn)
+        
+        combine_layout.addLayout(dir_layout)
+        
+        output_file_label = QLabel("Output file:")
+        output_file_label.setStyleSheet("font-size: 12pt;")
+        combine_layout.addWidget(output_file_label)
+        
+        output_file_layout = QHBoxLayout()
+        self.output_file_input = QLineEdit()
+        self.output_file_input.setStyleSheet("background-color: white; color: black; padding: 5px; font-size: 11pt;")
+        self.output_file_input.setPlaceholderText("Output file...")
+        output_file_layout.addWidget(self.output_file_input)
+        
+        self.browse_output_file_btn = QPushButton("Browse...")
+        self.browse_output_file_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a5f7a; 
+                color: white; 
+                padding: 7.5px 15px; 
+                font-size: 11pt;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #5a7090;
+            }
+        """)
+        self.browse_output_file_btn.clicked.connect(self.browse_output_file)
+        self.browse_output_file_btn.setToolTip("Select output file for combined CSV/TSV")
+        output_file_layout.addWidget(self.browse_output_file_btn)
+        
+        combine_layout.addLayout(output_file_layout)
+        
+        combine_widget.setLayout(combine_layout)
+        self.stacked_widget.addWidget(combine_widget)
+        
+        self.stacked_widget.setCurrentIndex(0)
+        
+        layout.addWidget(self.stacked_widget)
+        
+        layout.addSpacing(20)
+        
+        # Execute button
+        self.execute_btn = QPushButton("Execute")
+        self.execute_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FDB200; 
+                color: #263543; 
+                padding: 12px; 
+                font-size: 14pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #fdc520;
+            }
+            QPushButton:disabled {
+                background-color: #666;
+                color: #999;
+            }
+        """)
+        self.execute_btn.clicked.connect(self.execute)
+        self.execute_btn.setToolTip("Start the selected operation")
+        layout.addWidget(self.execute_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid #4a5f7a;
+                border-radius: 5px;
+                text-align: center;
+                background-color: #1a2530;
+                color: white;
+            }
+            QProgressBar::chunk {
+                background-color: #FDB200;
+                width: 10px;
+            }
+        """)
+        self.progress_bar.setVisible(False)
+        layout.addWidget(self.progress_bar)
+        
+        # Output text area
+        self.output_text = QTextEdit()
+        self.output_text.setReadOnly(True)
+        self.output_text.setStyleSheet("background-color: #1a2530; color: #aaa; padding: 10px; font-size: 10pt; font-family: monospace; border: 1px solid #4a5f7a;")
+        self.output_text.setMaximumHeight(150)
+        layout.addWidget(self.output_text)
+        
+        layout.addStretch()
+    
+    def on_mode_changed(self):
+        if self.split_radio.isChecked():
+            self.stacked_widget.setCurrentIndex(0)
+        else:
+            self.stacked_widget.setCurrentIndex(1)
+    
+    def browse_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select CSV/TSV File",
+            "",
+            "CSV/TSV Files (*.csv *.tsv);;All Files (*)"
+        )
+        if file_path:
+            self.file_input.setText(file_path)
+            self.update_split_output()
+    
+    def browse_directory(self):
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Directory"
+        )
+        if dir_path:
+            self.dir_input.setText(dir_path)
+            self.update_combine_output()
+    
+    def browse_output_dir(self):
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Output Directory"
+        )
+        if dir_path:
+            self.output_dir_input.setText(dir_path)
+    
+    def browse_output_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Select Output File",
+            "",
+            "CSV/TSV Files (*.csv *.tsv);;All Files (*)"
+        )
+        if file_path:
+            self.output_file_input.setText(file_path)
+    
+    def update_split_output(self):
+        file_path = self.file_input.text()
+        if file_path:
+            input_path = Path(file_path)
+            output_dir = input_path.parent / 'split_output'
+            self.output_dir_input.setText(str(output_dir))
+    
+    def update_combine_output(self):
+        dir_path = self.dir_input.text()
+        if dir_path:
+            dir_path_obj = Path(dir_path)
+            csv_files = sorted(list(dir_path_obj.glob('*.csv')) + list(dir_path_obj.glob('*.tsv')))
+            if csv_files:
+                first_file = csv_files[0]
+                stem = first_file.stem
+                # Remove _part_xxxx if present
+                stem = re.sub(r'_part_\d{4}$', '', stem)
+                output_file = first_file.parent / f"{stem}_combined{first_file.suffix}"
+                self.output_file_input.setText(str(output_file))
+    
+    def execute(self):
+        mode = 'split' if self.split_radio.isChecked() else 'combine'
+        
+        self.output_text.clear()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)
+        self.execute_btn.setEnabled(False)
+        
+        if mode == 'split':
+            file_path = self.file_input.text()
+            if not file_path:
+                self.output_text.append("Error: Please select a file to split.")
+                self.progress_bar.setVisible(False)
+                self.execute_btn.setEnabled(True)
+                return
+            
+            lines = self.lines_input.value()
+            output_path = self.output_dir_input.text() if self.output_dir_input.text() else None
+            self.worker = WorkerThread('split', file_path=file_path, lines=lines, output_path=output_path)
+        else:
+            directory = self.dir_input.text()
+            if not directory:
+                self.output_text.append("Error: Please select a directory to combine.")
+                self.progress_bar.setVisible(False)
+                self.execute_btn.setEnabled(True)
+                return
+            
+            self.worker = WorkerThread('combine', directory=directory, output_path=self.output_file_input.text() if self.output_file_input.text() else None)
+        
+        self.worker.progress.connect(self.update_progress)
+        self.worker.progress_percent.connect(self.update_progress_bar)
+        self.worker.finished.connect(self.operation_finished)
+        self.worker.start()
+    
+    def update_progress(self, message):
+        self.output_text.append(message)
+    
+    def update_progress_bar(self, value):
+        self.progress_bar.setValue(value)
+    
+    def operation_finished(self, message):
+        self.output_text.append(message)
+        self.progress_bar.setVisible(False)
+        self.execute_btn.setEnabled(True)
+
+
+def build_parser():
+    """
+    Build and return the argument parser.
+    This function is required for the GUI launcher to work.
+    
+    Note: This script has its own GUI, so the launcher will simply
+    open the full-featured splitter/combiner interface.
+    """
+    parser = argparse.ArgumentParser(
+        description='CSV/TSV Splitter/Combiner - Opens a graphical interface for splitting and combining CSV/TSV files'
+    )
+    # No arguments needed - this script launches its own GUI
+    return parser
+
+
+def main(argv=None):
+    # Parse arguments if provided (for compatibility with launcher)
+    if argv is None:
+        argv = sys.argv
+    
+    # Only parse if called from launcher or with explicit args
+    if len(argv) > 1:
+        parser = build_parser()
+        args = parser.parse_args(argv[1:])
+    
+    # Launch the GUI
+    app = QApplication(sys.argv)
+    gui = SplitterGUI()
+    gui.show()
+    return app.exec()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
