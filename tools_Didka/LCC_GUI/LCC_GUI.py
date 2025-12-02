@@ -19,6 +19,7 @@ import importlib.util
 import subprocess
 import threading
 import csv
+import configparser
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import argparse
@@ -31,6 +32,93 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
+
+
+class Settings:
+    """Manage application settings from INI file"""
+    
+    def __init__(self, config_path: Path):
+        self.config_path = config_path
+        self.config = configparser.ConfigParser()
+        self.load_or_create_defaults()
+    
+    def load_or_create_defaults(self):
+        """Load settings or create default INI file if it doesn't exist"""
+        if self.config_path.exists():
+            self.config.read(self.config_path)
+        else:
+            self.create_defaults()
+            self.save()
+    
+    def create_defaults(self):
+        """Create default settings"""
+        self.config['Fonts'] = {
+            'ui_font_family': 'Arial',
+            'ui_font_size': '10',
+            'script_list_font_size': '10',
+            'output_log_font_family': 'Monaco',
+            'output_log_font_size': '10'
+        }
+        
+        self.config['Spacing'] = {
+            'line_spacing_multiplier': '1.5',
+            '# Values between 1.0 and 3.0': ''
+        }
+        
+        self.config['Colors'] = {
+            '# Log output colors (do not edit)': '',
+            'log_default': '#999999',
+            'log_error': '#cc0000',
+            'log_success': '#00aa00',
+            'log_info': '#0000cc',
+            'log_gray': '#666666',
+            'script_list_selection_bg': '#ff8c00',
+            'script_list_selection_text': '#ffffff'
+        }
+    
+    def save(self):
+        """Save settings to INI file"""
+        with open(self.config_path, 'w') as f:
+            self.config.write(f)
+    
+    def get_ui_font(self) -> QFont:
+        """Get UI font"""
+        family = self.config.get('Fonts', 'ui_font_family', fallback='Arial')
+        size = self.config.getint('Fonts', 'ui_font_size', fallback=10)
+        return QFont(family, size)
+    
+    def get_script_list_font(self) -> QFont:
+        """Get script list font"""
+        family = self.config.get('Fonts', 'ui_font_family', fallback='Arial')
+        size = self.config.getint('Fonts', 'script_list_font_size', fallback=10)
+        return QFont(family, size)
+    
+    def get_output_log_font(self) -> QFont:
+        """Get output log font"""
+        family = self.config.get('Fonts', 'output_log_font_family', fallback='Monaco')
+        size = self.config.getint('Fonts', 'output_log_font_size', fallback=10)
+        return QFont(family, size)
+    
+    def get_log_color(self, color_type: str) -> str:
+        """Get log color"""
+        color_map = {
+            'default': self.config.get('Colors', 'log_default', fallback='#333333'),
+            'red': self.config.get('Colors', 'log_error', fallback='#cc0000'),
+            'green': self.config.get('Colors', 'log_success', fallback='#00aa00'),
+            'blue': self.config.get('Colors', 'log_info', fallback='#0000cc'),
+            'gray': self.config.get('Colors', 'log_gray', fallback='#666666')
+        }
+        return color_map.get(color_type, color_map['default'])
+    
+    def get_line_spacing(self) -> float:
+        """Get line spacing multiplier"""
+        return self.config.getfloat('Spacing', 'line_spacing_multiplier', fallback=1.5)
+    
+    def get_selection_colors(self) -> tuple:
+        """Get script list selection colors (background, text)"""
+        bg = self.config.get('Colors', 'script_list_selection_bg', fallback='#ff8c00')
+        text = self.config.get('Colors', 'script_list_selection_text', fallback='#ffffff')
+        return bg, text
 
 
 class ScriptRunner(QThread):
@@ -93,6 +181,9 @@ class ScriptLauncherGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.tools_dir = Path(__file__).parent / "tools"
+        self.config_path = Path(__file__).parent / "lcc_settings.ini"
+        self.settings = Settings(self.config_path)
+        
         self.current_script_path: Optional[Path] = None
         self.current_parser: Optional[argparse.ArgumentParser] = None
         self.current_module = None
@@ -132,23 +223,56 @@ class ScriptLauncherGUI(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         
+        # Apply spacing
+        spacing = int(10 * self.settings.get_line_spacing())
+        layout.setSpacing(spacing)
+        
         # Title
         title = QLabel("Available Scripts")
-        title.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        title.setFont(QFont(self.settings.get_ui_font().family(), 12, QFont.Weight.Bold))
         layout.addWidget(title)
         
         # Script list
         self.script_list = QListWidget()
+        self.script_list.setFont(self.settings.get_script_list_font())
+        self.script_list.setSpacing(int(2 * self.settings.get_line_spacing()))
+        
+        # Apply selection colors from settings
+        sel_bg, sel_text = self.settings.get_selection_colors()
+        self.script_list.setStyleSheet(f"""
+            QListWidget::item:selected {{
+                background-color: {sel_bg};
+                color: {sel_text};
+            }}
+            QListWidget::item:selected:active {{
+                background-color: {sel_bg};
+                color: {sel_text};
+            }}
+        """)
+        
         self.script_list.currentItemChanged.connect(self.on_script_selected)
         layout.addWidget(self.script_list)
         
+        # Buttons layout
+        buttons_layout = QHBoxLayout()
+        
         # Refresh button
-        refresh_btn = QPushButton("🔄 Refresh Scripts")
+        refresh_btn = QPushButton("🔄 Refresh")
+        refresh_btn.setFont(self.settings.get_ui_font())
         refresh_btn.clicked.connect(self.load_scripts)
-        layout.addWidget(refresh_btn)
+        buttons_layout.addWidget(refresh_btn)
+        
+        # Settings button
+        settings_btn = QPushButton("⚙️ Settings")
+        settings_btn.setFont(self.settings.get_ui_font())
+        settings_btn.clicked.connect(self.open_settings)
+        buttons_layout.addWidget(settings_btn)
+        
+        layout.addLayout(buttons_layout)
         
         # Info label
         self.tools_dir_label = QLabel(f"Tools folder: {self.tools_dir}")
+        self.tools_dir_label.setFont(self.settings.get_ui_font())
         self.tools_dir_label.setWordWrap(True)
         self.tools_dir_label.setStyleSheet("color: gray; font-size: 9pt;")
         layout.addWidget(self.tools_dir_label)
@@ -160,9 +284,13 @@ class ScriptLauncherGUI(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         
+        # Apply spacing
+        spacing = int(10 * self.settings.get_line_spacing())
+        layout.setSpacing(spacing)
+        
         # Script info
         self.script_info_label = QLabel("Select a script to begin")
-        self.script_info_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        self.script_info_label.setFont(QFont(self.settings.get_ui_font().family(), 11, QFont.Weight.Bold))
         layout.addWidget(self.script_info_label)
         
         # Scrollable form area
@@ -171,12 +299,15 @@ class ScriptLauncherGUI(QMainWindow):
         scroll_area.setMinimumHeight(200)
         
         self.form_widget = QWidget()
+        self.form_widget.setFont(self.settings.get_ui_font())
         self.form_layout = QFormLayout(self.form_widget)
+        self.form_layout.setVerticalSpacing(int(10 * self.settings.get_line_spacing()))
         scroll_area.setWidget(self.form_widget)
         layout.addWidget(scroll_area)
         
         # Run button
         self.run_button = QPushButton("▶ Run Script")
+        self.run_button.setFont(self.settings.get_ui_font())
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self.run_script)
         self.run_button.setMinimumHeight(40)
@@ -199,19 +330,18 @@ class ScriptLauncherGUI(QMainWindow):
         
         # Output log
         output_group = QGroupBox("Output Log")
+        output_group.setFont(self.settings.get_ui_font())
         output_layout = QVBoxLayout()
         
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
-        mono_font = QFont()
-        mono_font.setFamily("Monaco")  # Standard macOS monospace font
-        mono_font.setPointSize(10)
-        self.output_text.setFont(mono_font)
+        self.output_text.setFont(self.settings.get_output_log_font())
         self.output_text.setMinimumHeight(200)
         output_layout.addWidget(self.output_text)
         
         # Clear output button
         clear_btn = QPushButton("Clear Log")
+        clear_btn.setFont(self.settings.get_ui_font())
         clear_btn.clicked.connect(self.output_text.clear)
         output_layout.addWidget(clear_btn)
         
@@ -244,6 +374,21 @@ class ScriptLauncherGUI(QMainWindow):
             self.script_list.addItem(script.name)
             
         self.log_output(f"Loaded {len(scripts)} script(s) from {self.tools_dir}\n", "green")
+    
+    def open_settings(self):
+        """Open settings INI file in default editor"""
+        try:
+            if sys.platform == 'darwin':  # macOS
+                subprocess.run(['open', str(self.config_path)])
+            elif sys.platform == 'win32':  # Windows
+                os.startfile(str(self.config_path))
+            else:  # Linux
+                subprocess.run(['xdg-open', str(self.config_path)])
+            
+            self.log_output(f"Opened settings file: {self.config_path}\n", "blue")
+            self.log_output("Restart the application to apply font changes.\n", "gray")
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Could not open settings file:\n{str(e)}")
         
     def on_script_selected(self, current, previous):
         """Handle script selection from the list"""
@@ -611,7 +756,7 @@ class ScriptLauncherGUI(QMainWindow):
             # Create and start runner thread
             self.runner_thread = ScriptRunner(str(self.current_script_path), args)
             self.runner_thread.output_signal.connect(
-                lambda text: self.log_output(text, "black")
+                lambda text: self.log_output(text, "default")
             )
             self.runner_thread.error_signal.connect(
                 lambda text: self.log_output(text, "red")
@@ -636,7 +781,7 @@ class ScriptLauncherGUI(QMainWindow):
         else:
             self.log_output(f"\n✗ Script failed with exit code {exit_code}\n", "red")
             
-    def log_output(self, text: str, color: str = "black"):
+    def log_output(self, text: str, color: str = "default"):
         """Append text to output log with color"""
         from PyQt6.QtGui import QTextCursor
         
@@ -644,15 +789,9 @@ class ScriptLauncherGUI(QMainWindow):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.output_text.setTextCursor(cursor)
         
-        color_map = {
-            "black": "#000000",
-            "red": "#cc0000",
-            "green": "#00aa00",
-            "blue": "#0000cc",
-            "gray": "#666666"
-        }
+        # Use settings colors instead of hardcoded
+        html_color = self.settings.get_log_color(color)
         
-        html_color = color_map.get(color, "#000000")
         self.output_text.insertHtml(
             f'<span style="color: {html_color};">{text.replace("\n", "<br>")}</span>'
         )
