@@ -12,10 +12,10 @@ from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QTextCursor, QFont, QColor, QIcon, QTextCharFormat, QPixmap
 
 # Configuration - will be overridden by settings
-# DEFAULT_OLLAMA_HOST = "81.244.26.127"
-# DEFAULT_OLLAMA_PORT = "50200"
-DEFAULT_OLLAMA_HOST = "192.168.1.28"
-DEFAULT_OLLAMA_PORT = "11434"
+DEFAULT_LOCAL_HOST = "192.168.1.28"
+DEFAULT_LOCAL_PORT = "11434"
+DEFAULT_INTERNET_HOST = "81.244.26.127"
+DEFAULT_INTERNET_PORT = "50200"
 
 # Get script directory for portable settings
 SCRIPT_DIR = Path(__file__).parent
@@ -40,20 +40,35 @@ class StyleSettingsDialog(QDialog):
         
         layout = QVBoxLayout(self)
         
-        # Server settings
-        server_group = QGroupBox("Server Settings")
-        server_layout = QFormLayout()
+        # Local server settings
+        local_group = QGroupBox("Local Server Settings")
+        local_layout = QFormLayout()
         
-        self.server_host = QLineEdit()
-        self.server_host.setText(self.settings.value("server_host", DEFAULT_OLLAMA_HOST))
-        server_layout.addRow("Host/IP:", self.server_host)
+        self.local_host = QLineEdit()
+        self.local_host.setText(self.settings.value("local_host", DEFAULT_LOCAL_HOST))
+        local_layout.addRow("Host/IP:", self.local_host)
         
-        self.server_port = QLineEdit()
-        self.server_port.setText(self.settings.value("server_port", DEFAULT_OLLAMA_PORT))
-        server_layout.addRow("Port:", self.server_port)
+        self.local_port = QLineEdit()
+        self.local_port.setText(self.settings.value("local_port", DEFAULT_LOCAL_PORT))
+        local_layout.addRow("Port:", self.local_port)
         
-        server_group.setLayout(server_layout)
-        layout.addWidget(server_group)
+        local_group.setLayout(local_layout)
+        layout.addWidget(local_group)
+        
+        # Internet server settings
+        internet_group = QGroupBox("Internet Server Settings")
+        internet_layout = QFormLayout()
+        
+        self.internet_host = QLineEdit()
+        self.internet_host.setText(self.settings.value("internet_host", DEFAULT_INTERNET_HOST))
+        internet_layout.addRow("Host/IP:", self.internet_host)
+        
+        self.internet_port = QLineEdit()
+        self.internet_port.setText(self.settings.value("internet_port", DEFAULT_INTERNET_PORT))
+        internet_layout.addRow("Port:", self.internet_port)
+        
+        internet_group.setLayout(internet_layout)
+        layout.addWidget(internet_group)
         
         # User prompt styling
         user_group = QGroupBox("User Prompt Style")
@@ -177,8 +192,10 @@ class StyleSettingsDialog(QDialog):
     
     def save_settings(self):
         """Save settings to persistent storage."""
-        self.settings.setValue("server_host", self.server_host.text())
-        self.settings.setValue("server_port", self.server_port.text())
+        self.settings.setValue("local_host", self.local_host.text())
+        self.settings.setValue("local_port", self.local_port.text())
+        self.settings.setValue("internet_host", self.internet_host.text())
+        self.settings.setValue("internet_port", self.internet_port.text())
         self.settings.setValue("user_name", self.user_name.text())
         self.settings.setValue("assistant_name", self.assistant_name.text())
         
@@ -324,6 +341,17 @@ class ChatWindow(QMainWindow):
         self.streaming_checkbox.setChecked(True)
         controls_layout.addWidget(self.streaming_checkbox)
         
+        # Connection toggle
+        controls_layout.addWidget(QLabel("Connection:"))
+        self.connection_combo = QComboBox()
+        self.connection_combo.addItems(["Local", "Internet"])
+        self.connection_combo.setMinimumWidth(100)
+        # Restore last connection
+        last_connection = self.settings.value("last_connection", "Local")
+        self.connection_combo.setCurrentText(last_connection)
+        self.connection_combo.currentTextChanged.connect(self.on_connection_changed)
+        controls_layout.addWidget(self.connection_combo)
+        
         # Push settings button to the right
         controls_layout.addStretch()
         
@@ -368,8 +396,9 @@ class ChatWindow(QMainWindow):
         if geometry:
             self.restoreGeometry(geometry)
         
-        # Welcome message
-        self.append_system_message("Connected to Ollama server. Ready to chat!")
+        # Welcome message with connection info
+        connection = self.settings.value("last_connection", "Local")
+        self.append_system_message(f"Connected to Ollama server ({connection}). Ready to chat!")
     
     def eventFilter(self, obj, event):
         """Filter events for input field to handle Enter key."""
@@ -383,6 +412,14 @@ class ChatWindow(QMainWindow):
                     self.send_message()
                     return True
         return super().eventFilter(obj, event)
+    
+    def on_connection_changed(self, connection_type):
+        """Handle connection type change."""
+        self.settings.setValue("last_connection", connection_type)
+        self.model_combo.clear()
+        self.models = []
+        self.load_models()
+        self.append_system_message(f"Switched to {connection_type} connection")
     
     def open_style_settings(self):
         """Open the style settings dialog."""
@@ -412,12 +449,21 @@ class ChatWindow(QMainWindow):
             elif msg_type == "system":
                 self.append_system_message(text)
     
+    def get_current_ollama_url(self):
+        """Get the current Ollama URL based on selected connection."""
+        connection = self.connection_combo.currentText()
+        if connection == "Local":
+            host = self.settings.value("local_host", DEFAULT_LOCAL_HOST)
+            port = self.settings.value("local_port", DEFAULT_LOCAL_PORT)
+        else:  # Internet
+            host = self.settings.value("internet_host", DEFAULT_INTERNET_HOST)
+            port = self.settings.value("internet_port", DEFAULT_INTERNET_PORT)
+        return f"http://{host}:{port}"
+    
     def load_models(self):
         """Load available models from Ollama server."""
         try:
-            host = self.settings.value("server_host", DEFAULT_OLLAMA_HOST)
-            port = self.settings.value("server_port", DEFAULT_OLLAMA_PORT)
-            ollama_url = f"http://{host}:{port}"
+            ollama_url = self.get_current_ollama_url()
             
             resp = session.get(f"{ollama_url}/api/tags", timeout=10)
             resp.raise_for_status()
@@ -529,9 +575,7 @@ class ChatWindow(QMainWindow):
         
         # Create worker thread
         streaming = self.streaming_checkbox.isChecked()
-        host = self.settings.value("server_host", DEFAULT_OLLAMA_HOST)
-        port = self.settings.value("server_port", DEFAULT_OLLAMA_PORT)
-        ollama_url = f"http://{host}:{port}"
+        ollama_url = self.get_current_ollama_url()
         
         # Save selected model
         self.settings.setValue("last_model", selected_model)
