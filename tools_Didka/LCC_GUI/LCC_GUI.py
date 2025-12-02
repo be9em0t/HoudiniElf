@@ -503,7 +503,14 @@ class ScriptLauncherGUI(QMainWindow):
                     # Only auto-populate if empty
                     if isinstance(line_edit, QLineEdit) and not line_edit.text():
                         base, ext = os.path.splitext(csv_path)
-                        default_output = f"{base}_numbered{ext}"
+                        
+                        # Determine suffix based on script type
+                        script_name = self.current_script_path.name if self.current_script_path else ''
+                        if 'nonbreak' in script_name.lower() or 'npc' in script_name.lower():
+                            default_output = f"{base}_NPC_fixed{ext}"
+                        else:
+                            default_output = f"{base}_numbered{ext}"
+                        
                         line_edit.setText(default_output)
                         
         except Exception as e:

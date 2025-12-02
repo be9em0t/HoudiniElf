@@ -28,3 +28,6 @@ work/
 !.continue/**
 !.vscode/
 !.vscode/**
+
+*.zip
+*.rar
