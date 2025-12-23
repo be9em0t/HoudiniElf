@@ -1,25 +1,4 @@
-.DS_Store
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-.env
-env/
-venv/
-.venv/
-*.json
-.pytest_cache/
-images_temp/**
-*.code-workspace
-node_modules/
-backup/
-build/
-dist/
-work/
-*/work/
-
-# Keep .github and .clinerules tracked
+# Exceptions: Keep these tracked
 !.github/
 !.github/**
 !.clinerules/
@@ -29,5 +8,93 @@ work/
 !.vscode/
 !.vscode/**
 
+# OS-specific files
+## macOS
+.DS_Store
+
+## Windows
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+env/
+venv/
+.venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+
+# .NET
+bin/
+obj/
+*.csproj.user
+*.user
+*.suo
+*.userprefs
+*.sln.iml
+*.vs/
+.vs/
+.idea/
+
+# NuGet Packages
+packages/
+*.nupkg
+*.snk
+*.DotSettings.user
+
+# Test Results
+TestResults/
+*.trx
+
+# Build outputs
+build/
+dist/
+backup/
+work/
+*/work/
+images_temp/**
+
+# Archives
 *.zip
 *.rar
+
+# Logs and temp files
+*.log
+*.tmp
+*.cache
+
+# WinUI-Specific (App Packages, Manifests, etc.)
+*.appx
+*.appxupload
+*.appxrecipe
+*.appxsym
+*.appxmap
+*.cer
+*.pfx
+AppPackages/
+BundleArtifacts/
+PublishProfiles/
+*.PublishSettings
+
+# Generated files from tools like dotnet CLI
+*.deps.json
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+
+# Secrets
+appsettings.*.json
+secrets.json
+*.key
+*.pem
+
+# Other
+*.json
+*.code-workspace
