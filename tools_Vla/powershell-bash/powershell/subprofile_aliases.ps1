@@ -1,7 +1,5 @@
-﻿function psrc {
-    . $PROFILE
-    Write-Host "✅ Profile reloaded"
-}
+﻿Write-Host "🔍 aliases reloaded"
+
 # Git aliases and functions
 function gs {
     Write-Host "🔍 Git Status:"
@@ -35,6 +33,8 @@ Set-Alias glfs "git lfs ls-files"
 Set-Alias gurl "git config --get remote.origin.url"
 Set-Alias gball "git branch --all"
 
+Set-Alias vactivate ".\.venv\Scripts\activate"
+
 function gex {
     param([string]$query)
     gh copilot explain $query
@@ -54,3 +54,8 @@ function gcm {
 
 Set-Alias gcomm gcm
 
+# but, of course, functions do not count as aliases
+function aliases {
+    $defaults = powershell -NoProfile -Command "Get-Alias | Select-Object -ExpandProperty Name"
+    Get-Alias | Where-Object { $_.Name -notin $defaults } | Sort-Object Name | Format-Table Name, Definition -AutoSize
+}

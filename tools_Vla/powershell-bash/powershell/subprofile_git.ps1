@@ -1,6 +1,5 @@
 
 # == Git ===
-#
 # To enable autofetch:
 # git config --global fetch.auto 1
 # git config --global fetch.prune true

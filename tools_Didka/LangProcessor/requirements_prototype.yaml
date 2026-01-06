@@ -1,0 +1,23 @@
+Lets do an AI project. My intention is to use AnythingLLM, but it might be that different approach is more beneficial, so I'm open to advice.
+
+Use case: my wife's team works on map localization - for example, the list of locations or POIs in arabic needs to be correclty transferred (translated is not the word) to dutch or french.
+
+- they need to use cerain rules, described in a database
+- they need to account for exonims (for example most languages have their own rendering of Paris, slightly different from the french original)
+- they need to account for input garbage (sometimes the source looks like "Big fish, best restaurant" instead of "Big Fish")
+- they need to account for inconsistencies, for example one street comes named "6th of July", the other "Sixt of July"
+- Deal with shorthand, for example is Dr. doctor in the local rendering? Is q. short for quarter?
+- they sometimes take as input already existing translations and need to verify them (often, especially with AI processes, there is a lot of garbage like strange symbols, spaces, parasitic words or plain name explanations instead of translation)
+- and there are target language rules which can be applied, like "capitalize only first word", "shorten titles like Doctor" etc.
+
+So requirements, at first iteration, are:
+- intelligent language normalization, localizaion, transliteration
+- work with input in the form of CSV UTF-8
+- source files need to  be chunked as they can be in excess of 50,000 lines
+- output CSV UTF-8 with extra column containing the corrections, plus tag column that marks the type of change (NBSPs removed, shorthand corrected, translated from scratch etc. We'll come with definitive categories)
+- we should have non-llm (pure python) preprocessing and intelligent LLM processing. For example, NBSPs or double spaces, leading spaces etc can be part of the python process
+- For the LLM part, besides the system prompt that holds general requirements we need to add user prompt where specifics for the current case are given - for example arabic to fench might have slightly different requirments than french to arabic
+ 
+This is the MVP. 
+For v.2 we can look into providing access to company database that contains mulitple rules, both for the python and LLM parts of the process
+

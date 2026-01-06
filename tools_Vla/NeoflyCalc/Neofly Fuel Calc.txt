@@ -1,0 +1,26 @@
+Aircraft settings:
+Model: Asobo C208B Cargo
+Max. fuel: 2034 lbs
+Range: 964 n.m.
+Cruise speed: 195 ktas
+
+Flight settings:
+Fuel reserve: 10%
+Flight distance: 336 n.m.
+
+Results:
+Fuel to load = lbs
+Fuel needed for flight =  lbs
+Fuel consumption rate =  lbs/n.m.
+Expected fule flow = pph
+
+Formula:
+1. Fuel consumption rate = Max. fuel / Range
+2. Fuel needed for flight = Fuel consumption rate * Flight distance
+3. Fuel to load = Fuel needed for flight * (1 + Fuel reserve)
+
+
+Calculation:
+Fuel consumption rate = 2034 lbs / 964 n.m. = 2.11 lbs/n.m.
+Fuel needed for flight = 2.11 lbs/n.m. * 336 n.m. = 709.96 lbs
+Fuel to load = 709.96 lbs * (1 + 0.10) = 780.96 lbs
