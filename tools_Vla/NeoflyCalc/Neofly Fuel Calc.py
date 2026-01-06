@@ -9,11 +9,36 @@ class FuelCalc(QWidget):
         super().__init__()
         ini_path = os.path.join(os.path.dirname(__file__), 'neoflycalc.ini')
         self.settings = QSettings(ini_path, QSettings.Format.IniFormat)
-        self.aircrafts = {
-            "Asobo C208B Cargo": {"max_fuel": 2034, "range": 964, "speed": 195},
-            "Microsoft Piper PA28-236 Dacota": {"max_fuel": 432, "range": 740, "speed": 123},
-            "Asobo C172SP G1000 Passengers": {"max_fuel": 342, "range": 640, "speed": 124}
-        }
+        self.aircrafts = {}
+        aircraft_list_str = self.settings.value('aircraft_list', '')
+        if not aircraft_list_str:
+            # Set defaults
+            default_aircrafts = {
+                "Asobo C208B Cargo": {"max_fuel": 2034, "range": 964, "speed": 195},
+                "Microsoft Piper PA28-236 Dacota": {"max_fuel": 432, "range": 740, "speed": 123},
+                "Asobo C172SP G1000 Passengers": {"max_fuel": 342, "range": 640, "speed": 124}
+            }
+            aircraft_list = list(default_aircrafts.keys())
+            self.settings.setValue('aircraft_list', ','.join(aircraft_list))
+            for name, data in default_aircrafts.items():
+                group_name = name.replace(' ', '_')
+                self.settings.beginGroup(group_name)
+                for key, value in data.items():
+                    self.settings.setValue(key, value)
+                self.settings.endGroup()
+        else:
+            aircraft_list = aircraft_list_str.split(',')
+        
+        for name in aircraft_list:
+            group_name = name.replace(' ', '_')
+            self.settings.beginGroup(group_name)
+            data = {
+                'max_fuel': int(self.settings.value('max_fuel', 0)),
+                'range': int(self.settings.value('range', 0)),
+                'speed': int(self.settings.value('speed', 0))
+            }
+            self.settings.endGroup()
+            self.aircrafts[name] = data
         self.initUI()
 
     def initUI(self):
