@@ -33,7 +33,8 @@ Set-Alias glfs "git lfs ls-files"
 Set-Alias gurl "git config --get remote.origin.url"
 Set-Alias gball "git branch --all"
 
-Set-Alias vactivate ".\.venv\Scripts\activate"
+Set-Alias vact ".\.venv\Scripts\activate"
+Set-Alias deact "deactivate"
 
 function gex {
     param([string]$query)
@@ -58,4 +59,8 @@ Set-Alias gcomm gcm
 function aliases {
     $defaults = powershell -NoProfile -Command "Get-Alias | Select-Object -ExpandProperty Name"
     Get-Alias | Where-Object { $_.Name -notin $defaults } | Sort-Object Name | Format-Table Name, Definition -AutoSize
+}
+
+function test{
+    Write-Host "you sa idiots 10"
 }
