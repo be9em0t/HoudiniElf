@@ -125,10 +125,15 @@ class FuelCalc(QWidget):
         layout.addWidget(self.distance_edit)
 
         self.weight_edit.textChanged.connect(self.save_settings)
+        self.weight_edit.textChanged.connect(self.calculate)
         self.wind_edit.textChanged.connect(self.save_settings)
+        self.wind_edit.textChanged.connect(self.calculate)
         self.climb_edit.textChanged.connect(self.save_settings)
+        self.climb_edit.textChanged.connect(self.calculate)
         self.reserve_frac_edit.textChanged.connect(self.save_settings)
+        self.reserve_frac_edit.textChanged.connect(self.calculate)
         self.distance_edit.textChanged.connect(self.save_settings)
+        self.distance_edit.textChanged.connect(self.calculate)
 
         # Button
         self.calc_button = QPushButton("Calculate")
