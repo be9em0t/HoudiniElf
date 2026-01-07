@@ -58,6 +58,7 @@ class FuelCalc(QWidget):
             self.aircraft_combo.addItem(name)
         selected = self.settings.value('selected_aircraft', 'Asobo C208B Cargo')
         self.aircraft_combo.setCurrentText(selected)
+        self.aircraft_combo.setToolTip("Select aircraft model")
         layout.addWidget(self.aircraft_combo)
         self.aircraft_combo.currentTextChanged.connect(self.load_aircraft)
 
@@ -87,17 +88,46 @@ class FuelCalc(QWidget):
         font.setCapitalization(QFont.Capitalization.SmallCaps)
         self.flight_label.setFont(font)
         layout.addWidget(self.flight_label)
-        self.reserve_edit = QLineEdit()
-        self.reserve_edit.setText(self.settings.value('fuel_reserve', '10'))
-        layout.addWidget(QLabel("Fuel reserve (%):"))
-        layout.addWidget(self.reserve_edit)
+
+        self.weight_edit = QLineEdit()
+        self.weight_edit.setText(self.settings.value('weight_factor', '0.90'))
+        weight_label = QLabel("Weight factor:")
+        weight_label.setToolTip("1 is empty plane, 0 is maximum load")
+        layout.addWidget(weight_label)
+        layout.addWidget(self.weight_edit)
+
+        self.wind_edit = QLineEdit()
+        self.wind_edit.setText(self.settings.value('wind_factor', '0.90'))
+        wind_label = QLabel("Wind factor:")
+        wind_label.setToolTip("1 is no wind penalty, <1 for headwind")
+        layout.addWidget(wind_label)
+        layout.addWidget(self.wind_edit)
+
+        self.climb_edit = QLineEdit()
+        self.climb_edit.setText(self.settings.value('climb_fraction', '0.08'))
+        climb_label = QLabel("Climb fraction:")
+        climb_label.setToolTip("Fraction of max fuel reserved for climb")
+        layout.addWidget(climb_label)
+        layout.addWidget(self.climb_edit)
+
+        self.reserve_frac_edit = QLineEdit()
+        self.reserve_frac_edit.setText(self.settings.value('reserve_fraction', '0.12'))
+        reserve_label = QLabel("Reserve fraction:")
+        reserve_label.setToolTip("Fraction of max fuel reserved as final reserve")
+        layout.addWidget(reserve_label)
+        layout.addWidget(self.reserve_frac_edit)
 
         self.distance_edit = QLineEdit()
         self.distance_edit.setText(self.settings.value('flight_distance', '336'))
-        layout.addWidget(QLabel("Flight distance (n.m.):"))
+        distance_label = QLabel("Flight distance (n.m.):")
+        distance_label.setToolTip("Planned distance in nautical miles")
+        layout.addWidget(distance_label)
         layout.addWidget(self.distance_edit)
 
-        self.reserve_edit.textChanged.connect(self.save_settings)
+        self.weight_edit.textChanged.connect(self.save_settings)
+        self.wind_edit.textChanged.connect(self.save_settings)
+        self.climb_edit.textChanged.connect(self.save_settings)
+        self.reserve_frac_edit.textChanged.connect(self.save_settings)
         self.distance_edit.textChanged.connect(self.save_settings)
 
         # Button
@@ -113,17 +143,17 @@ class FuelCalc(QWidget):
         font.setCapitalization(QFont.Capitalization.SmallCaps)
         self.results_label.setFont(font)
         layout.addWidget(self.results_label)
-        layout.addWidget(QLabel("Fuel consumption rate:"))
+        layout.addWidget(QLabel("Effective range:"))
         self.consumption_edit = QLineEdit()
         self.consumption_edit.setReadOnly(True)
         layout.addWidget(self.consumption_edit)
 
-        layout.addWidget(QLabel("Fuel needed for flight:"))
+        layout.addWidget(QLabel("Cruise fuel:"))
         self.needed_edit = QLineEdit()
         self.needed_edit.setReadOnly(True)
         layout.addWidget(self.needed_edit)
 
-        layout.addWidget(QLabel("Fuel to load:"))
+        layout.addWidget(QLabel("Total fuel:"))
         self.load_edit = QLineEdit()
         self.load_edit.setReadOnly(True)
         layout.addWidget(self.load_edit)
@@ -143,17 +173,26 @@ class FuelCalc(QWidget):
             max_fuel = float(self.max_fuel_label.text().split()[0])
             range_ = float(self.range_label.text().split()[0])
             speed = float(self.speed_label.text().split()[0])
-            reserve = float(self.reserve_edit.text()) / 100
+            weight_factor = float(self.weight_edit.text())
+            wind_factor = float(self.wind_edit.text())
+            climb_fraction = float(self.climb_edit.text())
+            reserve_fraction = float(self.reserve_frac_edit.text())
             distance = float(self.distance_edit.text())
 
-            consumption = max_fuel / range_
-            needed = consumption * distance
-            load = needed * (1 + reserve)
-            flow = consumption * speed
+            effective_range = range_ * weight_factor * wind_factor
+            fixed_fraction = climb_fraction + reserve_fraction
+            available_cruise_fuel = (1 - fixed_fraction) * max_fuel
+            cruise_fuel = available_cruise_fuel * (distance / effective_range)
+            total_fuel = cruise_fuel + fixed_fraction * max_fuel
+            flow = (cruise_fuel / distance) * speed # if distance > 0 else 0
 
-            self.consumption_edit.setText(f"{consumption:.2f} lbs/n.m.")
-            self.needed_edit.setText(f"{needed:.2f} lbs")
-            self.load_edit.setText(f"{load:.2f} lbs")
+            self.consumption_edit.setText(f"{effective_range:.2f} n.m.")
+            self.needed_edit.setText(f"{cruise_fuel:.2f} lbs")
+            self.load_edit.setText(f"{total_fuel:.2f} lbs")
+            if total_fuel >= max_fuel:
+                self.load_edit.setStyleSheet("color: red;")
+            else:
+                self.load_edit.setStyleSheet("color: white;")
             self.flow_edit.setText(f"{flow:.2f} lbs/hour")
         except ValueError:
             # Handle invalid input - perhaps show a message
@@ -166,9 +205,13 @@ class FuelCalc(QWidget):
         self.range_label.setText(f"{data['range']} n.m.")
         self.speed_label.setText(f"{data['speed']} ktas")
         self.settings.setValue('selected_aircraft', name)
+        self.calculate()
 
     def save_settings(self):
-        self.settings.setValue('fuel_reserve', self.reserve_edit.text())
+        self.settings.setValue('weight_factor', self.weight_edit.text())
+        self.settings.setValue('wind_factor', self.wind_edit.text())
+        self.settings.setValue('climb_fraction', self.climb_edit.text())
+        self.settings.setValue('reserve_fraction', self.reserve_frac_edit.text())
         self.settings.setValue('flight_distance', self.distance_edit.text())
 
 if __name__ == "__main__":
