@@ -197,7 +197,7 @@ class FuelCalc(QWidget):
             if total_fuel >= max_fuel:
                 self.load_edit.setStyleSheet("color: red;")
             else:
-                self.load_edit.setStyleSheet("color: white;")
+                self.load_edit.setStyleSheet("color: #fdb200;")
             self.flow_edit.setText(f"{flow:.2f} lbs/hour")
         except ValueError:
             # Handle invalid input - perhaps show a message
