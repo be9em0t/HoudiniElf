@@ -43,6 +43,7 @@ alias gsize='(git ls-files --others --exclude-standard && git diff --name-only) 
     fi
 done'
 alias gpush='git push'
+alias glog='git log --oneline'
 alias glfs='git lfs ls-files'
 alias gurl='git config --get remote.origin.url'
 alias gball='git branch --all'
@@ -91,25 +92,25 @@ gs() {
   echo "🌐 Remote: $(git remote get-url origin)"
   echo "🧑 Author: $(git config user.name) <$(git config user.email)>"
 }
-alias ga='git add .'
+
 alias gadd='git add'
 # alias gs='git status'
-alias gslfs='git lfs ls-files'
+alias glfs='git lfs ls-files'
 alias gsize='(git ls-files --others --exclude-standard && git diff --name-only) | sort -u | while IFS= read -r file; do
     if [ -f "$file" ] && [ $(du -m "$file" | cut -f1) -gt 42 ]; then
         echo "$file : $(du -h "$file" | cut -f1)"
     fi
 done'
 alias gpush='git push'
-alias glfs='git lfs ls-files'
 alias gurl='git config --get remote.origin.url'
 alias gball='git branch --all'
-alias gex='function _gcm() { gh copilot explain "$@"; }; _gcm'
+alias gfet='git fetch --prune'
+alias gf='git fetch --prune && git status -sb'
 
-alias gco='function _gco() { git checkout "$@"; }; _gco'
 alias gcout='function _gco() { git checkout "$@"; }; _gco'
-alias gcm='function _gcm() { git commit -m "$@"; }; _gcm'
 alias gcomm='function _gcm() { git commit -m "$@"; }; _gcm'
+
+alias gex='function _gcm() { gh copilot explain "$@"; }; _gcm'
 
 export PATH="$HOME/.local/bin:$PATH"
 alias py='python'
