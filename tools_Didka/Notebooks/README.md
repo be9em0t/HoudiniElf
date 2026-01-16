@@ -16,7 +16,7 @@ Quick start
 
 Notes
 - The LLM adapter is currently a placeholder; adapt it to your chosen provider (OpenAI/Anthropic/local) when ready.
-- Malformed lines are written to `<source>_fallout<ext>` and include the header for context.
+- Malformed lines are written to `<source>_fallout<ext>` and include the header for context. This is caused by a wrong number of fields, caused by newline inside a field, unmatched quites or missing fields.
 
 Contributors
 - Managed in this repo by the project maintainer.
