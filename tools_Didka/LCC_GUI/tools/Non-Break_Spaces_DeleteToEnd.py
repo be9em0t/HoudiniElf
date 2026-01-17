@@ -11,6 +11,7 @@ This script normalizes spaces and non-printable characters in a single column of
 - If an NBSP (U+00A0) is found in a field, everything from the first NBSP to the end of the field (including the NBSP) is deleted
 - After truncation, multiple ASCII spaces are collapsed into a single ASCII space and leading/trailing spaces are trimmed
 - Preserves all other columns unchanged
+- Directional marks (LRM/RLM) can be removed with `--remove-directional` (see `BIDI_REMOVE` default U+200E/U+200F)
 - Use `--nbsp_lines_only` to output only rows where the selected column contained an NBSP (test mode)
 
 Writes output to the same directory with `_NPC_fixed` appended before the extension.
@@ -25,14 +26,16 @@ import csv
 # === Configuration ===
 # Two configurable lists control how characters are handled:
 # - NPC_AS_SPACE: characters treated like spaces (they will be collapsed with spaces into a single ASCII space)
-# - NPC_REMOVE: characters removed entirely (useful for directional marks like LRM/RLM which break RTL text)
+# - NPC_REMOVE: characters removed entirely (useful for small control characters)
+# - BIDI_REMOVE: directional marks removed when `--remove-directional` is used (defaults: U+200E/U+200F)
 #
 # By default only normalize NO-BREAK SPACE (U+00A0) into a regular ASCII space.
-# We intentionally preserve tabs and directional marks so RTL Arabic text
+# We intentionally preserve tabs and directional marks by default so RTL Arabic text
 # and existing tab structure remain intact. If you explicitly want to remove
 # directionality marks, use `--remove-directional` on the command line.
 NPC_AS_SPACE = ["\u00A0"]
-NPC_REMOVE = []
+NPC_REMOVE = [] # not implemented yet
+BIDI_REMOVE = ["\u200E", "\u200F"]
 
 # Build a character class for regex that matches any of these characters
 def build_char_class(chars):
@@ -71,7 +74,8 @@ def normalize_text(s: str, remove_directional: bool = False) -> str:
     """
     # Step 0: Remove directional marks if requested
     if remove_directional:
-        s = s.replace('\u200E', '').replace('\u200F', '')
+        for ch in BIDI_REMOVE:
+            s = s.replace(ch, '')
 
     # Step 1: If an NBSP exists, truncate the field at the first NBSP (remove NBSP and everything after)
     idx = s.find('\u00A0')
@@ -167,7 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('-c', '--column', metavar='COLUMN', help='Column name to normalize (default: translation)')
     parser.add_argument('-o', '--output', help='Output file path (default: auto-generated with _NPC_fixed suffix)')
     parser.add_argument('-rd', '--remove-directional', action='store_true',
-                        help='Also remove directional marks (U+200E/U+200F). Off by default to preserve RTL text')
+                        help='Also remove directional marks (see BIDI_REMOVE; defaults: U+200E/U+200F) \nOff by default to preserve RTL text')
     parser.add_argument('--nbsp_lines_only', action='store_true',
                         help='Output only rows where the target column contained an NBSP (test mode)')
     
