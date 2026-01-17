@@ -11,6 +11,7 @@ This script normalizes spaces and non-printable characters in a single column of
 - If an NBSP (U+00A0) is found in a field, everything from the first NBSP to the end of the field (including the NBSP) is deleted
 - After truncation, multiple ASCII spaces are collapsed into a single ASCII space and leading/trailing spaces are trimmed
 - Preserves all other columns unchanged
+- Use `--nbsp_lines_only` to output only rows where the selected column contained an NBSP (test mode)
 
 Writes output to the same directory with `_NPC_fixed` appended before the extension.
 """
@@ -167,6 +168,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('-o', '--output', help='Output file path (default: auto-generated with _NPC_fixed suffix)')
     parser.add_argument('-rd', '--remove-directional', action='store_true',
                         help='Also remove directional marks (U+200E/U+200F). Off by default to preserve RTL text')
+    parser.add_argument('--nbsp_lines_only', action='store_true',
+                        help='Output only rows where the target column contained an NBSP (test mode)')
     
     # Mark column as dynamic for GUI
     for action in parser._actions:
@@ -201,6 +204,7 @@ def main(argv):
     
     # If requested, extend NPC_REMOVE to include directional marks
     remove_dir = args.remove_directional
+    nbsp_only = args.nbsp_lines_only
 
     # Determine output path
     if args.output:
@@ -251,6 +255,8 @@ def main(argv):
     # Process data rows line-by-line
     output_lines = [header_line + '\n']
     changed_count = 0
+    nbsp_found_count = 0
+    lines_written = 0
     
     for line_num, line in enumerate(lines[1:], start=2):
         line = line.rstrip('\n\r')
@@ -268,20 +274,33 @@ def main(argv):
         # Normalize the target column
         if col_idx < len(fields):
             original = fields[col_idx]
+            had_nbsp = '\u00A0' in original
+
+            # If test mode and row did not contain NBSP, skip writing this line
+            if nbsp_only and not had_nbsp:
+                continue
+
             fields[col_idx] = normalize_text(fields[col_idx], remove_directional=remove_dir)
             if fields[col_idx] != original:
                 changed_count += 1
+            if had_nbsp:
+                nbsp_found_count += 1
         
         # Reconstruct line
         output_line = delimiter.join(fields) + '\n'
         output_lines.append(output_line)
+        lines_written += 1
 
     # Write output
     with out.open('w', encoding='utf-8', newline='') as fh:
         fh.writelines(output_lines)
     
-    print(f"Wrote: {out}")
-    print(f"Normalized {changed_count} rows in column '{column_name}'")
+    if nbsp_only:
+        print(f"Wrote {lines_written} rows (only rows that contained NBSP) to: {out}")
+        print(f"Found NBSP in {nbsp_found_count} rows in column '{column_name}' (normalized {changed_count} rows)")
+    else:
+        print(f"Wrote: {out}")
+        print(f"Normalized {changed_count} rows in column '{column_name}'")
     
     # Check if any columns still have NBSP after processing
     _, remaining_cols = find_columns_with_nbsp(str(out))
