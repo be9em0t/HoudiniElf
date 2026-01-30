@@ -1,0 +1,581 @@
+ID	name	language	translation	confidence	breakdown	Remaining	Unallowed_characters	transliterations	Unmapped_in_transliterions
+	Achraf Rent Car	ARA	تأجير سيارات أشرف	85	Rent Car' translates to تأجير سيارات which clarifies the service offered, while preserving the brand name 'Achraf.				
+	Achraf rohdine	ARA	أشرف روهدين	90	Transliterated as a proper noun, maintaining the original pronunciation.				
+	Achraf Soft	ARA	أشرف سوفت	95	Transliteration of the brand name 'Soft' to preserve its identity.				
+	Dar El Mizan دار الميزان	ARA	دار الميزان	90	The name 'Dar El Mizan' is transliterated as 'دار الميزان'. The term 'دار' means 'house' or 'place', which is a common term in Arabic for establishments.				
+	Dar Lbacha دار الباشا برشيد	ARA	دار الباشا برشيد	90	Dar Lbacha' is transliterated to 'دار الباشا برشيد'. Here, 'الباشا' refers to a title of respect, indicating the establishment's significance. The addition of 'برشيد' specifies its location.				
+	Darb Omar درب عمر	ARA	درب عمر	95	Darb Omar' translates directly to 'درب عمر'. The word 'درب' means path or way, commonly used in place names across Arabic-speaking regions.				
+	Darna - دارنا	ARA	دارنا	100	Darna - دارنا' retains its form as it translates directly to mean 'Our House'. This reflects a sense of community and belonging.				
+	Debdou دبدو	ARA	دبدو	100	Debdou' is transliterated as it stands since it's a proper noun referring to a specific place. No translation needed here.				
+	Derb Rabat درب الرباط	ARA	درب الرباط	90	The name 'Derb' translates to 'path' or 'way', and is commonly used in Arabic to denote streets or alleys, while 'Rabat' remains transliterated as it is a proper noun.				
+	Douche Ben Diban دوش رشاشات بنديبان	ARA	دوش رشاشات بنديبان	85	Douche' refers to a shower, which can be understood in Arabic. The rest of the name is transliterated as it represents a brand or specific product line.				
+	DROGERIE Jaouad دروغري جواد	ARA	دروغري جواد	95	Droguerie' means drugstore or pharmacy; thus, it is transliterated to maintain brand identity while keeping the context clear for Arabic speakers.				
+	Association Sportive Achbal Adrar спортивный комплекс Agadir	ARA	الجمعية الرياضية أشبال أدرار المركب الرياضي أكادير	85	coPilot				
+	4martshop	ARA	متجر 4مارت	85	mart' translates to 'متجر', meaning shop, while the number 4 is retained for brand identity. This reflects common usage in branding.				
+	4noos	ARA	4نوس	90	noos' is phonetically transcribed as 'نوس'. The number 4 stays the same, maintaining brand recognition.				
+	4NoOs	ARA	4نوسز	80	NoOs' is transliterated to 'نوسز', keeping the original phonetics intact while adapting it for Arabic speakers.				
+	4P Agency	ARA	وكالة 4بي إيه جي	75	Agency' translates to 'وكالة', and the rest of the name retains its phonetic form with numbers and letters kept intact for brand consistency.				
+	4S Print	ARA	طباعة 4س	85	طباعة' means 'print', and the brand name '٤س' is retained as it is.				
+	4th Tranche Market	ARA	سوق الشريحة الرابعة	80	سوق' means 'market', and 'الشريحة الرابعة' translates to 'the fourth tranche'.				
+	Airplus   تجاريStore	ARA	متجر ايربلس ستوري  تجاري	80	Store' translates to 'متجر', while 'Airplus' retains its phonetic form. The term reflects commercial context in Arabic.				
+	Airport	ARA	المطار	90	The term 'المطار' is the standard Arabic word for 'airport', widely recognized and used across Arabic-speaking countries.				
+	Airport (CMN)-Mohammed V Airport	ARA	مطار محمد الخامس CMN	85	مطار محمد الخامس' is the official name of the airport in Casablanca, Morocco. The abbreviation '(CMN)' is retained as it refers to its IATA code, which is commonly understood internationally.				
+	Amine Games & Services	ARA	أمين ألعاب وخدمات	90	Games & Services' translates directly to 'ألعاب وخدمات', which are common terms understood in the context of entertainment and service industries.				
+	Amine Games And Services	ARA	أمين جيمز آند سيرفيسز	80	Games And Services' can be translated similarly as above, but also retains an alternative transliteration for brand recognition:  ‘جيمز آند سيرفيسز’.				
+	AMINE HAIR ARTIST	ARA	أمين فنان الشعر	90	The name 'Amine' is transliterated as 'أمين', and 'Hair Artist' translates to 'فنان الشعر', which maintains the professional context.				
+	Lakhdar Design - होम	ARA	الأخضر ديزاين هوم	85	coPilot				
+	Hydrocanal Depot Sale√Ω	ARA	هيدروكانال مستودع سلاي	85	coPilot				
+	S.N.C.E Aϊt Ourir Marrakech	ARA	شركة S.N.C.E آيت أورير مراكش	85	coPilot				
+	Τεκιτες Aaa	ARA	تيكيتيس آآآ	85	coPilot				
+	orientalhotel东方酒店	ARA	فندق أورينتال	85	coPilot				
+	月前往Droguerie EL-HAOUIL	ARA	دروغري الحويل	85	coPilot				
+	青岛菜馆 QINGDAO restaurant	ARA	مطعم تشينغداو	85	coPilot				
+	百老滙 Broadway	ARA	برودواي	85	coPilot				
+	Boutique רנין בוטיק رنين	ARA	رنين بوتيك	85	coPilot				
+	אצל מישל-מסעדה כשרה למהדרין קזבלנקה	ARA	مطعم عند ميشيل كوشير ممتاز كازابلانكا	85	coPilot				
+	lavazza de marrakech	ARA	لافازا مراكش	85	coPilot				
+	9 Rue Jakarta Hay Oued 2 Fès	ARA	9 شارع جاكرتا حي واد 2 فاس	85	coPilot				
+	ADV MAROC JET SKI IMIOUADDAR	ARA	ماروك جت سكي إيميوعدار ADV	85	coPilot				
+	Association Dar Al Atfal EL Ouafae	ARA	جمعية دار الأطفال الوفاء	85	coPilot				
+	Quad & Buggy a Imi Tamraght Taghazout	ARA	كواد وبوغي في إيمي تمراغت تغازوت	85	coPilot				
+	SUPER MARCHÉ IMI	ARA	المتجر الكبير إيمي	85	coPilot				
+	가죽가방상점	ARA	متجر الحقائب الجلدية	85	coPilot				
+	골프장	ARA	ملعب الغولف	85	coPilot				
+	리트릿장소	ARA	مكان الاعتكاف	85	coPilot				
+	모로코 44일차 차박지	ARA	موقع التخييم بالسيارة المغرب اليوم 44	85	coPilot				
+	모로코 45일차 차박지	ARA	موقع التخييم بالسيارة المغرب اليوم 45	85	coPilot				
+	모로코 72 75일차 차박지	ARA	موقع التخييم بالسيارة المغرب اليوم 72 75	85	coPilot				
+	모로코 77일치 차박지	ARA	موقع التخييم بالسيارة المغرب اليوم 77	85	coPilot				
+	서울공연예술고등학교	ARA	مدرسة سيول الثانوية لفنون الأداء	85	coPilot				
+	숙소2023	ARA	سكن 2023	85	coPilot				
+	숙소202301	ARA	سكن 202301	85	coPilot				
+	쉐프샤우엔 전망대	ARA	منصة مشاهدة شفشاون	85	coPilot				
+	점심	ARA	الغداء	85	coPilot				
+	카사블랑카	ARA	الدار البيضاء	85	coPilot				
+	. بالاج.	ARA	. بالاج.	90	Transliteration of a proper noun; no direct translation available.				
+	6نونبر	ARA	6 نوفمبر	80	The number '6' is retained, and 'نونبر' is the Arabic form of 'November', reflecting the date format commonly used in Arabic.				
+	Ahmed bennaji احمد بناجي Deutsch	ARA	أحمد بناجي دويتش	85	Ahmed' is transliterated as 'أحمد', 'bennaji' as 'بناجي', and 'Deutsch' retains its phonetic form while being adapted to Arabic script.				
+	Ain Tasgount عین تاسقونت	ARA	عين تاسقونت	95	Ain Tasgount' is a proper noun referring to a location, thus it is transliterated directly into Arabic script without alteration.				
+	AMLAL NIZNAGNE املال نيزناگن	ARA	املال نيزناگن	90	AMLAL NIZNAGNE' is treated as a brand name or specific place name, hence it is transliterated phonetically into Arabic.				
+	Atlas peintures صباغات اطلس	ARA	صباغات الأطلس	90	The term 'صباغات' translates to 'paints', and 'الأطلس' is the transliteration of 'Atlas' with the definite article added for grammatical correctness.				
+	Atlas resortsفندق اطلس	ARA	فندق الأطلس	90	فندق' means 'hotel', and again, 'الأطلس' is used with a definite article to maintain brand identity while ensuring clarity in Arabic.				
+	AVENUE MOHAMMED 6 شارع محمد السادس	ARA	شارع محمد السادس	95	شارع' translates to 'street'. The name retains its original form as it is a proper noun, thus no transliteration was needed beyond the Arabic equivalent.				
+	Bab Jdid باب الجديد	ARA	باب الجديد	100	باب' means 'gate', and this name is already in Arabic. It reflects local terminology without needing alteration.				
+	Bab Nouader باب النوادر	ARA	باب النوادر	100	نوادر' refers to rare or unique items, making this a culturally significant term that resonates well within local context.				
+	@ahlam elhaddad	ARA	@أحلام الحداد	90	Transliteration of the name 'Ahlam Elhaddad' into Arabic script, maintaining the original identity.				
+	achrafelkhonsi	ARA	أشرف الخنصي	85	Transliterated as a proper noun; 'elkhonsi' is treated as part of the name.				
+	Achsachs	ARA	أخساخس	80	Achsachs' is transliterated phonetically due to lack of direct translation.				
+	Achtma.Com	ARA	أختما.كوم	90	Transliterated as a brand name, preserving its identity and phonetic characteristics.				
+	Achton	ARA	أختون	85	Transliterated to maintain the original pronunciation; no direct Arabic equivalent exists.				
+	Achulene	ARA	أخوليني	80	Transliteration of the brand name, keeping its unique sound intact.				
+	Acima Er Rachidia	ARA	أسيمة الرشيدية	90	Acima' is transliterated as a brand, while 'Er Rachidia' is translated to reflect local geographical context.				
+	Acima S.A.	ARA	أسيمة س.أ.	95	S.A.' is retained in transliteration for clarity on the business type, while 'Acima' remains consistent with branding.				
+	Acima Tanger	ARA	أسيما طنجة	90	Transliteration of the brand name 'Acima' with the city name 'Tanger' translated to 'طنجة', maintaining brand identity.				
+	Acimcom	ARA	أسيكم كوم	85	Phonetic transliteration of the brand name 'Acimcom', preserving its original pronunciation.				
+	Ackam	ARA	أكام	90	Direct phonetic transliteration of the brand name 'Ackam', keeping its integrity intact.				
+	Aco Maroc	ARA	أكو ماروك	90	Aco' is transliterated phonetically, while 'Maroc' is adapted to Arabic as it refers to Morocco.				
+	Farah Shop فرح شوب	ARA	فرح شوب	90	Shop' is translated into Arabic as 'شوب', maintaining the phonetic sound of the original name while ensuring clarity for local users.				
+	Acousticxel	ARA	أكوستيكزيل	90	Transliterated as it is a brand name, preserving its identity.				
+	Acquassime	ARA	أكواسيم	90	Transliterated to maintain brand recognition; no direct Arabic equivalent.				
+	Actif Para	ARA	أكتيف بارا	90	Transliteration of the brand name, keeping original pronunciation intact.				
+	@aji.trinimarrakech	ARA	@آجي.تريني مراكش	85	Transliteration of the brand name 'Aji.TriniMarrakech', preserving its phonetic characteristics.				
+	@alyusra rent-a-car	ARA	@اليسرى لتأجير السيارات	95	Rent-a-car' is translated to 'لتأجير السيارات' for clarity, while 'Alyusra' is transliterated.				
+	@association itihad ait amira	ARA	@جمعية اتحاد آيت أميرة	90	Association' is translated to 'جمعية', and the rest of the name is transliterated.				
+	@astroled.tanger	ARA	+ @استرو ليد طنجة	80	Astroled' is transliterated while 'Tanger' (Tangier) retains its local form in Arabic.				
+	@benamar fastfood	ARA	مطعم بن عمار للوجبات السريعة	85	Fastfood' is translated to 'للوجبات السريعة' for clarity, while 'Ben Amar' is transliterated as it is a brand name.				
+	@benjijet	ARA	بن جيت	90	Benjijet' is transliterated phonetically since it appears to be a unique brand name without direct translation.				
+	@cafe venicia	ARA	كافيه فينيسيا	90	Cafe' is transliterated as 'كافيه', and 'Venicia' is also transliterated, maintaining the brand identity.				
+	@cooperative sahara cactus	ARA	التعاونية صبار الصحراء	80	Cooperative' translates to 'التعاونية', while 'Sahara Cactus' translates directly to maintain meaning and context.				
+	@cosybayimmo	ARA	كوزي باي إيمو العقارية	85	Cosy Bay Immo' retains its phonetic form in Arabic with an added descriptor for real estate ('العقارية') to clarify the business type.				
+	@deco dalena	ARA	@ديكو دالينا	90	Transliteration of the brand name to preserve its identity.				
+	@dr.slaoui.taoufik	ARA	@د.سلاوي.توفيق	95	Transliteration of the doctor's name, maintaining professional title and integrity.				
+	@gym_hamid	ARA	@جيم حامد	90	Transliteration of the gym's name while keeping 'Gym' as a recognizable term in Arabic.				
+	@hachim auto	ARA	@هاشيم أوتو	90	Auto' is transliterated to maintain brand recognition; 'Hachim' is also transliterated.				
+	@jaouharat tidrhine	ARA	@جوهرة تيدرهين	85	The name is transliterated, preserving its unique identity without translation due to lack of direct meaning in Arabic.				
+	@khouloud radi caftan	ARA	@خولود رادي قفطان	90	Transliteration of the brand name 'khouloud radi' with 'قفطان' (caftan) translated as it is a common term for traditional clothing.				
+	@otchizy	ARA	@أوتشيزي	95	Phonetic transliteration of the brand name '@otchizy', preserving its identity.				
+	@promo ouajdi	ARA	@برومو وجدي	85	Promo' is transliterated while 'وجدي' (Ouajdi) is a proper noun, maintaining local relevance.				
+	@rachid barber48	ARA	@رشيد باربر 48	90	Rachid' is a proper name and 'باربر' (barber) is transliterated to maintain clarity in service type.				
+	@saguem	ARA	@ساقيم	95	Phonetic transliteration of the brand name '@saguem', keeping its original form intact.				
+	@salimbarbershop	ARA	صالون سليم للحلاقة	85	Transliteration of 'salim' as a proper name and translation of 'barbershop' to 'صالون للحلاقة', which is commonly understood in Arabic.				
+	BaB Souk باب السوق	ARA	باب السوق	90	The name 'BaB Souk' translates directly to 'باب السوق', which means 'The Market Gate'. The term is descriptive and easily recognizable in Arabic.				
+	@salon.soufiane khemisset-Instagram	ARA	صالون سفيان خميسات - إنستغرام	90	Transliteration of 'Soufiane Khemisset' as a proper name, maintaining the Instagram reference for brand identity.				
+	@snack badraoui	ARA	وجبات بدراوي الخفيفة	80	Snack' translated to 'وجبات خفيفة', while 'Badraoui' is transliterated as it is a proper noun.				
+	@waha sport	ARA	واحة الرياضة	75	Waha' translates to 'واحة', meaning oasis, and 'sport' translates directly to 'الرياضة', creating an inviting image.				
+	@zonebike morocco	ARA	زون بايك المغرب	85	Zonebike' transliterated phonetically, preserving brand identity; Morocco translated directly as it is widely recognized.				
+	¡get Lost!	ARA	¡جِت لُوست!	90	Brand name transliterated to preserve its identity; the phrase 'get lost' is a playful invitation, which may not have a direct cultural equivalent.				
+	01 Hour Quad Riding in Merzouga Adventure	ARA	مغامرة ركوب الدراجات الرباعية في مرزوكة لمدة ساعة واحدة	85	مغامرة' translates to 'adventure', while 'ركوب الدراجات الرباعية' means 'quad riding'. The location 'مرزوكة' is preserved as it is a proper noun.				
+	03 Vers El Houda	ARA	ثلاثة فيرس الهُدى	80	ثلاثة' means 'three', and 'الهُدى' refers to guidance or direction. The term retains its original form for brand recognition.				
+	04 Cylindres Car Aeroport al Aroui	ARA	سيارات أسطوانية مطار العروي رقم 04	75	سيارات أسطوانية' translates to 'cylindrical cars', and the airport name is transliterated. The number indicates a specific service offering.				
+	04 Jabal Bounacer Rich	ARA	جبل بوناصر ريتش رقم 04	80	جبل بوناصر' refers to the mountain's name, with 'ريتچ' indicating richness or abundance, maintaining brand integrity with the number included.				
+	04shop	ARA	04 شوب	90	Transliterated as a brand name; retains original identity.				
+	1 Gite Challal Mawaa Alshalaal	ARA	بيت الضيافة 1 شلال مآوى الشلالات	85	Gite' translated to 'بيت الضيافة' (guesthouse) for clarity, while the rest is transliterated.				
+	1.7 MX	ARA	1.7 إم إكس	90	MX' transliterated phonetically; maintains brand integrity.				
+	1.academie Chippo De Foot Ball	ARA	أكاديمية 1 تشيبو لكرة القدم	80	Academie' translated to 'أكاديمية'; 'Chippo De Foot Ball' transliterated for brand recognition.				
+	100% Mamans Tanger	ARA	100% مامات طنجة	85	Mamans' transliterated while retaining the percentage symbol and city name for local context.				
+	1001 Nights Surf Hostel	ARA	بيت شباب ألف ليلة وليلة	85	The name '1001 Nights' is translated to 'ألف ليلة وليلة', a well-known cultural reference in Arabic literature, while 'Surf Hostel' is translated as 'بيت شباب' to indicate a youth hostel.				
+	101 Caffe Gueliz	ARA	كافيه 101 غليز	90	Caffe' is transliterated as it is a brand name, and 'Gueliz' retains its original form for location identification.				
+	101CAFFE Casablanca	ARA	101 كافيه الدار البيضاء	90	101CAFFE' is transliterated to preserve brand identity, while 'Casablanca' translates to 'الدار البيضاء', the Arabic name of the city.				
+	10HDFootBall	ARA	10HD كرة القدم	80	FootBall' is translated as 'كرة القدم', which is the standard term in Arabic for football, while the rest of the name remains unchanged.				
+	10Tableaux	ARA	10 تابلوهات	85	Tableaux' is transliterated into Arabic script as it refers to an artistic concept that may not have a direct translation but can be understood contextually.				
+	113 Cent Treize Cafe	ARA	كافيه 113	90	The name is transliterated to preserve brand identity, while 'Cafe' is translated to 'كافيه' for local understanding.				
+	11eme Arrondissement de Police	ARA	المنطقة الحادية عشرة للشرطة	85	Arrondissement' translates to 'منطقة', and 'Police' translates directly. The definite article 'الـ' is added for grammatical correctness.				
+	12 Cool	ARA	12 كول	95	Cool' is transliterated as it serves as a brand identifier; the number remains unchanged.				
+	123GO	ARA	123 جو!	90	GO' is transliterated phonetically into Arabic script, maintaining its branding appeal.				
+	125 ORIGINAL	ARA	125 أوريجينال	90	ORIGINAL' is transliterated to keep the brand's integrity intact; the number remains unchanged.				
+	125Original	ARA	125أوريجينال	90	Transliteration of the brand name 'Original' while retaining the number as is.				
+	12COOL	ARA	12كول	95	Phonetic transliteration of 'COOL', maintaining the number intact.				
+	12cool Kénitra	ARA	12كول كينيترا	90	Kénitra' is a proper noun and is transliterated, while 'cool' remains phonetic.				
+	1337 Ben Guérir	ARA	1337 بن غرير	85	Ben Guérir' is a proper name; thus, it is transliterated to maintain its identity.				
+	1337 Parada	ARA	1337 بارادا	85	Parada' is treated as a brand name and transliterated phonetically.				
+	14 Place Molay Hassan	ARA	14 ساحة مولاي حسن	90	"ساحة"" means ""place"" in Arabic, and is used here to denote a public square or area. The name ""مولاي حسن"" is transliterated as it refers to a proper noun."				
+	148 ZC	ARA	148 زك	85	"The abbreviation ""ZC"" is transliterated phonetically into Arabic as ""زك"", maintaining its identity while adapting to the script."				
+	1er Partie	ARA	الجزء الأول	80	الجزء الأول' translates directly to 'the first part', which clarifies the meaning for Arabic speakers.				
+	1PORT	ARA	1 بورت	85	بورت' is the phonetic transcription of 'PORT', preserving brand identity while adapting it for Arabic readers.				
+	2 Bro Multi Services Auto	ARA	خدمات أوتو متعددة 2 برو	90	خدمات أوتو متعددة' translates to 'multi services auto', with '2 برو' being a transliteration of the brand name, ensuring recognition across languages.				
+	2 Days Trip to Zagora	ARA	رحلة لمدة يومين إلى زاكورة	85	Translated 'Trip' and 'Days' for clarity; 'Zagora' is a proper noun transliterated as 'زاكورة', maintaining its identity.				
+	2 Mars Luxury Residence	ARA	إقامة مارس الفاخرة 2	80	Luxury Residence' translated to reflect the nature of the place, while keeping 'Mars' as a brand name.				
+	Autodata Services Seat	ARA	ورتي	85	أوتوداتا' هو اسم علامة تجارية معروف في مجال خدمات السيارات، و'سيت' تشير إلى المقعد.				
+	autodiag	ARA	أوتودياغ	90	أوتودياغ' هو اسم علامة تجارية يُستخدم بشكل شائع في تشخيص أعطال السيارات.				
+	Autodiagnamo	ARA	أوتودياغنامو	80	أوتودياغنامو' هو اسم علامة تجارية، والترجمة تحافظ على النطق الأصلي.				
+	Autodistribution Maroc	ARA	أوتوديسبريشن المغرب	75	أوتوديسبريشن' تعني توزيع السيارات، و 'المغرب' تُشير إلى البلد.				
+	Auto-Ecola Noor	ARA	مدرسة أوتو-نور للسيارات	85	مدرسة أوتو-نور للسيارات' تشير إلى مؤسسة تعليمية متخصصة في تدريب السائقين وصيانة السيارات.				
+	Auto-ecole Ben Omar	ARA	مدرسة تعليم القيادة بن عمر	90	The term 'مدرسة تعليم القيادة' translates to 'driving school', while 'بن عمر' is a common Arabic name meaning 'son of Omar'.				
+	Auto-Ecole Choukri	ARA	مدرسة تعليم القيادة شوكري	90	شوكري' is a personal name, and the phrase maintains the structure of 'driving school' in Arabic.				
+	Auto-Ecole Iyad Khouribga	ARA	مدرسة تعليم القيادة إياد خريبقة	85	Here, 'إياد خريبقة' refers to the person's name and location. The translation keeps the driving school context intact.				
+	Autoecole Jil Al Najah	ARA	مدرسة تعليم القيادة جيل النجاح	80	This translation uses 'جيل النجاح', which means 'generation of success', reflecting an aspirational branding approach.				
+	Auto-Ecole SEIF Academy Driving School SARL	ARA	أكاديمية سيف لتعليم القيادة ذ.م.م	75	In this case, 'أكاديمية سيف' translates to 'SEIF Academy', with '(ذ.م.م)' indicating it is a limited liability company (SARL).				
+	Auto-Ennour	ARA	أوتو-إنور	90	The name 'Auto-Ennour' is transcribed phonetically into Arabic, maintaining the brand's identity while adapting to Arabic script.				
+	Autogear	ARA	أوتوجير	90	Autogear' is also phonetically transcribed, ensuring that the brand remains recognizable in Arabic-speaking markets.				
+	Autogear.ma	ARA	أوتوجير.ما	90	Autogear.ma' retains its original structure with a phonetic transcription and the domain suffix '.ma', which indicates it is a Moroccan website.				
+	Auto-Ghame	ARA	أوتو-غيمه	85	Auto-Ghame' is translated phonetically, preserving the sound of the original name while adapting it for Arabic readers.				
+	AutoGo	ARA	أوتو إيكول شرقي	90	AutoGo' is transcribed to maintain its catchy nature and ease of pronunciation in Arabic, making it appealing to local consumers.				
+	Autogo	ARA	أوتوجو	90	Transcription of the brand name 'Autogo' into Arabic, maintaining phonetic integrity.				
+	Autogo Azhar	ARA	أوتوجو أزهار	90	Azhar' means 'flowers' in Arabic, and is a common term used in names. The brand name is transcribed while keeping the additional descriptor intact.				
+	Auto-Hall Chichaoua	ARA	أوتو هول شيشاوة	85	Chichaoua' refers to a region in Morocco; thus, it remains unchanged. The term 'Auto-Hall' is phonetically transcribed.				
+	Autohall Hay Badr	ARA	أوتوهال حي بدر	85	Hay Badr' translates to 'Badr Neighborhood', which is a common naming convention for areas in Arabic-speaking countries. The brand name is kept intact.				
+	AutoHammou	ARA	أوتوهاممو	90	The brand name 'AutoHammou' is phonetically transcribed into Arabic without translation as it appears to be a proper noun.				
+	Auto-Hassan Alkhayat	ARA	أوتو-حسن الخياط	90	The name 'Hassan Alkhayat' is a proper noun and is transliterated to maintain its identity. The prefix 'Auto-' is commonly used in Arabic for automotive businesses.				
+	Auto-Ice	ARA	أوتو-آيس	85	Ice' is transliterated as it refers to the brand name, while 'Auto-' remains consistent with automotive terminology.				
+	Autoland Rabat	ARA	أوتولاند الرباط	90	Rabat' is the capital of Morocco and retains its original form. 'Autoland' is also transliterated to preserve brand identity.				
+	Autoline Car Rental	ARA	أوتولاين لتأجير السيارات	95	Car Rental' translates directly to 'لتأجير السيارات', which conveys the service offered, while maintaining the brand name 'Autoline'.				
+	Autoline Rent	ARA	أوتولاين للإيجار	95	Rent' translates to 'للإيجار', indicating rental services, while keeping the brand name intact.				
+	Autoloca	ARA	أوتولوكَا	90	The name 'Autoloca' is transcribed phonetically into Arabic as 'أوتولوكَا', maintaining its brand identity.				
+	Autologic Casablanca	ARA	أوتولوجيك كازابلانكا	85	Autologic' is a brand name and is transliterated to 'أوتولوجيك'. The city name 'Casablanca' is also retained in its familiar form, ensuring recognition.				
+	Autologic SARL	ARA	أوتولوجيك سارل		Similar to the previous entry, 'SARL' (Société à Responsabilité Limitée) is kept in its original form as it represents a legal structure commonly understood in business contexts.				
+	Automaher.Luxury	ARA	أوتوماهر.لوكسري	80	The brand name 'Automaher.Luxury' retains its phonetic transcription while keeping the '.Luxury' intact, which signifies a luxury branding aspect that appeals to high-end markets.				
+	Auto-Mahti	ARA	أوتو-ماهتي	90	Auto-Mahti' is transcribed phonetically as 'أوتو-ماهتي', preserving the unique character of the brand while making it pronounceable for Arabic speakers.				
+	Auto-Mansour	ARA	أوتو منصور	90	The name 'Auto-Mansour' is transcribed phonetically into Arabic, maintaining the brand's identity.				
+	% Arabica M Avenue	ARA	شارع % أرابيكا م	90	The name retains the brand 'Arabica' which is well-known in coffee culture, and 'M Avenue' is translated to 'شارع م' to maintain its meaning as a street.				
+	@acabexact	ARA	@أكاب إكزاكت	85	acabexact' is a brand name that does not have a direct translation; it is phonetically transcribed while keeping the '@' symbol for social media relevance.				
+	@ayline butik	ARA	@أيلين بوتيك	90	ayline butik' is also a brand name. The term 'butik', meaning boutique, remains unchanged but is transliterated to fit Arabic phonetics.				
+	@azalbio	ARA	@أزال بيو	80	azalbio' is another brand name without direct translation; it has been phonetically adapted for Arabic speakers.				
+	@baraem school	ARA	مدرسة @براعم	95	baraem' translates directly to 'براعم', meaning buds or sprouts, which conveys growth and learning, fitting for an educational institution.				
+	@bkbeauty.makeup	ARA	@بي كيه بيوتي.ماكياج	90	The brand name 'BK Beauty' is transcribed phonetically to maintain its identity, while 'makeup' is translated to 'ماكياج', which is the common term used in Arabic for cosmetics.				
+	@cafe.moha	ARA	@كافيه موها	95	Cafe' is translated as 'كافيه', a widely recognized term in Arabic-speaking countries for coffee shops, and 'Moha' remains unchanged as it appears to be a proper noun.				
+	@capnord.equipement	ARA	@كاب نوردي.معدات	85	Cap Nord' is phonetically transcribed to maintain brand recognition, while 'equipment' translates to 'معدات', which refers to tools or gear commonly used in various contexts.				
+	@cinqcinq.5	ARA	@سينك سينك.5	80	The name ‘Cinq Cinq’ (French for five five) is transliterated into Arabic script as ‘سينك سينك’, with the numeral ‘5’ represented by its Arabic equivalent ‘٥’. This maintains both phonetic sound and visual representation.				
+	@dlk.team	ARA	@دي ال كيه.فريق	90	DLK' remains unchanged as it represents an acronym or brand identifier, while 'team' translates to 'فريق', a common word used in Arabic for groups or teams.				
+	@elasri.mustapha	ARA	@الاسري.مصطفى	90	The name is transcribed phonetically into Arabic, maintaining the original structure and integrity of the brand.				
+	@evet.coffee	ARA	@إيفيت.قهوة	85	Evet' is transliterated to 'إيفيت', while 'coffee' translates to 'قهوة', a common term in Arabic for coffee.				
+	@excellent by faty	ARA	@ممتاز بواسطة فاتي	80	Excellent' translates to 'ممتاز', which conveys high quality, and 'by Faty' is translated as 'بواسطة فاتي'.				
+	@fakhama shop	ARA	@محل فخامة	90	The word 'Fakhama' means luxury or elegance in Arabic, making it an appropriate translation for a shop that likely sells upscale items.				
+	@futuris club	ARA	@نادي فيوتوريس	85	Futuris' is transliterated directly as it appears to be a brand name, while 'club' translates to 'نادي', commonly used in Arabic for social clubs.				
+	@hakimdekoration	ARA	@ديكور حكيم	90	The name is transcribed phonetically, with 'ديكور' meaning 'decoration' in Arabic, maintaining the brand's identity.				
+	@indianflavors.ma	ARA	@نكهات هندية م.	85	نكهات هندية' translates to 'Indian flavors', which is a direct translation that retains the essence of the brand.				
+	@instacolis.sarl	ARA	@إنستاكوليس س.أ.ر.ل.	95	This is a phonetic transcription of the brand name, preserving its original sound and structure.				
+	@karkab barber	ARA	@كركاب حلاق	80	حلاق' means 'barber', providing clarity while keeping the unique brand name intact.				
+	@ladyshop by a.s.	ARA	+ @محل السيدة بواسطة أ.س.	75	محل السيدة' translates to 'Lady Shop', and 'بواسطة أ.س.' indicates it is by A.S., maintaining both cultural relevance and brand identity.				
+	@laplantation marrakech	ARA	@مزرعة مراكش	90	The term 'مزرعة' (plantation) is a direct translation, while 'مراكش' refers to the city of Marrakech. The brand name is kept intact as '@laplantation'.				
+	@lhbab drive	ARA	@طريق الحبّاب	85	حبّاب' translates to 'beloved' or can refer to a specific area. The term 'طريق' means 'drive', maintaining the original context.				
+	@lilly beauty 24	ARA	@ليلى بيوتي 24	95	The name 'Lilly' is phonetically transcribed as 'ليلى', and 'بيوتي' is a common transliteration for beauty in Arabic. The number remains unchanged.				
+	@my galactic galaxies	ARA	@مجراتي المجرة الخاصة بي	80	This translation captures the essence of the phrase, with 'مجراتي المجرة الخاصة بي' meaning ‘my galaxy’. However, it loses some of the playful tone present in English.				
+	@one touch by ahlam	ARA	@لمسة واحدة من أحلام	90	لمسة واحدة' translates directly to ‘one touch’, and ‘من أحلام’ means ‘by Ahlam’, keeping the brand identity intact.				
+	@othman shop	ARA	محل عثمان	90	The name 'Othman' is a common Arabic name, and 'shop' translates to 'محل', which is widely understood in Arabic-speaking regions.				
+	@secretmarocain	ARA	السر المغربي	85	Secret' translates to 'السر', and 'Marocain' refers to Moroccan culture. This translation maintains the brand's identity while making it understandable for Arabic speakers.				
+	@shop iken	ARA	محل إيكين	80	Shop' translates to 'محل', and 'Iken' is transcribed phonetically as it appears to be a brand name without direct translation.				
+	@sorore elegance	ARA	أناقة سورورى	75	Elegance' translates directly to 'أناقة', while 'Sorore' is phonetically transcribed, preserving the brand's unique identity.				
+	@the barber karim	ARA	الحلاق كريم الحلاق كارييم	90	Barber' translates to 'الحلاق', which is a common term in Arabic for barbershops, and Karim remains unchanged as it’s a personal name that carries cultural significance.				
+	@tigre.shopp	ARA	@تيغري.شوب	90	The name '@tigre.shopp' is phonetically transcribed to '@تيغري.شوب', maintaining the brand's identity while adapting it to Arabic phonetics.				
+	@yassine.market	ARA	@ياسين.ماركت	90	The name '@yassine.market' is transcribed as '@ياسين.ماركت', preserving the original sound and meaning, with 'ماركت' being a common term for market in Arabic.				
+	@zack.dh2	ARA	@زاك.دي اتش 2	85	@zack.dh2' is transliterated as '@زاك.دي اتش 2'. The use of English letters 'DH2' remains unchanged due to its specific branding context.				
+	@zinemoda	ARA	@زينة مودا	90	@zinemoda' translates to '@زينة مودا', where 'زينة' means beauty or adornment, aligning well with fashion-related contexts.				
+	0.P.E.M.	ARA	.ص .إي .م	80	0.P.E.M.' is transliterated as '.ص .إي .م', keeping the initials intact while adapting them into Arabic script.				
+	0031 Food	ARA	0031 فود	90	The name '0031' is a brand identifier and remains unchanged. 'Food' is translated to 'فود', which is commonly used in Arabic-speaking regions.				
+	007 Design Auto Official	ARA	007 ديزاين أوتو أوفيسيال	85	007' is a recognizable brand element, while 'Design Auto' translates phonetically to maintain brand integrity. 'Official' becomes 'أوفيسيال', reflecting common usage in branding.				
+	007 Design Auto official	ARA	007 ديزاين أوتو أوفيسيال	85	Official' retains the same translation as above due to its branding context.				
+	007 Night Club	ARA	007 نايت كلوب	90	Night Club' is transliterated as it reflects a specific entertainment venue type that does not have an exact Arabic equivalent but is widely understood.				
+	017 Restaurant	ARA	017 مطعم	95	Restaurant' translates directly to 'مطعم', which is the standard term for dining establishments in Arabic.				
+	04 Street	ARA	شارع 04	90	The term 'شارع' means 'street' in Arabic, and the number is retained as it is.				
+	04 swi9a	ARA	سويقة 04	85	سويقة' refers to a small market or street vendor area, which fits the context of 'swi9a'. The number remains unchanged.				
+	05.Saka City Ulm	ARA	مدينة ساكا أولم 05	80	مدينة' means 'city', and 'ساكا أولم' is a phonetic transcription of the brand name. The number is kept for identification.				
+	1 Annexe Administrative Ait Melloul	ARA	المرفق الإداري 1 أيت ملول	75	المرفق الإداري' translates to 'administrative annex', while 'أيت ملول' is a direct transcription of the location's name.				
+	1 Click Gift	ARA	هدية كليك 1	90	هدية' means 'gift', and 'كليك' is a phonetic representation of the brand name. The number indicates its order or identifier.				
+	1 Garden	ARA	حديقة 1	90	The term 'حديقة' means 'garden' in Arabic, and the number is retained as it is.				
+	1 Side Basketball Court	ARA	ملعب كرة السلة الجانبي 1	85	ملعب كرة السلة' translates to 'basketball court', with 'الجانبي' meaning 'side'. The number remains unchanged.				
+	1 Tikarwal	ARA	تيكاروال 1	80	Tikarwal' appears to be a proper noun or brand name, so it is transcribed phonetically into Arabic while retaining the number.				
+	1.36	ARA	1.36	95	1.36' is a numerical value and remains unchanged in translation.				
+	10 College	ARA	كلية 10	90	كلية' means 'college', and the number is kept as it is.				
+	10 Lebanese Restaurants	ARA	10 مطاعم لبنانية	90	The term 'مطاعم' means 'restaurants' in Arabic, and 'لبنانية' refers to the Lebanese cuisine, which is well-known and appreciated in Arab culture.				
+	10 Makeup Artists	ARA	10 فنانين مكياج	85	فنانين مكياج' translates to 'makeup artists', where 'فنانين' means 'artists'. This reflects the growing beauty industry in the Arab world.				
+	10 Rajeb Showroom	ARA	10 صالة عرض رجب	95	صالة عرض' means 'showroom', and since 'Rajeb' is a brand name, it is transcribed phonetically as رجب.				
+	10 Restaurants	ARA	10 مطاعم	100	مطاعم' simply translates to 'restaurants'. The number remains unchanged as numerals are universally understood.				
+	100 Food	ARA	100 طعاما أو 100 نوع من الطعام	80	طعاما' means food. The phrase can be interpreted as either 100 types of food or just 100 food items, depending on context.				
+	1000 CAR Sarl	ARA	1000 كار سارل	90	The brand name is transcribed phonetically, maintaining its original form while adapting the script to Arabic.				
+	1000 Design	ARA	1000 ديزاين	90	Design' is a commonly used term in Arabic, often retained in its English form for branding purposes.				
+	1000volts.ma	ARA	.ما 1000 فولتس	85	The '.ma' domain indicates Moroccan origin; 'volts' is kept in English as it relates to electrical terminology widely recognized.				
+	1001robes	ARA	1001 روبز	90	Phonetic transcription of 'robes', which means 'dresses' or 'garments' in French and is understood within the context of fashion.				
+	1003 Shop	ARA	متجر 1003	95	Shop' translates directly to 'متجر', a common term for retail spaces in Arabic-speaking regions.				
+	101 Business Square	ARA	ميدان الأعمال 101	85	The term 'Business Square' is translated to 'ميدان الأعمال', which conveys the idea of a commercial area. The number '101' remains unchanged as it is part of the name.				
+	1020° Pottery Studio	ARA	استوديو الفخار 1020 درجة	80	Pottery Studio' translates to 'استوديو الفخار', where 'الفخار' means pottery. The degree symbol is translated as 'درجة', maintaining the original numeric value.				
+	1030 Dar	ARA	دار 1030	90	Dar' translates directly to 'دار', meaning house or place in Arabic, and retains its original form with the number for identification.				
+	1046 Hay Safaa	ARA	حي صفاء 1046	95	Hay Safaa' translates to 'حي صفاء', where 'حي' means neighborhood. The number remains unchanged, indicating a specific location within that neighborhood.				
+	108 Pool Lounge	ARA	صالة المسبح 108	85	Pool Lounge' translates to 'صالة المسبح'. In this context, it refers to a lounge area by a pool, and the number indicates its specific identifier.				
+	109 Arrv	ARA	109 أرف	90	The name is transcribed phonetically into Arabic, maintaining the numerical representation and brand integrity.				
+	10xmedia	ARA	10 إكس ميديا	85	The brand name is transliterated to preserve its phonetic sound while using Arabic numerals for clarity.				
+	10XMedia	ARA	10 إكس ميديا	85	Similar to '10xmedia', this version maintains the same phonetic transcription and numeral usage.				
+	11 Janvier Middle School	ARA	مدرسة 11 جانفيه المتوسطة	80	Janvier' is translated as 'جانفيه', which refers to January in French, reflecting the school's likely cultural context. The term 'Middle School' is translated appropriately.				
+	11 Surf Rental	ARA	إيجار 11 سيرف	75	Surf Rental' is translated as 'إيجار سيرف', where 'سيرف' retains its English form due to lack of a direct Arabic equivalent, emphasizing the activity's cultural significance.				
+	113 babershop Marrakech	ARA	حلاق 113 مراكش	90	The term 'حلاق' (hallaq) is the Arabic word for 'barber', and it is commonly used in Morocco. The number '113' remains unchanged as it is part of the brand name.				
+	114 Coworking Space	ARA	مساحة العمل المشترك 114	85	مساحة العمل المشترك' translates to 'Coworking Space'. The number '114' is retained as part of the brand identity.				
+	11th of January Middle School	ARA	مدرسة 11 يناير الإعدادية	80	مدرسة الإعدادية' means 'Middle School', and the date format aligns with local customs, where dates are often written in Arabic numerals.				
+	12 CooL - Sandwich	ARA	ساندويتش 12 كول - ساندويتش	75	ساندويتش' is a direct translation for 'sandwich'. The brand name 'CooL' retains its phonetic form due to branding considerations.				
+	12 COOL Kenitra	ARA	كينيترا 12 كول	75	كينيترا' refers to the city Kenitra, while 'كول' maintains its original branding. Numbers are typically kept in their numeric form.				
+	12 Lbess	ARA	12 لبس	90	The number '12' is retained as it is, while 'Lbess' is phonetically transcribed to 'لبس', which means 'wear' or 'clothing' in Arabic. This maintains the brand's identity.				
+	1220 Rooftop	ARA	1220 روفتوب	85	1220' remains unchanged, and 'Rooftop' is transliterated to 'روفتوب'. The term refers to a rooftop setting, which may be familiar in urban contexts.				
+	123 Food	ARA	123 فود	95	The number '123' stays the same for clarity, while 'Food' is transliterated as 'فود', a common term used in Arabic-speaking regions for food-related businesses.				
+	123stay	ARA	123 ستاي	90	The name retains its numerical component and ‘stay’ is transliterated to ‘ستاي’, reflecting hospitality services. The use of English terms like this can appeal to younger audiences.				
+	129ssi	ARA	129 سي سي	80	Here, ‘129’ remains unchanged; ‘ssi’ is phonetically transcribed as ‘سي سي’. This transcription keeps the original branding intact while making it pronounceable for Arabic speakers.				
+	12cool Restaurant	ARA	مطعم 12كول	90	The name '12cool' is transcribed phonetically as '12كول', maintaining the brand identity while 'Restaurant' translates to 'مطعم', a common term for dining establishments.				
+	12cool Sandwitch	ARA	ساندويتش 12كول	90	Sandwitch' is translated to 'ساندويتش', which is widely recognized in Arabic-speaking countries, and the brand name remains unchanged.				
+	12livery	ARA	12ليفري	85	Livery' does not have a direct translation in Arabic; thus, it is phonetically transcribed as 'ليفري'. This maintains the original branding while adapting to local pronunciation.				
+	12YANSIN	ARA	12يانسين	85	YANSIN' is also phonetically transcribed as 'يانسين', preserving its unique branding without translation due to lack of meaning in Arabic.				
+	13 Amp Morocco	ARA	13 أمب المغرب	80	Amp' can be translated contextually depending on usage; here it’s kept as part of the brand. The word ‘Morocco’ translates directly to ‘المغرب’, ensuring cultural relevance.				
+	13 AMP Morocco	ARA	13 أمب المغرب	90	The term 'AMP' is transliterated as 'أمب' to maintain brand integrity, while 'Morocco' is translated to 'المغرب', the Arabic name for the country.				
+	133 Coworking	ARA	133 كاويركينغ	85	Coworking' is a common term in Arabic and is often used in its English form. The number '133' remains unchanged.				
+	1337 Coding School	ARA	مدرسة 1337 للبرمجة	80	Coding School' translates to 'مدرسة للبرمجة', which conveys the educational aspect of coding. The number '1337' retains its original form due to its significance in tech culture.				
+	1337 Parking	ARA	بارك 1337	80	Parking' translates directly to 'بارك', commonly used in urban contexts. The number remains unchanged.				
+	1337 Restaurant and Fast Food	ARA	مطعم ووجبات سريعة 1337	75	Restaurant and Fast Food' translates to 'مطعم ووجبات سريعة'. The brand name '1337' stays intact, reflecting its identity within the fast food industry.				
+	1337 School	ARA	مدرسة 1337	90	The term 'مدرسة' means 'school' in Arabic, and the number '1337' is retained as it is part of the brand name.				
+	1337 Shore	ARA	شاطئ 1337	90	شاطئ' translates to 'shore' or 'beach', maintaining the brand identity with the number intact.				
+	1337 Sport Facilities	ARA	مرافق رياضية 1337	85	مرافق رياضية' means 'sport facilities', keeping the brand's numerical identifier unchanged.				
+	134 Square	ARA	ساحة 134	90	The word 'ساحة' means 'square', while retaining the number for recognition purposes.				
+	139 Hay Majd	ARA	حي مجد 139	80	حي مجد' translates to 'Hay Majd', where 'حي' refers to a neighborhood, and again, the number is kept for identification.				
+	147 Snooker	ARA	سنُوكَر 147	90	The term 'سنُوكَر' is the Arabic transliteration of 'Snooker', a popular cue sport. The number '147' is retained as it holds significance in the game, representing the highest possible break.				
+	15 Stadium	ARA	استاد 15	85	استاد' means 'stadium' in Arabic, and the number '15' is kept as is for identification purposes.				
+	150px	ARA	150 بيكسل	80	بيكسل' is the Arabic word for 'pixel'. The number remains unchanged as it refers to a measurement.				
+	150PX	ARA	150 بي إكس	80	بي إكس' represents an abbreviation for pixels, similar to English usage. The number stays intact.				
+	1-54 Comtemporary African Art Fair	ARA	معرض الفن الأفريقي المعاصر 1-54	75	معرض الفن الأفريقي المعاصر' translates to 'Contemporary African Art Fair'. The numbers are preserved for branding purposes.				
+	16 Block 1nouvelle Khourdia	ARA	16 بلوك 1نوفيل خورديّة	85	The term 'Block' is translated to 'بلوك', and 'Nouvelle' is adapted phonetically as 'نوفيل'. The name retains its original number for clarity.				
+	16 cafe	ARA	16 كافيه	90	Cafe' is commonly used in Arabic as 'كافيه', maintaining the brand's identity while adapting to local language norms.				
+	16 Novembre Garden	ARA	حديقة 16 نوفمبر	80	Garden' translates to 'حديقة', and the date remains unchanged, reflecting a significant historical context related to November events.				
+	16 Optic	ARA	16 أوبتيك	95	Optic' is transcribed phonetically as 'أوبتيك', preserving the brand's identity without translation due to its specificity.				
+	164 Residence Ryad Almohit	ARA	164 إقامة رياض المحيط	85	Residence' translates to 'إقامة', while 'Ryad Almohit' maintains its original form, indicating a specific place or brand that should not be altered.				
+	16facade Elmers Kelaa Sraghna	ARA	واجهة 16 إلمرز كالا سراغنة	85	The term 'واجهة' means 'facade', and the brand name 'Elmers' is transcribed phonetically. 'كالا سراغنة' refers to the location.				
+	16th November	ARA	16 نوفمبر	95	نوفمبر' is the Arabic equivalent of 'November', and numbers are typically retained in their original form.				
+	17 Etages Snack	ARA	وجبة 17 طابقاً	80	وجبة' translates to 'snack', while 'طابقاً' means 'floors'. The number remains unchanged, but contextually it suggests a multi-level establishment.				
+	175kg	ARA	175 كجم	90	كجم' is the Arabic abbreviation for kilograms, maintaining numerical integrity.				
+	1987 Factory Architecte d'Intérieur	ARA	مصنع 1987 مهندس داخلي	80	مصنع' means 'factory', and the year is kept as-is. The phrase indicates an interior design context with a focus on architecture.				
+	19c	ARA	19 سي	90	The name '19c' is transcribed phonetically into Arabic numerals and letters, maintaining its original form.				
+	1beautywings	ARA	وان بيوتي وينغز	85	1beautywings' is a brand name that has been phonetically transcribed to maintain its identity while adapting to Arabic phonetics.				
+	1ere Annexe administratif	ARA	الملحق الإداري الأول	80	1ere Annexe administratif' translates to 'the first administrative annex', where 'الملحق الإداري' is a common term in Arabic for administrative offices.				
+	1form Store	ARA	متجر وان فورم	85	1form Store' is translated as 'متجر وان فورم', keeping the brand's integrity intact while using the Arabic word for store (متجر).				
+	1globo	ARA	وان غلوبو	90	1globo' is also a brand name and has been phonetically adapted to fit Arabic pronunciation without altering its essence.				
+	1hunna Carwash	ARA	غسيل سيارات 1هونا	85	The name '1hunna' is phonetically transcribed as '1هونا', while 'Carwash' translates to 'غسيل سيارات'. The number and brand integrity are maintained.				
+	1hunna carwash	ARA	غسيل سيارات 1هونا	85	Similar to the previous entry, this maintains the same phonetic transcription and translation for consistency.				
+	1km Gold	ARA	ذهب 1كم	80	Gold' translates directly to 'ذهب', while '1km' is kept as is, reflecting a common understanding of distance in Arabic-speaking regions.				
+	1LAND	ARA	أرض 1لاند	75	Land' translates to 'أرض', but the number remains unchanged. This reflects a common usage of English terms in branding.				
+	1MILLIONSHOP	ARA	متجر مليون واحد	70	Millionshop' is translated as 'متجر مليون واحد', which means 'One Million Shop'. The term retains its commercial context, appealing to local consumers.				
+	1moment Parapharmacy Racine	ARA	فارماسي 1مومنت راسين	85	The name '1moment' is transcribed phonetically as '1مومنت', while 'Parapharmacy' translates to 'فارماسي', a common term in Arabic for pharmacies. 'Racine' is also phonetically transcribed.				
+	1said Gsm	ARA	جي إس إم 1سايد	80	Gsm' remains unchanged as it is an acronym, and '1said' is phonetically transcribed to '1سايد'. This maintains brand integrity.				
+	1st Argan Morocco	ARA	أول أركان المغرب 1ست	90	First' translates to 'أول', which indicates the ranking or order, while 'Argan Morocco' retains its meaning with slight phonetic adjustments.				
+	1st Class Magasin	ARA	متجر الدرجة الأولى 1ست كلاس	75	Class' translates to 'درجة', indicating quality, and ‘Magasin’ means store. The phrase emphasizes high-quality service.				
+	1st Hassan pharmacy	ARA	صيدلية حسن الأولى 1ست هاسن	85	Hassan' remains unchanged as it’s a proper name; however, the word for pharmacy ('صيدلية') is included for clarity in Arabic context.				
+	1st Royal Military High School	ARA	المدرسة العسكرية الملكية الأولى	90	The term 'Royal Military High School' is translated directly, with 'الأولى' indicating 'first'. The translation maintains the formal and prestigious nature of the institution.				
+	1st. Argan Morocco	ARA	أركان المغرب الأول	85	Argan' refers to the argan tree native to Morocco, which is culturally significant. The term 'الأول' indicates it as a first or primary entity in its category.				
+	1XBET	ARA	1إكس بيت		1XBET' is a brand name and does not have a direct translation; it remains unchanged for recognition purposes.				
+	1zemedia	ARA	1زيميديا		Similar to '1XBET', this brand name is transcribed phonetically into Arabic while retaining its original form for branding consistency.				
+	2 B.m.s.	ARA	2 ب.م.س.	80	This abbreviation retains its phonetic representation in Arabic script, ensuring that it remains recognizable while adapting to local writing conventions.				
+	2 Brothers	ARA	الأخوان 2	90	The name '2 Brothers' is translated to 'الأخوان 2', where 'الأخوان' means 'the brothers'. The numeral '2' remains unchanged as it is universally recognized.				
+	2 Brothers Detailing	ARA	تفاصيل الأخوان 2	85	Detailing' refers to a specific service, which translates to 'تفاصيل'. Thus, the full translation becomes 'تفاصيل الأخوان 2', maintaining brand integrity.				
+	2 Brothers Food 94	ARA	طعام الأخوان 94	80	Food' translates to 'طعام', and the number remains unchanged. This reflects a common naming convention in Arabic for food establishments.				
+	2 Days Toubkal Small Group Trek	ARA	رحلة مجموعة صغيرة إلى توبقال لمدة يومين	75	Trek' translates to 'رحلة', and the phrase captures the essence of a small group adventure. Cultural context emphasizes group travel in Morocco.				
+	2 Engineers Residence For Students	ARA	سكن المهندسين للطلاب 2	90	The term 'سكن' (residence) is commonly used in Arabic to refer to student housing. The phrase maintains the original meaning while adapting it for local understanding.				
+	Bekassi Car Location de Voitures	ARA	بيكاسي لتأجير السيارات	90	Location de Voitures' translates to 'لتأجير السيارات', which is a common term for car rental services in Arabic. The brand name 'Bekassi' is transliterated.				
+	2 Engineers Residence for Students	ARA	سكن المهندسين للطلاب 2	90	Residence' translates to 'سكن', and 'for students' is translated as 'للطلاب'. The translation remains consistent with the previous entry due to identical wording.				
+	2 Étoiles Garden	ARA	حديقة النجمتين 2	85	Étoiles' means 'stars', which translates to 'نجوم'. However, in this context, it refers specifically to a rating or quality ('نجمتين'). The word order is adjusted for natural flow in Arabic.				
+	2 Home	ARA	هوم 2	80	The name retains its phonetic sound as it's a brand name. In Arabic script, it becomes هوم, which closely resembles the English pronunciation.				
+	2 Mars Construction	ARA	مارس للبناء 2	85	Construction' translates directly to 'البناء'. The name reflects both the brand identity and its function within the construction industry.				
+	2 Med Fish	ARA	2 ميد فيش	90	The name is transcribed phonetically, maintaining the original brand identity.				
+	2 Plus	ARA	2 بلس	95	Plus' is a common term used in branding and is kept as it is for recognition.				
+	2 Tetouan	ARA	2 تطوان	85	Tétouan' is a city name and has an established Arabic spelling.				
+	2 Tours	ARA	2 تورز	90	Tours' retains its phonetic sound to preserve brand identity.				
+	2/5 2 Mars	ARA	2/5 2 مارس	80	Mars' refers to the month and is translated directly while keeping the numeric format intact.				
+	20 Aout Garden	ARA	حديقة 20 أغسطس	90	The name '20 Aout' is translated to '20 أغسطس', which is the Arabic equivalent of August. The term 'Garden' translates directly to 'حديقة', a common term in Arabic for garden.				
+	20 Août Garden	ARA	حديقة 20 أغسطس	90	Août' is the French word for August, and in Arabic, it translates to 'أغسطس'. Thus, this name also becomes 'حديقة 20 أغسطس'.				
+	20 Aout Map - Garden	ARA	خريطة حديقة 20 أغسطس	85	Map' translates to 'خريطة', making the full translation reflect both the location and its purpose as a garden.				
+	20 Août Palace	ARA	قصر 20 أغسطس	90	Palace' translates directly to 'قصر', maintaining the significance of grandeur associated with palaces in Arab culture.				
+	20 August Place	ARA	ساحة 20 أغسطس	85	Place' can be translated as either 'ميدان' or 'ساحة'; here, we use 'ساحة', which conveys an open area suitable for gatherings.				
+	2016 Car	ARA	سيارة 2016	90	The term 'Car' is translated to 'سيارة', which is the standard Arabic word for car. The year '2016' remains unchanged as it is a numeral.				
+	21 Home	ARA	منزل 21	85	Home' translates to 'منزل', a common term in Arabic for home or house. The number '21' is retained as it is.				
+	21 Victory Residence	ARA	إقامة النصر 21	80	Here, 'Victory' translates to 'النصر', which carries positive connotations of success and triumph in Arabic culture. The word 'Residence' becomes 'إقامة'.				
+	212 E-Commerce	ARA	212 التجارة الإلكترونية	75	The term ‘E-Commerce’ translates to ‘التجارة الإلكترونية’, which is widely recognized in the Arab world. The brand name ‘212’ remains unchanged.				
+	212Assurances	ARA	212 للتأمينات	80	‘Assurances’ translates to ‘للتأمينات’, referring specifically to insurance services, while keeping the brand name intact.				
+	212News	ARA	212نيوز	90	The name '212News' is transcribed phonetically into Arabic as '212نيوز', maintaining the brand's identity while using the Arabic script.				
+	212Tek	ARA	212تيك	90	212Tek' is also phonetically transcribed to '212تيك', preserving its branding and technological connotation in a way that resonates with Arabic speakers.				
+	212tek.ma	ARA	212تك.ما	85	212tek.ma' is adapted to '212تك.ما', where '.ma' indicates Morocco, aligning with local internet domain conventions.				
+	212traveler	ARA	المسافر 212	80	Traveler' translates to 'المسافر', which means traveler in Arabic, providing clarity on the service offered while keeping the brand number intact.				
+	212Traveler	ARA	المسافر 212	75	Travelers' translates similarly but includes an additional phonetic transcription of 'Traveler' for recognition, making it relatable for Arabic speakers.				
+	218Labs	ARA	218لابز	90	Transcription of the brand name '218Labs' into Arabic script, maintaining its phonetic sound.				
+	218LABS	ARA	218لابز	90	Same as above; brand names are typically not translated but transcribed phonetically.				
+	220bis Bd Hassan 2 Rdc Bled Baarib	ARA	220ب شارع حسن 2 ردهة بلاد باريب	85	Bd' is translated to 'شارع' (street), and 'Rdc' is interpreted as 'ردهة' (ground floor). The rest remains in transliteration for clarity.				
+	220bis Bd Hassan 2 Rdc Bled Baarib	ARA	220ب شارع حسن 2 ردهة بلاد باريب	85	Duplicate entry; same translation applies. Localizing street names often involves translating common terms while keeping proper nouns intact.				
+	2235 N-v	ARA	2235 ن-ف	80	N-v' is transcribed phonetically as it does not have a direct meaning in Arabic. The number remains unchanged.				
+	229 Nail Lounge	ARA	لاونج الأظافر 229	90	The term 'Nail Lounge' is translated to 'لاونج الأظافر', which maintains the concept of a relaxing space for nail care. The number '229' remains unchanged as it is part of the brand name.				
+	23 Blanc	ARA	بلانك 23	85	Blanc' translates phonetically to 'بلانك', preserving the brand identity while adapting to Arabic phonetics. The number remains unchanged.				
+	23 Hado Mix Off Mii	ARA	هادو ميكس أوف مِي 23	80	Hado Mix Off Mii' is transcribed phonetically as 'هادو ميكس أوف مِي'. This preserves the original sound and branding, with numbers kept intact.				
+	23 Hado mix off mii	ARA	هادو ميكس أوف مِي 23	80	Hado mix off mii' follows the same transcription rules as above, ensuring consistency in branding across different cases.				
+	23 Pool	ARA	بركة 23	75	Pool' translates to 'بركة', which means pool or pond in Arabic. The number remains unchanged, but this translation may not fully capture any specific branding associated with a pool facility.				
+	233 Nakhil 4	ARA	233 نخيّل 4	90	The name 'Nakhil' is a common Arabic term meaning 'date palms', and the number is retained as it is.				
+	234 Cars	ARA	234 سيارات	85	Cars' translates to 'سيارات', which is a direct translation. The number remains unchanged.				
+	234 cars	ARA	234 سيارات		Similar to the previous entry, this retains the same translation but with lowercase letters. In Arabic, capitalization does not exist in the same way as in English.				
+	235th Barber Street Marrakech	ARA	شارع الحلاقين 235 في مراكش	80	This translates to 'Barber Street' as 'شارع الحلاقين'. The ordinal number is translated into its Arabic form, and 'Marrakech' becomes 'مراكش'.				
+	24 Hour Parking	ARA	موقف سيارات على مدار الساعة	75	24 Hour Parking' translates to 'موقف سيارات على مدار الساعة', which conveys that parking is available at all times.				
+	24-02 Moroccan Golf Range	ARA	نطاق جولف مغربي 24-02	85	The term 'نطاق جولف' translates to 'Golf Range', while 'مغربي' means 'Moroccan'. The numbers are retained as they are part of the brand name.				
+	247 Open Garage	ARA	كراج 247 المفتوح	90	كراج' is the Arabic word for 'Garage', and 'المفتوح' means 'Open'. The number is kept intact as it forms part of the brand identity.				
+	24gaming.ma	ARA	24جيمينغ.ما	95	جيمينغ' is a transliteration of 'gaming', and '.ما' represents the Moroccan domain extension, which remains unchanged.				
+	25 Corner	ARA	زاوية 25	80	زاوية' translates to 'Corner'. The number is preserved as it is essential to the name.				
+	25corner	ARA	25زاوية	80	زاوية' again means 'Corner', with the number preceding it for branding purposes.				
+	25k Jewellery	ARA	مجوهرات 25K	90	The term 'مجوهرات' means 'jewellery' in Arabic, and the number '25k' is retained as it refers to a specific quality of gold.				
+	26 Vape	ARA	فايب 26	85	فايب' is the transliteration of 'Vape', which is commonly used in Arabic-speaking regions. The number remains unchanged.				
+	2974 Asgass Ambarki	ARA	2974 أسغاس أمباركي	80	أسغاس أمباركي' is a phonetic transcription of the original name, maintaining its unique identity while adapting to Arabic script.				
+	2A CUISINISTE	ARA	2A كوزينستة	90	كوزينستة' is a phonetic adaptation of 'CUISINISTE', reflecting culinary expertise while keeping the brand's essence intact.				
+	2A Optic	ARA	2A أوبتيك	90	The name 'Optic' is transliterated to maintain brand identity, while the numeral and letter combination remains unchanged.				
+	2A OPTIC	ARA	2A أوبتيك	90	OPTIC' in uppercase is also transliterated similarly to ensure consistency with branding.				
+	2AC ARCHITECTURE	ARA	2AC عمارة	85	ARCHITECTURE' translates to 'عمارة', which is a common term for architecture in Arabic, ensuring clarity of the business type.				
+	2A-Cuisiniste	ARA	2A-كوزينست	80	The term 'Cuisiniste' refers to a kitchen designer or specialist. It is transliterated as it may not have a direct equivalent in Arabic but retains its meaning through phonetic representation.				
+	2AM Car	ARA	سيارة 2AM	85	In this case, 'Car' translates directly to 'سيارة', which is widely understood across Arabic-speaking regions. The brand name remains intact for recognition.				
+	2AT	ARA	2AT	90	The name '2AT' is a brand and does not have a direct translation. It is transcribed phonetically.				
+	2b ZEN	ARA	2ب زين	85	ZEN' is translated to 'زين', which means 'good' or 'beautiful' in Arabic, while '2b' remains unchanged as it represents the brand.				
+	2b2	ARA	2ب2	90	2b2' is a brand name that retains its original form in Arabic due to its phonetic nature.				
+	2BCreative	ARA	إبداع 2B كرييتف	80	Creative' translates to 'إبداع', meaning creativity, while '2B' remains unchanged for branding purposes.				
+	2bl	ARA	2بلّ	90	bl' can be transliterated as بلّ, maintaining the phonetic sound of the original name.				
+	2blc	ARA	2بلس	90	The name '2blc' is phonetically transcribed to '2بلس' as there is no direct translation. The number and letters are retained for brand recognition.				
+	2BRO MULTI-SERVICES AUTOS	ARA	تو بروا خدمات متعددة للسيارات	85	2BRO' is translated as 'تو بروا', maintaining the phonetic sound, while 'MULTI-SERVICES AUTOS' translates to 'خدمات متعددة للسيارات'. This reflects the service nature of the business.				
+	2c2m Consulting	ARA	استشارات 2سي 2ام	80	2c2m' is phonetically transcribed as 'استشارات 2سي 2ام', keeping its original form for brand identity, with 'Consulting' translated to 'استشارات', which means consulting in Arabic.				
+	2CL Marrakech	ARA	تو سي ال مراكش	90	2CL' is kept as 'تو سي ال', preserving its phonetics, while 'Marrakech' translates directly to its Arabic equivalent, reflecting local cultural significance.				
+	2cl Marrakesh	ARA	تو سي ال مراكش	90	Marrakesh' retains its Arabic spelling similar to the previous entry. The transcription of 'cl' maintains brand integrity while ensuring it sounds familiar in Arabic.				
+	2D Pieces Auto	ARA	قطع غيار 2D أوتو	85	The term 'قطع غيار' means 'spare parts', which is a common term in automotive contexts. The brand name '2D' is retained as it is.				
+	2DS Development	ARA	تطوير 2DS	90	تطوير' translates to 'development'. The brand name '2DS' remains unchanged, reflecting its identity.				
+	2E Trading de Marbre et Granite	ARA	تجارة 2E من الرخام والجرانيت	80	تجارة' means 'trading', and the phrase retains the original materials (marble and granite) for clarity. The brand name '2E' is preserved.				
+	2eme Annexe Administratif	ARA	الملحق الإداري الثاني 2	75	الملحق الإداري الثاني' translates to 'the second administrative annex'. The French term is kept in transliteration due to its specific context.				
+	2h Auto Pro	ARA	2ه أوتو برو	90	The name is phonetically transcribed to maintain brand identity, with 'أوتو' meaning 'auto' in Arabic.				
+	2IS Bureau	ARA	2آي إس بيورو	85	بيورو' is a common term for 'bureau', and the rest of the name is phonetically transcribed.				
+	2jprint	ARA	2جي برينت	90	برينت' translates to 'print', while the rest remains phonetic to preserve brand recognition.				
+	2l2m	ARA	2ل 2م	95	ل' and 'م' are phonetic representations of letters, maintaining the original branding without translation.				
+	2L2M Consulting	ARA	استشارات 2ل 2م	80	استشارات' means 'consulting', while '2ل 2م' retains its phonetic form for brand consistency.				
+	2launch Academy	ARA	أكاديمية 2لانش	90	The name '2launch' is phonetically transcribed to maintain its brand identity, while 'Academy' translates directly to أكاديمية.				
+	2loupes	ARA	2لوبيس	85	Loupes' is a specific term that refers to magnifying glasses; it is kept in its phonetic form for brand recognition.				
+	2m Tv	ARA	تي في 2م	95	Tv' is a common abbreviation for television and remains unchanged, while '2m' is transcribed phonetically.				
+	2MAG Agence Digitale	ARA	وكالة 2ماج الرقمية	90	Agence Digitale' translates directly to وكالة رقمية, maintaining the professional context of the name.				
+	2mars	ARA	مارس 2	80	Mars' can refer to both the planet and the month; here it retains its phonetic transcription with '2' preceding it for branding purposes.				
+	2mars Casablanca	ARA	2مارس كازابلانكا	90	The name '2mars' is phonetically transcribed to '2مارس', maintaining the brand's identity, while 'Casablanca' is translated as 'كازابلانكا', a common Arabic rendering of the city.				
+	2mars Casablanca	ARA	2مارس كازابلانكا	90	Same as above; repetition indicates consistency in branding.				
+	2MED FISH	ARA	فش 2ميد	85	FISH' is transliterated to 'فش', and 'MED' becomes 'ميد'. This maintains the brand's phonetic sound while adapting it for Arabic speakers.				
+	2MS Print	ARA	برينت 2ام اس	85	Print' is transliterated to 'برينت', and 'MS' remains as it is. The translation keeps the original branding intact.				
+	2N Assistance	ARA	أسيستانس 2إن	80	Assistance' translates to 'أسيستانس', preserving its meaning while keeping the brand recognizable. The number and letter combination are retained for brand integrity.				
+	2N Auto	ARA	تو أوتو	90	The name '2N Auto' is phonetically transcribed to 'تو أوتو', maintaining the brand's identity while adapting it to Arabic phonetics.				
+	2NAutoMoto	ARA	تو أوتوموتو	85	2NAutoMoto' is transcribed as 'تو أوتوموتو', preserving the original sound and meaning related to automobiles and motorcycles.				
+	2nd HOME	ARA	المنزل الثاني	80	2nd HOME' translates directly to 'المنزل الثاني', where 'المنزل' means home, reflecting a common term in Arabic for residence.				
+	2ND Home	ARA	المنزل الثاني	80	2ND Home' has the same translation as above due to its identical meaning, emphasizing familiarity with the concept of a second home.				
+	2nd Home	ARA	المنزل الثاني	80	2nd Home' again translates to 'المنزل الثاني', reinforcing consistency in branding across translations.				
+	2P Event Maroc	ARA	2P إيفنت المغرب	90	The term 'إيفنت' is a transliteration of 'Event', commonly used in Arabic to refer to events or gatherings, while 'المغرب' means Morocco.				
+	2P Shop	ARA	2P شوب	85	شوب' is a phonetic transcription of 'Shop', widely understood in the Arab world as referring to retail stores.				
+	2s Energie	ARA	2س إنرجي	95	إنرجي' is a common transliteration for 'Energy', which retains its meaning and context in Arabic.				
+	2S ENERGIE	ARA	2س إنرجي	95	إنرجي' remains consistent with the previous entry, maintaining brand integrity and recognition.				
+	2SID Technologies	ARA	تكنولوجيات 2SID	90	تكنولوجيات' translates to 'Technologies', ensuring clarity while keeping the brand name intact.				
+	2SL	ARA	2إس إل	90	Transcribed phonetically as '2إس إل' to maintain brand identity.				
+	2ssbtp	ARA	2أس أس بي تي بي	85	Phonetic transcription of the brand name, preserving its original sound.				
+	2TechDesign	ARA	تصميم 2تيك	80	Tech' is translated to 'تيك' while keeping the number for branding purposes.				
+	2wheels Bike	ARA	دراجة 2ويلز	75	Wheels' is translated to 'ويلز', and 'Bike' becomes 'دراجة', a common term in Arabic.				
+	2WLS	ARA	2دبليو أل إس	90	WLS' is transcribed as 'أل إس', maintaining phonetic integrity.				
+	2YAZ	ARA	2ياز	90	The name '2YAZ' is a brand and is phonetically transcribed into Arabic as '2ياز', maintaining its original form.				
+	2zcar	ARA	2زكار	90	2zcar' is also a brand name, transcribed as '2زكار' to preserve its phonetic sound in Arabic.				
+	3 day tour from Marrakech	ARA	جولة لمدة 3 أيام من مراكش	85	3 day tour from Marrakech' translates directly to 'جولة لمدة 3 أيام من مراكش', where 'جولة' means tour, and the structure follows standard Arabic syntax.				
+	3 Days Desert Tour From Marrakech	ARA	جولة صحراوية لمدة 3 أيام من مراكش	85	3 Days Desert Tour From Marrakech' translates to 'جولة صحراوية لمدة 3 أيام من مراكش'. The term 'صحراوية' (desert) adds specificity about the type of tour.				
+	3 Days Morocco Desert Tours From Marrakech	ARA	جولات صحراوية في المغرب لمدة 3 أيام من مراكش	80	3 Days Morocco Desert Tours From Marrakech' becomes 'جولات صحراوية في المغرب لمدة 3 أيام من مراكش'. This translation emphasizes that these are tours within Morocco's desert regions.				
+	3 March Theater	ARA	مسرح 3 مارس	90	The term 'مسرح' means 'theater' in Arabic, and '3 مارس' is a phonetic transcription of '3 March', maintaining the original name's significance.				
+	3 Mars Gym	ARA	صالة رياضية 3 مارس	90	صالة رياضية' translates to 'gym', while '3 مارس' is phonetically transcribed, preserving brand identity.				
+	3 Mars Open Space	ARA	مساحة مفتوحة 3 مارس	85	مساحة مفتوحة' means 'open space', with '3 مارس' kept as is for brand recognition.				
+	3 Roses Cremerie	ARA	كريميري 3 روزس	80	كريميري' refers to a creamer or ice cream shop, and '3 روزس' is a phonetic adaptation of the brand name.				
+	3 Steps School	ARA	مدرسة 3 ستيبس	90	مدرسة' means 'school', while '3 ستيبس' retains the original branding through phonetic transcription.				
+	3+ Coofee	ARA	كافيه 3+	90	The name 'Coofee' is a phonetic transcription of 'Coffee', and the number '3+' is retained as it is part of the brand identity.				
+	301 Avenue Lahraouine	ARA	301 شارع لحرواين	85	Avenue' translates to 'شارع' (street) in Arabic, while 'Lahraouine' is transliterated directly as it appears to be a proper noun.				
+	307 Hay Inara	ARA	307 حي إنارة	80	Hay' translates to 'حي' (neighborhood), and 'Inara' is transliterated. The number remains unchanged for identification purposes.				
+	32 Yami	ARA	32 يامي	95	Yami' is likely a brand or specific term that does not have an Arabic equivalent, so it is kept in its original form.				
+	33 Factory	ARA	33 مصنع	90	Factory' translates to 'مصنع', which conveys the meaning clearly in Arabic while retaining the identifying number.				
+	33 Optic	ARA	33 أوبتيك	90	The name 'Optic' is transcribed phonetically as 'أوبتيك', maintaining the brand's identity while using Arabic numerals for clarity.				
+	33 Pare Brise	ARA	33 بار بريز	85	Pare Brise' refers to windshields in French, and is transcribed as 'بار بريز'. The use of Arabic numerals helps retain the original branding.				
+	33 Store	ARA	33 ستور	80	Store' is translated to '(المتجر)' which means 'the store', while keeping the number intact. This provides clarity for Arabic speakers.				
+	.33optic	ARA	.33 أوبتيك	90	This transcription maintains the brand's integrity by using a phonetic approach, with Arabic numerals and letters reflecting its original form.				
+	33-34 Shop	ARA	(المتجر) 33-34	80	Shop' translates to '(المتجر)', indicating a retail space. The hyphenated numbers are preserved for brand recognition.				
+	33Factory	ARA	33 مصنع	90	The term 'مصنع' (factory) is a direct translation, maintaining the brand's numeric identity.				
+	33OPTIC	ARA	33 أوبتيك	85	أوبتيك' is a phonetic transcription of 'OPTIC', preserving the brand name while adapting it to Arabic script.				
+	34 Barber	ARA	34 حلاق	90	حلاق' means barber in Arabic, providing a clear understanding of the service offered.				
+	34 Food& Drinks	ARA	34 طعام ومشروبات	80	طعام ومشروبات' translates to food and drinks, which conveys the essence of the establishment clearly.				
+	343 Nassim	ARA	343 نسيم	90	نسيم' is a common Arabic name meaning breeze; here it serves as a proper noun alongside the number.				
+	36 Digital Label	ARA	ملصق 36 الرقمي	85	The term 'Digital Label' is translated to 'الرقمي' which means digital, and 'ملصق' means label. The number remains unchanged as it is part of the brand name.				
+	36 Mouassine Concept Store	ARA	متجر مفهوم 36 موازين	80	Mouassine' is a proper noun referring to a specific area or concept, thus it is transliterated. 'Concept Store' translates to 'متجر مفهوم', maintaining the integrity of the brand.				
+	360 Printing Solutions	ARA	حلول الطباعة 360	90	Printing Solutions' translates directly to 'حلول الطباعة'. The number remains unchanged as it forms part of the brand identity.				
+	366 Cafe	ARA	كافيه 366	95	Cafe' is commonly used in Arabic as كافيه, and the number stays intact for branding purposes.				
+	369 car	ARA	سيارة 369	90	Car' translates to 'سيارة', while the number remains unchanged for consistency with branding.				
+	369 Car	ARA	369 كار	90	The name 'Car' is a common term in Arabic, and the number '369' is retained as it is part of the brand identity.				
+	36rue Elmourabitin Oujda	ARA	36 شارع المورابطين وجدة	85	rue' translates to 'شارع', which means street. 'Elmourabitin' is transliterated as it refers to a specific name, while 'Oujda' remains unchanged as it's a city name.				
+	36STYLE	ARA	36ستايل	80	STYLE' is transliterated to maintain brand recognition, while the number remains unchanged.				
+	376 Izdihar Extension	ARA	376 امتداد إزدهار	90	Izdihar' translates to 'إزدهار', meaning prosperity or flourishing, which may have positive connotations in Arabic culture.				
+	3A Sweet	ARA	3A سويتس أو 3A حلوى	75	Sweet' can be translated as either 'حلوى' (confectionery) or transliterated as 'سويتس'. The choice depends on whether it's referring to sweets generally or a specific brand style.				
+	3a9ar	ARA	عقار	90	The term 'عقار' translates to 'property' or 'real estate', which is a common term in Arabic.				
+	3aaaay	ARA	عياي	80	عياي' is a phonetic transcription of the original name, as it does not have a direct translation. It may refer to a specific brand or concept.				
+	3achaba Staduim	ARA	استاد عشبى	85	استاد عشبى' means 'grass stadium', which captures the essence of the venue while maintaining its identity.				
+	3alamsat	ARA	علامسات	75	This is a phonetic transcription as there is no direct translation; it retains the sound and feel of the original name.				
+	3alamsat.c.la	ARA	علامسات.سي.لا	70	This represents an online domain or brand name, transcribed phonetically to maintain its integrity in Arabic.				
+	3ali	ARA	علي	90	The name '3ali' is a common Arabic name, transliterated as 'Ali', which means 'exalted' or 'noble'. It is widely used in Arab culture.				
+	3ali Shop	ARA	متجر علي	85	Shop' translates to 'متجر', making it clear that this is a retail establishment. The name retains its cultural significance by using the personal name Ali.				
+	3alla9a Store	ARA	متجر علاقة	80	Store' translates to 'متجر'. The term 'علاقة' (pronounced as 3alla9a) can mean connection or relationship, which may imply a store that focuses on personal connections or relationships.				
+	3am Lwalida	ARA	عم الوالدة	90	Lwalida' refers to mother in Arabic, and the phrase means 'Uncle of the Mother'. This reflects familial ties, which are significant in Arab culture.				
+	3amat Nabila	ARA	عمة نبيلة	90	Nabila' is a feminine given name meaning noble. The term 'عمة' means aunt, indicating a family relationship that holds importance in social structures within Arab communities.				
+	3ami	ARA	عمي	90	The term 'عمي' (Ami) translates to 'my uncle' in Arabic, commonly used as a term of endearment or respect.				
+	3amo	ARA	عمو	85	عمو' (Amo) is an informal way to refer to an uncle, often used affectionately among friends and family.				
+	3amom	ARA	عموم	80	عموم' (Amom) can be interpreted as 'general' or 'common', but it may also refer to the concept of uncles collectively in some contexts.				
+	3amr L9ayd	ARA	عمرو القيد	75	عمرو القيد' (Amr Al-Qaid) is a phonetic transcription that maintains the original name's sound while adapting it for Arabic speakers. The name might not have a direct meaning but could represent a person's name.				
+	3amti rabi3a	ARA	عمت ربيعة	80	The phrase translates to 'My aunt Rabi'a', where 'ربيعة' is likely a personal name. The use of familial terms like 'عمة' (Aunt) reflects cultural values around family ties.				
+	3anata and Zarba	ARA	عانات وزرابة	85	"عانات"" is a phonetic transcription of '3anata', while ""وزرابة"" represents 'Zarba'. The use of 'و' (and) connects the two names, maintaining their original structure."				
+	3antar	ARA	عنتار	90	عنتار' is a direct phonetic transcription of '3antar', preserving its sound and form in Arabic.				
+	3anti	ARA	عانتي	90	عانتي' is a phonetic representation of '3anti', keeping the pronunciation intact for Arabic speakers.				
+	3aqar.ma	ARA	عقار.ما	80	عقار.ما' maintains the brand name's integrity with '.ما' representing the Moroccan domain, which adds local context to the translation.				
+	3ar3ar	ARA	عرعار	85	عرعار' is a phonetic transcription of '3ar3ar', reflecting its original sound while adapting it to Arabic script.				
+	3arche	ARA	أركي	90	The name '3arche' is phonetically transcribed to 'أركي', maintaining its original sound while adapting it to Arabic phonetics.				
+	3arid	ARA	عاريد	85	3arid' is transliterated as 'عاريد', which closely resembles the original pronunciation and fits well within Arabic phonetic structures.				
+	3arost Chamal	ARA	عروس الشمال	80	This translates to 'Bride of the North', a common phrase that may refer to a place known for its beauty or significance in northern regions, thus providing cultural context.				
+	3asimat Dajaj	ARA	عاصمة دجاج	75	Translates directly to 'Capital of Chickens'. This name might be used humorously or colloquially, reflecting local culture around poultry farming.				
+	3atif Tolorie	ARA	عاطف تولوري	80	Phonetically transcribed as 'عاطف تولوري', preserving the brand's identity while ensuring it remains recognizable in Arabic-speaking contexts.				
+	3atriat Souss	ARA	عطريات سوس	90	The term 'عطريات' translates to 'fragrances' or 'perfumes', and 'سوس' refers to the Souss region in Morocco, known for its rich culture.				
+	3attar.ma Store	ARA	متجر عطار.ما	85	عطار' means 'perfumer' or 'herbalist', and '.ما' is a domain suffix indicating Moroccan identity, thus maintaining brand integrity.				
+	3awatif	ARA	عواطف		This name translates directly as it is a common Arabic word meaning 'emotions'. It retains its original form due to cultural significance.				
+	3bd Lah	ARA	عبد الله	95	A direct translation of the name meaning 'Servant of God', which is a common Arabic name with deep religious significance.				
+	3BFORM	ARA	ثري بي فورم	80	Transcribed phonetically while keeping the brand's essence intact; it does not have a direct translation but maintains recognition in the market.				
+	3bika & Hamouda Shop	ARA	متجر 3بيكا وحمودا	85	The name '3bika' is transliterated as '3بيكا', and 'Hamouda' remains the same due to its common usage. The term 'Shop' is translated to 'متجر', which is a standard term for a store in Arabic.				
+	3Brothers Food	ARA	طعام 3إخوة	80	Brothers' translates to 'إخوة', while 'Food' becomes 'طعام'. The number '3' is retained as it represents the brand identity.				
+	3Brothers.food	ARA	3إخوة.فود	75	Brothers.food' retains its structure, with '.food' transliterated as '.فود'. This maintains the brand's online presence while adapting it for Arabic speakers.				
+	3chibati	ARA	شيباتي 3شيباتي	90	Chibati' is transliterated directly as it appears to be a unique brand name, and the number remains unchanged.				
+	3CI	ARA	سي آي 3CI	95	CI' is kept intact since it's likely an abbreviation or brand identifier, while the number precedes it for clarity.				
+	3clabcom	ARA	3كلابكوم	90	Transcription of the brand name '3clabcom' into Arabic, maintaining phonetic integrity.				
+	3CLabcom	ARA	3سي لابكوم	90	Transcription of the brand name '3CLabcom', preserving its original pronunciation.				
+	3CMI	ARA	3سي إم آي	90	3CMI' is transcribed phonetically to maintain brand identity.				
+	3d Cat Sarl Impression 3d	ARA	شركة 3دي كات انطباع 3دي س.ر.ل.	85	Impression' translates to 'انطباع', and 'Sarl' is a common abbreviation for limited liability companies in Arabic-speaking regions.				
+	3D CAT SARL Impression 3D	ARA	شركة 3دي كات انطباع 3دي س.ر.ل.	85	Sarl' remains as an abbreviation, while other terms are translated or transcribed for clarity and recognition.				
+	3D Com	ARA	3دي كوم	90	The name '3D Com' is transcribed phonetically into Arabic as '3دي كوم'. The term 'Com' is commonly used in tech-related names and retains its original sound.				
+	3D Events	ARA	3دي إيفنتس	90	Events' is a widely recognized term in both English and Arabic, often used in the context of gatherings or occasions. It is transcribed to maintain phonetic similarity.				
+	3D Robuste	ARA	روبوست 3دي		The word 'Robuste' suggests strength or robustness, which can be translated as 'روبوست'. This maintains the brand's identity while conveying its meaning.				
+	3D Smart Factory	ARA	المصنع الذكي 3دي	85	This translation emphasizes the concept of a smart factory ('المصنع الذكي') while keeping the '3D' intact for brand recognition.				
+	3D Solutions	ARA	حلول 3دي	80	The term 'Solutions' translates to 'حلول', which conveys problem-solving capabilities, an important aspect for businesses in this sector.				
+	3D Travel's & Events Marrakech	ARA	مراكش 3D ترافيلز وفعاليات	85	The name is transcribed to maintain brand integrity, with 'ترافيلز' (Travels) and 'فعاليات' (Events) being common terms in Arabic.				
+	3d Vision Marchica	ARA	مارشيكا 3d فيجن	80	فيجن' (Vision) is a commonly used term in branding, while 'مارشيكا' refers to the location, ensuring local relevance.				
+	3dayma Shop	ARA	متجر 3دايما	90	دايما' means 'always', making it relatable; the shop aspect is clearly indicated by 'متجر'.				
+	3design	ARA	تصميم 3	75	The term 'تصميم' means design. The number retains its original form for brand recognition.				
+	3Di.Store	ARA	متجر 3دي	80	دي' represents the phonetic sound of 'Di', while 'متجر' indicates it's a store, maintaining clarity and brand identity.				
+	3doul	ARA	3دول	90	The name '3doul' is transcribed phonetically into Arabic as '3دول', maintaining its original sound.				
+	3D-Robuste	ARA	3دي روبوست	85	3D-Robuste' is a brand name and is transliterated to '3دي روبوست' to preserve its phonetic characteristics.				
+	3em	ARA	ثلاثة إيم	80	3em' translates to 'ثلاثة إيم', where 'إيم' represents the English letter pronunciation, reflecting common usage in branding.				
+	3Eme Annexe Adminstrative	ARA	الملحق الإداري الثالث	75	3Eme Annexe Administrative' translates to 'الملحق الإداري الثالث', which means the third administrative annex, emphasizing its organizational context.				
+	3ÈME Store	ARA	المتجر الثالث	80	3ÈME Store' translates to 'المتجر الثالث', indicating it is the third store in a series, which may be relevant for customers familiar with the brand's hierarchy.				
+	3F PIECES AUTO	ARA	3F بييس أوتو	90	The name is transcribed phonetically to maintain brand integrity, as 'PIECES AUTO' refers to auto parts.				
+	3F Spare Parts	ARA	3F قطع غيار	85	Spare Parts' translates directly to 'قطع غيار', which is a common term in Arabic for automotive spare parts.				
+	3fbtp	ARA	3فبتب	80	3fbtp' is a brand name and is transcribed phonetically without translation.				
+	3fc Fiduciaire Freedom for Consulting	ARA	3FC فيديشيار فريدوم للاستشارات	90	Fiduciaire' remains unchanged as it refers to fiduciary services, while 'Freedom for Consulting' translates directly.				
+	3FC. Fiduciaire Freedom For Consulting	ARA	3FC. فيديشيار فريدوم للاستشارات	90	.Similar to the previous entry, this maintains the brand's identity with slight variations in punctuation but keeps the meaning intact.				
+	3gcom	ARA	3جكوم	90	Transcribed phonetically to maintain brand identity.				
+	3GCOm	ARA	3جيكوم	90	Phonetic transcription, preserving the original branding style.				
+	3globale Service	ARA	خدمة 3غلوبيال	85	Service' is translated to 'خدمة', while 'globale' is transcribed phonetically.				
+	3IMRAN	ARA	3إمران	95	Imran' is a common name in Arabic, thus it retains its phonetic form.				
+	3INAYA FOOD	ARA	طعام 3عناية	80	Food' translates to 'طعام', while 'Inaya' is kept phonetically for brand recognition.				
+	3INAYA Food	ARA	طعام 3إنيا	90	The name '3INAYA' is transcribed phonetically as 'إنيا', while 'Food' translates to 'طعام'. The number '3' represents the Arabic letter ع (Ayn), which is common in transliterations.				
+	3ine Sba3e	ARA	سبعة 3عين	85	Sba3e' means 'seven' in Arabic, and it is a play on words with the phonetic transcription of '3ine'. The number again represents the letter ع.				
+	3JM Agadir	ARA	أكادير 3جم	80	Agadir' remains unchanged as it refers to a specific place. The brand name 'JM' is transcribed phonetically as 'جم', maintaining its identity.				
+	3lali lil9asse	ARA	للقصة 3لالي	75	Lil9asse' translates to 'for the story', while ‘lil’ indicates possession or purpose. The brand name retains its phonetic form with slight adjustments.				
+	3mi Fath	ARA	فتح 3مي	80	Fath' means 'opening', and ‘mi’ is transcribed from the original. This reflects a common theme of hospitality or welcome in Arabic culture.				
+	3mi Mstafa	ARA	ثلاثة مي مصطفى	85	The name '3mi' is phonetically transcribed as 'ثلاثة مي', where 'مي' refers to a unit of measurement (meters) in Arabic. 'Mstafa' is a common Arabic name, transliterated directly.				
+	3mimi Shop	ARA	متجر 3ميمي	90	Shop' translates to 'متجر', while '3mimi' is retained for brand identity and phonetic similarity.				
+	3miyr	ARA	ثلاثة ميار	80	3miyr' is phonetically transcribed as 'ثلاثة ميار'. The number retains its form, while the rest of the name follows Arabic phonetics.				
+	3mr bolis	ARA	عمر بوليس	75	3mr' is translated to 'عمر', a common Arabic name, and 'bolis' is transliterated as it may refer to a specific brand or term.				
+	3mr Bolis	ARA	عمر بوليس	75	Bolis' remains consistent with previous translation but includes an alternative spelling '(بوليص)' for clarity in pronunciation.				
+	3Ms Agency	ARA	وكالة 3Ms	90	The name '3Ms' is retained as a brand, with 'Agency' translated to 'وكالة', which means agency in Arabic.				
+	3N Eloujdi Asfar	ARA	3N الوجدي الأصفر	85	Here, 'Eloujdi Asfar' translates to 'الوجدي الأصفر', meaning 'the yellow one'. The number retains its form for branding purposes.				
+	3nd Baba - Fast Grill	ARA	بابا 3ند-جريل سريع	80	In this case, 'Baba' is kept as it is a common term of endearment. The phrase ‘Fast Grill’ translates to ‘جريل سريع’, maintaining the context of quick service.				
+	3niba's House	ARA	منزل 3نيبة	90	House' translates to 'منزل', while the name ‘3niba’ remains intact for brand recognition.				
+	3omar Hilali	ARA	عمر الهلالي	90	The name '3omar' is phonetically transcribed to 'عمر', which is a common Arabic name. 'Hilali' translates to 'الهلالي', indicating a familial or regional connection.				
+	3P Solution	ARA	حلول 3P	85	3P' remains unchanged as it is part of the brand identity, while 'Solution' translates to 'حلول', which means solutions in Arabic.				
+	3Print	ARA	طباعة 3	80	The term 'Print' translates to '(طباعة)', but the brand name retains its original form for recognition purposes. The number and English letters are kept intact.				
+	3R Impression	ARA	انطباع 3R	80	Here, 'Impression' translates to 'انطباع'. The brand identifier '3R' remains unchanged for branding consistency.				
+	3rd Police District	ARA	المنطقة الشرطية الثالثة	90	This translation uses standard Arabic terms: ‘المنطقة’ (district) and ‘الشرطية’ (police), with ‘الثالثة’ indicating the ordinal number third.				
+	3S Emballage	ARA	3S إمبالاج	90	Emballage' means packaging in French, which is commonly used in Arabic-speaking regions. The brand name '3S' remains unchanged.				
+	3s Modes	ARA	3س مودز	95	Modes' refers to styles or fashions, and the phonetic transcription of '3s' maintains its branding while adapting to Arabic script.				
+	3S.MA Consulting	ARA	استشارات 3S.MA	85	Consulting' translates to استشارات (Istisharat) in Arabic, but the brand name '3S.MA' remains intact for recognition.				
+	3sk Parts Auto	ARA	قطع غيار 3SK أوتو	80	Parts Auto' translates to قطع غيار أوتو (Qita'a Ghayar Auto), meaning auto parts, while keeping the brand '3sk' unchanged for consistency.				
+	3Sk Parts Auto	ARA	قطع غيار 3Sk أوتو	85	The name '3Sk' is retained as it is a brand, while 'Parts Auto' translates to 'قطع غيار أوتو', meaning auto parts.				
+	3Srie	ARA	3سريه	90	3Srie' is phonetically transcribed into Arabic as '3سريه', maintaining the original sound and brand identity.				
+	3t Travel-MTS	ARA	ترافل 3T - MTS	80	Travel-MTS' is translated to 'ترافل - MTS', where 'MTS' remains unchanged due to its branding significance.				
+	3W Academy Maroc	ARA	أكاديمية 3W المغرب	85	Academy Maroc' translates to 'أكاديمية المغرب', with 'Maroc' being the French term for Morocco, commonly used in local contexts.				
+	3WT	ARA	ثلاثة WT	75	3WT' is phonetically transcribed as 'ثلاثة WT'. The number retains its form, while the word for three can be added for clarity.				
+	3zawateam Records	ARA	سجلات 3زواة تيم	85	The name '3zawateam' is phonetically transcribed to maintain brand identity, while 'Records' translates to 'سجلات', a common term for music labels.				
+	3ziya	ARA	3زيا	90	3ziya' is directly transcribed as it appears, preserving the brand's phonetic sound without translation.				
+	3ziza	ARA	3زيزا	90	3ziza' is also phonetically transcribed. The number '3' represents an Arabic letter (ع) in transliteration, which is commonly understood in this context.				
+	4 A Car	ARA	4 أ سيارة	80	The phrase 'A Car' translates to 'سيارة'. The number '4' remains unchanged as it serves as part of the brand name.				
+	4 CEREALES	ARA	4 حبوب	75	CEREALES' translates to 'حبوب', meaning cereals or grains. The number remains unchanged for branding purposes.				
+	4 Elec	ARA	4 إلك	90	The name '4 Elec' is transcribed phonetically into Arabic as '٤ إلك', maintaining the original brand identity while using Arabic numerals.				
+	4 fishing ports	ARA	4 موانئ صيد	85	Fishing ports' translates to 'موانئ صيد', which is a common term in Arabic for places where fishing activities occur. The numeral '4' remains unchanged.				
+	4 recyclage	ARA	4 إعادة تدوير	80	Recyclage' is translated to 'إعادة تدوير', which means recycling in Arabic. This reflects the concept of sustainability, important in many cultures.				
+	4 seasons	ARA	4 فصول السنة	90	Seasons' translates to 'فصول السنة'. This phrase is widely understood and culturally significant, referring to the four distinct periods of the year.				
+	4 SEASONS BARBERSHOP	ARA	حلاق 4 فصول السنة	85	Barbershop' translates to 'حلاق', and the brand name retains its phonetic structure with an added article for clarity in Arabic.				
+	4 Seasons Barbershop	ARA	فور سيزونز باربرشوب	85	The term 'Barbershop' is transliterated to maintain brand identity, while 'الأربعة مواسم' translates to 'the four seasons'.				
+	4 Seasons Shop	ARA	متجر الأربعة مواسم	90	متجر' means 'shop', and 'الأربعة مواسم' translates directly as 'the four seasons', preserving the brand's essence.				
+	4 Ventitravel	ARA	فنتي ترافل	80	This name is phonetically transcribed as it appears to be a unique brand name without direct translation.				
+	4 You School	ARA	مدرسة لك أربعة	75	Translates to 'School for you four', maintaining the original intent but slightly altering structure for clarity in Arabic.				
+	4.ulpress Bureau	ARA	بروكر أول بريس	70	Phonetic transcription of the brand name, with an adaptation of 'Bureau' into Arabic context.				
+	40 Boys	ARA	أربعون صبيًا	90	The name '40 Boys' is translated to 'أربعون صبيًا', which directly translates to 'Forty Boys'. The number 40 is significant in various cultures, often symbolizing completeness.				
+	400M	ARA	400 متر	95	400M' refers to a distance of 400 meters. In Arabic, it is simply transliterated as '٤٠٠ متر', maintaining the numerical representation common in both languages.				
+	404 Agadir Gaming Club	ARA	نادي الألعاب 404 أغادير	85	404 Agadir Gaming Club' is translated as 'نادي الألعاب 404 أغادير'. The term 'نادي الألعاب' means gaming club, and the city name Agadir remains unchanged due to its proper noun status.				
+	404 friterie	ARA	فريتري 404	80	404 friterie' retains its brand identity with a direct transcription as 'فريتري 404'. The word ‘friterie’ refers to a place that sells fries, commonly understood in many Arabic-speaking regions.				
+	404 Friterie	ARA	فريتري 404	80	404 Friterie' also transcribes similarly as 'فريتري 404', but here it emphasizes the capitalization of Friterie indicating it's part of the brand name.				
+	432 audio	ARA	432 أوديو	90	The name 'audio' is a common term in Arabic, and it retains its phonetic form. The number '432' is kept as is.				
+	44 Avenue Tiguert	ARA	44 أفينيو تيغرت	85	Avenue' translates to 'أفينيو', which is commonly used in urban contexts. 'Tiguert' remains phonetically transcribed.				
+	44 streetshop	ARA	44 شتريت شوب	80	Streetshop' is not a standard term in Arabic; thus, it has been phonetically transcribed while maintaining the original structure.				
+	441B	ARA	441 باء	95	B' is translated to 'باء', following the Arabic alphabet conventions for letters.				
+	441b	ARA	441 باء صغيرة	95	b' as a lowercase letter can be represented as 'باء صغيرة', indicating its size distinction in Arabic script.				
+	44-B-Moto Location Moto	ARA	موقع 44-ب-موتو	90	The name is transcribed phonetically, maintaining the brand integrity of 'B-Moto' while translating 'Location' to 'موقع', which is a common term for location.				
+	44-B-MOTO Location Moto	ARA	موقع 44-ب-موتو	90	Similar to the previous entry, this maintains the phonetic transcription of 'B-MOTO' and translates 'Location' as 'موقع'. The capitalization in the original suggests it may be a brand.				
+	44km Marrakech Aguergour al Haouz	ARA	44 كم مراكش أغيرغور الحوز	85	km' is translated into Arabic numerals, while 'Marrakech' becomes 'مراكش', and both 'Aguergour' and 'al Haouz' are transliterated. This reflects local geographical naming conventions.				
+	4541ab	ARA	4541أب	80	4541ab' is transcribed directly using Arabic numerals with an Arabic letter at the end. It retains its original form as it appears to be a code or identifier rather than a traditional name.				
+	47 House	ARA	المنزل 47	85	House' translates to 'المنزل', which means house in Arabic. The number remains unchanged but placed before the word for clarity in context.				
+	48 Car	ARA	48 كار	90	The name '48 Car' is phonetically transcribed into Arabic as '٤٨ كار', maintaining the original brand identity while using Arabic numerals.				
+	48car.ma	ARA	48كار.ما	85	48car.ma' is transcribed to '٤٨كار.ما', preserving the brand's web address format and phonetic sound in Arabic.				
+	4A Work Distrib	ARA	4أ توزيع العمل	80	4A Work Distrib' translates to '٤أ توزيع العمل', where 'توزيع العمل' means 'work distribution'. The number retains its form for branding purposes.				
+	4C Print	ARA	4سي برنت	85	4C Print' becomes '٤سي برنت', keeping the phonetic sound of the brand intact while using Arabic script.				
+	4D Business Consulting	ARA	4دي استشارات الأعمال	80	4D Business Consulting' translates to '٤دي استشارات الأعمال', where 'استشارات الأعمال' means 'business consulting'. The number remains unchanged for brand recognition.				
+	4D ORTHO	ARA	4دي أورثو	90	The name '4D ORTHO' is transcribed phonetically into Arabic as '4دي أورثو'. The term 'ORTHO' refers to orthopedics or orthodontics, which is commonly understood in the medical field.				
+	4Dcar	ARA	4دي كار	90	4Dcar' is transcribed as '4دي كار', maintaining the brand's identity. The term 'car' is universally recognized and does not require translation.				
+	4DORTHO	ARA	4دي أورثو	90	4DORTHO' follows the same transcription as '4D ORTHO', ensuring consistency in branding while retaining its phonetic sound.				
+	4-ELEC	ARA	4-إلكتريك أو 4-إلكترونيات (اختياري)	85	4-ELEC' can be translated to either '٤-إلكتريك' or more contextually as '٤-إلكترونيات'. The prefix indicates a focus on electronics, which may resonate with local audiences familiar with technology.				
+	4eme CMC	ARA	4إيم سي إم سي	90	The name is transcribed phonetically to maintain brand identity, as there is no direct Arabic translation.				
+	Bekkal Auto-École	ARA	بيكال مدرسة تعليم القيادة	90	Auto-École' translates to 'مدرسة تعليم القيادة', meaning driving school, which is widely understood in Arabic-speaking regions. The brand name 'Bekkal' is transliterated.				
+	Bekkali Rachid	ARA	بكالي رشيد	95	Rachid' is a proper noun and remains unchanged; it retains its identity in the translation.				
+	4Gestion Academy	ARA	أكاديمية 4جيستيون	85	Academy' translates directly to 'أكاديمية', while 'Gestion' is adapted phonetically. The number '4' remains unchanged for brand recognition.				
+	4hand Auto Services	ARA	خدمات أوتو 4هاند	80	Auto Services' translates to 'خدمات أوتو', and the brand name '4hand' is kept intact for recognition.				
+	4HOSTIA.Com	ARA	فورهوستيا.كوم	90	The domain name is transliterated to maintain its online presence, with '.com' being a common suffix in Arabic-speaking regions.				
+	4-Infocam Freelancer	ARA	فريلانسر 4إنفوكام	85	Freelancer' translates directly, while 'Infocam' is retained for branding purposes. The number maintains its significance in the name.				
+	4K IPTV	ARA	آي بي تي في 4 كيه	90	The term 'IPTV' is a widely recognized acronym for Internet Protocol Television, and it is transcribed phonetically to maintain brand integrity. The number '4K' is also retained as it refers to the resolution standard.				
+	4KDIGIT	ARA	ديجيت 4 كيه	85	DIGIT' is translated to 'ديجيت', which is commonly used in Arabic for digital contexts. The '4K' remains unchanged due to its significance in technology.				
+	4kdigit	ARA	ديجيت 4 كيه		Similar to the previous entry, this retains the same meaning but with a different casing. The transcription maintains brand recognition while adapting to Arabic phonetics.				
+	4KIDS	ARA	أطفال 4 كيه	80	The word 'كِدز' (kids) translates directly to 'أطفال', which means children in Arabic. This translation emphasizes the target audience of the brand while keeping the original branding intact.				
+	4kids	ARA	أطفال 4 كيه	80	This entry mirrors the previous one, maintaining consistency in branding while ensuring clarity for an Arabic-speaking audience.				
+	4LPHA	ARA	4ألفا	90	The name '4LPHA' is phonetically transcribed to '4ألفا', where 'ألفا' represents the phonetic sound of 'alpha' in Arabic. The number 4 remains unchanged as it is a numeral.				

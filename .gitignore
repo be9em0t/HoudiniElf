@@ -60,7 +60,7 @@ dist/
 backup/
 work/
 */work/
-images_temp/**
+# images_temp/**
 
 # Archives
 *.zip

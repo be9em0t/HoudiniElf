@@ -1,3 +1,4 @@
+ID	name	language	translation	confidence	breakdown	Remaining	Unallowed_characters	transliterations	Unmapped_in_transliterions
 	Agence ABB HAD Bradia	ARA	وكالة أَب بي هاد برادية	85	وكالة' means 'agency', and 'أَب بي' is the phonetic transcription of 'ABB'. 'هاد برادية' refers to the specific location, maintaining its original name.				
 	Agence Abb Ras Tabouda	ARA	وكالة أَب راس تابودة	85	راس تابودة' is a proper noun that retains its original form, while 'أَب' is phonetically transcribed.				
 	Agence ABB RAS TABOUDA	ARA	وكالة أَب بي راس تابودة	85	RAS TABOUDA' remains unchanged as it is a proper noun. The brand name 'ABB' is also phonetically transcribed.				
