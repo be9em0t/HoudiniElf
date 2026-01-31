@@ -1,0 +1,26 @@
+# CoRunner tasks manifest: only these whitelisted tasks may be executed
+# task_id: unique identifier used by the agent/CLI/server
+# command: absolute path to executable or a short shell command; prefer absolute script paths
+# phrases: list of user-facing phrases that map to the task (used for phrase matching)
+
+tasks:
+  wake_tuffbox:
+    command: "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/.venv/bin/python /Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_Vla/CoRunner/tools/wake_combined.py"
+    description: "Send Wake-on-LAN magic packets (LAN + INET) to tuffbox"
+    phrases:
+      - "wake remote tuffbox"
+      - "wake tuffbox"
+
+  test_echo:
+    command: "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_Vla/CoRunner/tools/test_echo.sh"
+    description: "Print a test message to stdout (tools/)"
+    phrases:
+      - "run test echo"
+      - "test echo"
+
+  test_qt:
+    command: "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/.venv/bin/python /Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_Vla/CoRunner/tools/test_qt.py"
+    description: "Open a simple PyQt6 MessageBox (tools/)"
+    phrases:
+      - "run test qt"
+      - "test qt"
