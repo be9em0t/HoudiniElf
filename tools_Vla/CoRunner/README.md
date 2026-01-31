@@ -39,3 +39,12 @@ Auto-start (macOS)
 Integration guidance for agents
 - Keep the agent’s call minimal: always call the runner using the canonical `task_id` or exact `phrase` from `tasks.yml`.
 - Avoid letting the agent craft shell commands — it should map user intent to an existing `task_id`.
+
+5. Environment
+
+Add .env file with something like
+
+# Copy to .env and set a strong token
+CO_RUNNER_API_TOKEN=testtoken
+# Optionally override URL (default is local)
+CO_RUNNER_URL=http://127.0.0.1:8000
