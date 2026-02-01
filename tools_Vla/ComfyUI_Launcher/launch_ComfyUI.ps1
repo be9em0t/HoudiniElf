@@ -1,57 +1,30 @@
 <#
 .SYNOPSIS
-  Launch ComfyUI from the repository virtual environment and open the UI in the browser after verifying the server is up.
+  Start ComfyUI using the repository virtual environment and open the UI in the browser when ready.
 
 .DESCRIPTION
-  - Starts ComfyUI in a new PowerShell window (interactive) or in background with venv activation.
-  - Uses the ComfyUI folder as the working directory to make execution stable when relative imports or resources are used.
-  - Polls the HTTP interface every $PollIntervalSeconds until it responds or the timeout ($TimeoutSeconds) expires.
-  - When started with `-Background` the launcher will activate the venv in a hidden PowerShell, start the Python process detached and write its PID to `$PidFile`.
-  - Use `stop_ComfyUI.ps1` to stop a background instance (reads the same PID file). Use `status_ComfyUI.ps1` to inspect status and HTTP responsiveness.
+  Starts ComfyUI in a new PowerShell window with the virtual environment activated and waits until the web UI responds before opening the browser.
 
 .PARAMETER VenvPath
-  Path to the virtual environment. Defaults to the repository-local `.venv` (same directory as this script).
+  Path to the virtual environment (default: .\.venv in the script directory).
 
 .PARAMETER TimeoutSeconds
-  Maximum number of seconds to wait for the HTTP interface to become responsive (default: 60).
+  Seconds to wait for the UI to respond (default: 60).
 
 .PARAMETER PollIntervalSeconds
-  How often to poll the URL in seconds (default: 1).
+  Poll interval in seconds (default: 1).
 
 .PARAMETER HostName
-  Host/IP to check (default: 127.0.0.1). Use `-HostName` to override.
+  Host/IP to check (default: 127.0.0.1).
 
 .PARAMETER Port
   Port used by ComfyUI (default: 8188).
 
 .PARAMETER ComfySubdir
-  Subdirectory inside the repository that contains ComfyUI. Default: 'ComfyUI'.
-
-.PARAMETER Background
-  Switch. When specified, start ComfyUI detached (no interactive window). The launcher creates `$PidFile` containing the background process ID so it can be stopped later.
-
-.PARAMETER PidFile
-  Path to the PID file written when `-Background` is used. Default: `comfyui.pid` in the script directory. Used by `stop_ComfyUI.ps1` and `status_ComfyUI.ps1`.
+  Subdirectory containing ComfyUI (default: 'ComfyUI').
 
 .EXAMPLE
   .\launch_ComfyUI.ps1
-  Start ComfyUI interactively (keeps a PowerShell window open with the venv activated).
-
-  .\launch_ComfyUI.ps1 -Background
-  Start ComfyUI in background; PID file is written to `comfyui.pid`.
-
-  .\launch_ComfyUI.ps1 -Background -PidFile 'C:\temp\comfy.pid'
-  Start background instance and write PID to a custom location.
-
-  .\launch_ComfyUI.ps1 -TimeoutSeconds 120
-  Increase wait time for the UI to become ready.
-
-  .\stop_ComfyUI.ps1
-  Stops the background ComfyUI using the default PID file.
-
-  .\status_ComfyUI.ps1
-  Shows whether a background ComfyUI is running and whether the HTTP interface is responding.
-
 #>
 
 param(
@@ -60,9 +33,7 @@ param(
     [int]$PollIntervalSeconds = 1,
     [string]$HostName = '127.0.0.1',
     [int]$Port = 8188,
-    [string]$ComfySubdir = 'ComfyUI',
-    [switch]$Background,
-    [string]$PidFile = (Join-Path $PSScriptRoot 'comfyui.pid')
+    [string]$ComfySubdir = 'ComfyUI'
 )
 
 Set-StrictMode -Version Latest
@@ -116,54 +87,15 @@ if (-not (Test-Path -Path $ActivatePs1 -PathType Leaf)) {
     exit 1
 }
 try {
-    if ($Background) {
-        # Background/detached start: write PID to $PidFile so the process can be stopped later
-        if (Test-Path -Path $PidFile) {
-            try {
-                $existingPid = [int](Get-Content -Path $PidFile -ErrorAction Stop).Trim()
-                if (Get-Process -Id $existingPid -ErrorAction SilentlyContinue) {
-                    Write-Err "An instance appears to be running (PID $existingPid). Stop it first or remove $PidFile"
-                    exit 3
-                }
-                else {
-                    Write-Warn "Removing stale PID file: $PidFile"
-                    Remove-Item -Path $PidFile -Force -ErrorAction SilentlyContinue
-                }
-            }
-            catch {
-                Write-Warn "Could not read existing PID file; removing it."
-                Remove-Item -Path $PidFile -Force -ErrorAction SilentlyContinue
-            }
-        }
+    Write-Info "Starting ComfyUI in a new PowerShell window and activating venv: $ActivatePs1"
+    # Build a PowerShell command that: cd to Comfy dir, source Activate.ps1, then run python main.py --enable-manager
+    $psCommand = "Set-Location -Path '$ComfyDir'; . '$ActivatePs1'; python `"$MainPy`" --enable-manager"
+    # Use -NoProfile to avoid loading user profiles (prevents errors from missing dot-sourced files)
+    $argList = @('-NoProfile', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $psCommand)
 
-        Write-Info "Starting ComfyUI in background (venv activated) and writing PID to $PidFile"
-        # Inner command: activate venv, start python as a detached process, then write its PID to the pid file
-        $inner = "Set-Location -Path '$ComfyDir'; . '$ActivatePs1'; `$p = Start-Process -FilePath 'python' -ArgumentList `"`"$MainPy`" --enable-manager`" -WorkingDirectory '$ComfyDir' -PassThru -WindowStyle Hidden; `$p.Id | Out-File -FilePath '$PidFile' -Encoding ASCII"
-        $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', $inner)
-
-        $launcher = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WorkingDirectory $ComfyDir -PassThru
-        Write-Info "Launched hidden launcher process Id: $($launcher.Id). Waiting for PID file..."
-        $pidDeadline = (Get-Date).AddSeconds(10)
-        while ((Get-Date) -lt $pidDeadline -and -not (Test-Path -Path $PidFile)) { Start-Sleep -Milliseconds 200 }
-        if (Test-Path -Path $PidFile) {
-            $newPid = (Get-Content -Path $PidFile).Trim()
-            Write-Info "ComfyUI started (PID $newPid)"
-        }
-        else {
-            Write-Warn "PID file was not created. Background start may have failed."
-        }
-    }
-    else {
-        Write-Info "Starting ComfyUI in a new PowerShell window and activating venv: $ActivatePs1"
-        # Build a PowerShell command that: cd to Comfy dir, source Activate.ps1, then run python main.py --enable-manager
-        $psCommand = "Set-Location -Path '$ComfyDir'; . '$ActivatePs1'; python `"$MainPy`" --enable-manager"
-        # Use -NoProfile to avoid loading user profiles (prevents errors from missing dot-sourced files)
-        $argList = @('-NoProfile', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $psCommand)
-
-        # Start a new PowerShell window so the venv activation is visible and any subprocesses use the activated venv.
-        $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WorkingDirectory $ComfyDir -WindowStyle Normal -PassThru
-        Write-Info "Launched PowerShell window (process Id: $($proc.Id))"
-    }
+    # Start a new PowerShell window so the venv activation is visible and any subprocesses use the activated venv.
+    $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WorkingDirectory $ComfyDir -WindowStyle Normal -PassThru
+    Write-Info "Launched PowerShell window (process Id: $($proc.Id))"
 }
 catch {
     Write-Err "Failed to launch ComfyUI: $_"
