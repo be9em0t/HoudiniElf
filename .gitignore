@@ -1,3 +1,8 @@
+# Local machine exceptions
+tools_QGIS/dbQGIS/MNR_automation/
+tools_QGIS/dbQGIS/dBeaver/
+tools_QGIS/dbQGIS/
+
 # Exceptions: Keep these tracked
 !.github/
 !.github/**
