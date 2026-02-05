@@ -1,0 +1,12 @@
+Quality audit completed for all 277 rows. The following entries may need improvement based on checks for literal translations, capitalization, diacritics, typos, English borrowings, and local map phrasing. No major character set or length issues found; all translations use appropriate scripts and are concise.
+
+Adventure Vehicle Trail: Serbian "Стaza" contains a Latin 't' instead of Cyrillic 'т' (should be "Стаза"); Bulgarian and Romanian are fine.
+Mountain Bike Trail: Serbian "Стaza" contains a Latin 't' instead of Cyrillic 'т' (should be "Стаза"); Bulgarian and Romanian are fine.
+Race Track: Serbian "Стaza" contains a Latin 't' instead of Cyrillic 'т' (should be "Стаза"); Bulgarian and Romanian are fine.
+Rock Climbing Trail: Serbian "Стaza" contains a Latin 't' instead of Cyrillic 'т' (should be "Стаза"); Bulgarian and Romanian are fine.
+Shanghainese Restaurant: Romanian "shanghaiez" is a typo; should be "șangăianez" for proper Romanian spelling.
+Skateboard Club: Serbian "СКејтборд" has incorrect capitalization and mixing; should be "Скејтборд" or use "skejtbord" for local style.
+Squash Club: Serbian "СКвош" has incorrect capitalization; should be "Сквош".
+Squash Court: Serbian "СКвош" has incorrect capitalization; should be "Сквош".
+Snooker, Pool or Billiard Centre: Serbian and Romanian repeat "биљар" twice; should clarify as "снукер, базен или билијар" in Serbian and "snooker, biliard sau biliard" in Romanian (or use local terms like "biliard american" for pool).
+Pub Food Restaurant: Use closer local equivalents for "pub" (Serbian: "Крачка"; Bulgarian: "Кръчма"; Romanian: "Cârciumă") instead of literal translations to match POI style.
