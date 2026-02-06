@@ -24,15 +24,15 @@ Desktop.ini
 ehthumbs.db
 
 # Python
+.env
+env/
+.venv/
+venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-.env
-env/
-venv/
-.venv/
 .pytest_cache/
 
 # Node.js
