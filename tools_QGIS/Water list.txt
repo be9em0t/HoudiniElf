@@ -1,0 +1,23 @@
+💡 Here’s a focused list of Water-related feature types to collect (from the TomTom Water feature group + what's present in Feature Overview.csv). I included the tag(s) shown in the CSV and a short note about geometry / why to include them.
+
+✅ Core Water feature types to collect (priority)
+Inland Water Body — natural=water — Area;Point — (primary water polygons; includes lakes, ponds)
+Ocean / Sea / Strait / Bay — place=ocean, natural=bay, (sea/strait listed in spec) — Point/Area — (large maritime polygons & names)
+Maritime Water — maritime_water=yes — Area — (explicit ocean/maritime areas)
+Land Mass — land_mass=yes — Area — (islands/land mass within maritime areas)
+Reservoir — natural=reservoir — Area — (man-made water body polygons)
+River / Canal / Waterway features — water, waterway=* (see property list: basin;canal;ditch;lock;pond;river;stream;tidal_channel;etc.) — Line/Area — (sometimes polygon or line)
+Inland Water Line — natural=waterway — Line — (river/stream geometries)
+✅ Water-related LOIs / coastal infrastructure to include
+Pier — man_made=pier — Area;Line;Point — (explicitly requested; often captured as pier geometry or as part of water polygon)
+Breakwater — man_made=breakwater — Area;Line;Point — (coastal protection structures)
+Marina — leisure=marina — Area;Point — (harbour subareas)
+Harbour — natural=harbour — Area;Point — (bay/harbour polygons)
+Ferry Terminal / Ferry Route — amenity=ferry_terminal, route=ferry — Area/Point / Line — (transport features adjacent to water)
+Reef — natural=reef — Area/Point — (underwater hazards)
+Beach / Beach Resort — natural=beach, leisure=beach_resort — Area;Point — (coastline features)
+✅ Useful tag checks (from docs + CSV) to detect water context
+tags: natural, maritime_water, land_mass, man_made, waterway, leisure, amenity, route, place, water (property values list includes lagoon, lock, pond, reservoir, river, tidal_channel, etc.)
+Notes / Rationale
+Some water infrastructure (pier, breakwater) may exist as standalone polygons/lines OR be represented as part of the water polygon geometry — we must check both polygons and relations_geometries.
+The spec’s Water feature group lists Bay / Inland Water / Ocean / Sea / Strait as the core features; the CSV adds many supporting coastal/inland features (Pier, Marina, Breakwater, Harbour, Reservoir, Reef, etc.) that are relevant to “Land Use over Water”.

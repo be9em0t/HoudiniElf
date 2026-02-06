@@ -1,0 +1,17 @@
+"table_name","geom_type","count"
+lines,ST_LINESTRING,20450
+points,ST_POINT,72022
+polygons,ST_MULTIPOLYGON,36
+polygons,ST_POLYGON,20202
+relations,ST_EMPTY,24748
+relations,ST_LINESTRING,1345
+relations,ST_MULTIPOINT,17
+relations,ST_MULTIPOLYGON,36
+relations,ST_POINT,4846
+relations,ST_POLYGON,283
+relations_geometries,ST_LINESTRING,1365
+relations_geometries,ST_MULTILINESTRING,24306
+relations_geometries,ST_MULTIPOINT,40
+relations_geometries,ST_MULTIPOLYGON,40
+relations_geometries,ST_POINT,5187
+relations_geometries,ST_POLYGON,337

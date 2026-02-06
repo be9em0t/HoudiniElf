@@ -1,0 +1,9 @@
+"namespace","viewName","isTemporary","isMaterialized","isMetric"
+map_central_repository,available_products,false,false,false
+map_central_repository,id_mapping,false,false,false
+map_central_repository,lines,false,false,false
+map_central_repository,mcr_releases_timestamp,false,true,false
+map_central_repository,points,false,false,false
+map_central_repository,polygons,false,false,false
+map_central_repository,relations,false,false,false
+map_central_repository,relations_geometries,false,false,false

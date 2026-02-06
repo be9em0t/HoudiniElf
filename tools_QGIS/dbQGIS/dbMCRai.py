@@ -1831,140 +1831,84 @@ def fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessLandUseWater(extent_layer, product_version, license_zone, extentCoords, h3):
-	"""Land use related polygons that intersect water / maritime features (polygons & relations)."""
-	if h3 == True:
-		hextiles = fHexesFromExtent(extent_layer)
-		bounds = hexListToChildString(hextiles)
-		h3_index = 'AND h3_index != \'0\''
-	else:
-		extentStr = "'" + extentCoords + "'"
-		bounds = f"ST_Intersects(ST_GEOMFROMWKT({extentStr}), ST_GEOMFROMWKT(geometry))"
-		h3_index = ''
+
+def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords):
+	"""Natural water polygons (natural=water tag) from both polygons and relations_geometries.
+	Optimized query based on tested SQL - filters by natural=water before spatial operations.
+	"""
+	extentStr = "'" + extentCoords + "'"
 
 	sql = f"""
-	-- Land Use features that intersect Water feature group (expanded)
-	WITH water_polys AS (
-		-- polygons table
-		SELECT ST_GEOMFROMWKT(geometry) AS geom FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-		WHERE (
-			-- natural water features
-			natural IN ('water','bay','harbour','reef','reservoir','sea','ocean','strait')
-			OR place = 'ocean'
-			OR tags['maritime_water'] = 'yes'
-			OR tags['land_mass'] = 'yes'
-			OR tags['water'] IS NOT NULL
-			OR tags['waterway'] IS NOT NULL
-			OR man_made IN ('pier','breakwater','quay','jetty')
-			OR tags['man_made'] IN ('pier','breakwater','quay','jetty')
-			OR leisure = 'marina'
-			OR amenity = 'ferry_terminal'
-		)
-		AND {bounds}
-		AND product = '{product_version}'
-		AND license_zone like '%{license_zone}%'
+	-- Natural Water Geometry (natural=water)
+	-- Optimized: filter by tag before expensive spatial operations
+	WITH polys_spatial_filtered AS (
+		SELECT
+			'polygons' AS source,
+			product,
+			element_type,
+			osm_identifier,
+			license_zone,
+			geometry,
+			tags
+		FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+		WHERE product = '{product_version}'
+		  AND license_zone = '{license_zone}'
+		  AND tags['natural'] = 'water'
+		  AND element_type != 'RELATION'
+		  AND geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+		  AND ST_Intersects(
+				ST_GeomFromWKT({extentStr}),
+				ST_GeomFromWKT(geometry)
+			  )
+	),
+	rels_spatial_filtered AS (
+		SELECT
+			'relations_geometries' AS source,
+			product,
+			element_type,
+			osm_identifier,
+			license_zone,
+			geometry,
+			tags
+		FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+		WHERE product = '{product_version}'
+		  AND license_zone = '{license_zone}'
+		  AND tags['natural'] = 'water'
+		  AND geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+		  AND ST_Intersects(
+				ST_GeomFromWKT({extentStr}),
+				ST_GeomFromWKT(geometry)
+			  )
+	),
+	combined_filtered AS (
+		SELECT * FROM polys_spatial_filtered
 		UNION ALL
-		-- relations_geometries (assembled polygons/multipolygons)
-		SELECT ST_GEOMFROMWKT(geometry) AS geom FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
-		WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-		AND (
-			geom_type IS NOT NULL -- placeholder
-			AND (
-				tags['natural'] IN ('water','bay','harbour','reef','reservoir','sea','ocean','strait')
-				OR tags['place'] = 'ocean'
-				OR tags['maritime_water'] = 'yes'
-				OR tags['land_mass'] = 'yes'
-				OR tags['water'] IS NOT NULL
-				OR tags['waterway'] IS NOT NULL
-				OR tags['man_made'] IN ('pier','breakwater','quay','jetty')
-				OR tags['leisure'] = 'marina'
-				OR tags['amenity'] = 'ferry_terminal'
-			)
-		)
-		AND {bounds}
-		AND product = '{product_version}'
-		AND license_zone like '%{license_zone}%'
+		SELECT * FROM rels_spatial_filtered
 	)
-
 	SELECT
-		orbis_id,
-		tags['aeroway'] as aeroway,
-		tags['landuse'] as landuse,
-		tags['leisure'] as leisure,
-		tags['military'] as military,
-		tags['natural'] as natural,
-		tags['tourism'] as tourism,
-		tags['amenity'] as amenity,
-		tags['water'] as water,
-		tags['waterway'] as waterway,
-		tags['man_made'] as man_made,
-		tags['maritime_water'] as maritime_water,
-		tags['land_mass'] as land_mass,
-		tags['place'] as place,
+		source,
+		product,
+		element_type,
+		osm_identifier,
+		license_zone,
+		tags['natural'] AS natural,
+		tags['water'] AS water,
+		tags['intermittent'] AS intermittent,
+		tags['bridge'] AS bridge,
+		tags['tunnel'] AS tunnel,
+		tags['name'] AS name,
+		tags['alt_name'] AS alt_name,
 		CAST(tags AS STRING) AS tags,
 		geometry
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
-	WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-	AND (
-		 tags['aeroway'] IS NOT NULL
-		 OR tags['landuse'] IS NOT NULL
-		 OR tags['leisure'] IS NOT NULL
-		 OR tags['military'] IS NOT NULL
-		 OR tags['natural'] IS NOT NULL
-		 OR tags['tourism'] IS NOT NULL
-		 OR tags['amenity'] IS NOT NULL
-		 OR man_made IN ('pier','breakwater','quay','jetty')
-		 OR tags['man_made'] IN ('pier','breakwater','quay','jetty')
-		 OR tags['waterway'] IN ('dock','quay','jetty')
-	)
-	AND EXISTS (SELECT 1 FROM water_polys w WHERE ST_Intersects(ST_GEOMFROMWKT(p.geometry), w.geom))
-	AND product = '{product_version}'
-	AND license_zone like '%{license_zone}%'
-	{h3_index}
-
-	UNION
-
-	SELECT
-		orbis_id,
-		tags['aeroway'] as aeroway,
-		tags['landuse'] as landuse,
-		tags['leisure'] as leisure,
-		tags['military'] as military,
-		tags['natural'] as natural,
-		tags['tourism'] as tourism,
-		tags['amenity'] as amenity,
-		tags['water'] as water,
-		tags['waterway'] as waterway,
-		tags['man_made'] as man_made,
-		tags['maritime_water'] as maritime_water,
-		tags['land_mass'] as land_mass,
-		tags['place'] as place,
-		CAST(tags AS STRING) AS tags,
-		geometry
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries rg
-	WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-	AND (
-		 tags['aeroway'] IS NOT NULL
-		 OR tags['landuse'] IS NOT NULL
-		 OR tags['leisure'] IS NOT NULL
-		 OR tags['military'] IS NOT NULL
-		 OR tags['natural'] IS NOT NULL
-		 OR tags['tourism'] IS NOT NULL
-		 OR tags['amenity'] IS NOT NULL
-		 OR rg.tags['man_made'] IN ('pier','breakwater','quay','jetty')
-		 OR rg.tags['waterway'] IN ('dock','quay','jetty')
-	)
-	AND EXISTS (SELECT 1 FROM water_polys w WHERE ST_Intersects(ST_GEOMFROMWKT(rg.geometry), w.geom))
-	AND product = '{product_version}'
-	AND license_zone like '%{license_zone}%'
-	{h3_index}
-	;""".format(product_version=product_version, license_zone=license_zone, bounds=bounds, h3_index=h3_index)
+	FROM combined_filtered
+	ORDER BY product, source, osm_identifier
+	;""".format(product_version=product_version, license_zone=license_zone, extentStr=extentStr)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
 	clipboard.setText(sql)
 
-	message = """\nThe Land Use over Water query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	message = """\nThe Water (natural=water) query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
@@ -2165,67 +2109,6 @@ INNER JOIN bbox_h3_tiles h ON (
 	qtMsgBox(message)
 
 
-def fProcessLandUseWaterH3(extent_layer, product_version, license_zone, extentCoords):
-	"""H3-optimized query: select polygons whose geometry is classified as water (natural=water).
-	Uses server-side H3 polyfill and k-ring expansion similar to `fProcessBuildingsWithPartsH3`.
-	"""
-	extentStr = "'" + extentCoords + "'"
-
-	sql = f"""
-	-- landuse water (H3 native server-side computation with k-ring buffer)
-	WITH bbox AS (
-		SELECT ST_GEOMFROMWKT({extentStr}) AS g
-	),
-	bbox_h3_base AS (
-		-- Generate base H3 tiles at resolution 8 from bbox polygon
-		SELECT explode(h3_polyfillash3string(ST_ASWKT(bbox.g), 8)) AS h3_tile
-		FROM bbox
-	),
-	bbox_h3_tiles AS (
-		-- Expand with k-ring=1 to capture edge hexagons
-		SELECT DISTINCT explode(h3_kring(h3_tile, 1)) AS h3_tile
-		FROM bbox_h3_base
-	),
-	polygons_filtered AS (
-		SELECT
-			p.orbis_id,
-			p.natural,
-			p.tags,
-			p.geometry,
-			p.h3_index,
-			p.h3_resolution
-		FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
-		WHERE (p.natural = 'water' OR p.tags['natural'] = 'water')
-		  AND p.product = '{product_version}'
-		  AND p.license_zone LIKE '%{license_zone}%'
-		  AND p.h3_index != '0'
-	)
-
-	SELECT 
-		p.orbis_id,
-		p.natural,
-		p.tags['water'] as water,
-		CAST(p.tags AS STRING) as tags,
-		p.geometry
-	FROM polygons_filtered p
-	INNER JOIN bbox_h3_tiles h ON (
-		(p.h3_resolution = 8 AND p.h3_index = h.h3_tile)
-		OR
-		(p.h3_resolution < 8 AND p.h3_index = h3_toparent(h.h3_tile, p.h3_resolution))
-		OR
-		(p.h3_resolution > 8 AND h3_toparent(p.h3_index, 8) = h.h3_tile)
-	)
-	""".format(product_version=product_version, license_zone=license_zone)
-
-	# Put query on the clipboard
-	clipboard = QgsApplication.clipboard()
-	clipboard.setText(sql)
-
-	message = """H3 land-use-over-water query is on the clipboard!\n\nUses server-side h3_polyfillash3string + h3_kring.\n\nPaste and run it from DBeaver."""
-	print(message + "\n======= clipboard! =======")
-	qtMsgBox(message)
-
-
 def fBuildingsSimple_H3(extent_layer,product_version, license_zone, extentCoords, h3):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
@@ -2392,13 +2275,12 @@ def fMainUI():
 	'All Polygons Contain',
 	'All Polygons Intersect',
 	'--',
+	'Water (natural)',
 	'Admin Areas',
 	'Admin Point Places',
 	'Inland Water',
 	'Ocean Water',
 	'Land Use',
-	'Land Use over Water',
-	'Land Use over Water (h3)',
 	'Buildings with parts',
 	'Buildings with parts H3',
 	'Buildings with relations',
@@ -2471,6 +2353,8 @@ def fMainUI():
 		fAllPolyContains(product_version, license_zone, extentCoords)
 	elif process == 'All Polygons Intersect':
 		fAllPolyIntersect(product_version, license_zone, extentCoords)
+	elif process == 'Water (natural)':
+		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords)
 	elif process == 'Admin Areas':
 		fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Admin Point Places':
@@ -2481,10 +2365,6 @@ def fMainUI():
 		fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Land Use':
 		fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h3)
-	elif process == 'Land Use over Water':
-		fProcessLandUseWater(extent_layer, product_version, license_zone, extentCoords, h3)
-	elif process == 'Land Use over Water (h3)':
-		fProcessLandUseWaterH3(extent_layer, product_version, license_zone, extentCoords)
 	elif process == 'Buildings with parts':
 		fProcessBuildingsWithParts(product_version, license_zone, extentCoords)
 	elif process == 'Buildings with parts H3':

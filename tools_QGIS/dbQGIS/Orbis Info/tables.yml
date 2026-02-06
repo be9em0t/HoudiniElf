@@ -1,0 +1,2454 @@
+tables:
+  - name: transportation_line
+    features:
+      - Ferry Route
+      - Funicular Railway
+      - Light Rail Track
+      - Miniature Railway
+      - Monorail Track
+      - Narrow Gauge Railway
+      - Preserved Railway
+      - Railway Under Construction
+      - Standard Railway
+      - Subway Track
+      - Tram Track
+      - Abandoned Railway
+      - Disused Railway
+      - Proposed Railway
+      - Living Street
+      - Motorway
+      - Motorway Link
+      - Primary Link
+      - Primary Road
+      - Residential Road
+      - Road Under Construction
+      - Secondary Link
+      - Secondary Road
+      - Tertiary Link
+      - Tertiary Road
+      - Trunk Link
+      - Trunk Road
+      - Unclassified Road
+      - Unknown Road
+      - Bridleway
+      - Cycleway
+      - Footway
+      - Path
+      - Pedestrian Road
+      - Service Road
+      - Steps
+      - Track Road
+    columns:
+      - name: highway
+        properties:
+          - highway
+      - name: railway
+        properties:
+          - railway
+      - name: route
+        properties:
+          - route
+      - name: navigability
+        properties:
+          - navigability
+      - name: routing_class
+        properties:
+          - routing_class
+      - name: surface
+        properties:
+          - surface
+      - name: oneway
+        properties:
+          - oneway
+      - name: oneway_tags
+        properties:
+          - oneway:0#Transportation And Purpose Mode:0#Conditional
+      - name: access_tags
+        properties:
+          - vehicle:0#Direction:0#Conditional
+          - motor_vehicle:0#Direction:0#Conditional
+          - motorcar:0#Direction:0#Conditional
+          - hgv:0#Direction:0#Conditional
+          - bus:0#Direction:0#Conditional
+          - psv:0#Direction:0#Conditional
+          - taxi:0#Direction:0#Conditional
+          - rideshare:0#Direction:0#Conditional
+          - access:0#Lanes:0#Direction:0#Conditional
+          - private:0#Direction
+      - name: zoomlevel_min
+        properties:
+          - zoomlevel_min
+      - name: zoomlevel_max
+        properties:
+          - zoomlevel_max
+      - name: postal_code
+        properties:
+          - postal_code:1#Postal Type:0#Side
+      - name: signpost_tags
+        properties:
+          - destination:colour:0#To:0#Lanes:0#Direction
+          - destination:colour:ref:0#To:0#Lanes:0#Direction
+          - destination:colour:arrow:0#Lanes:0#Direction
+          - destination:colour:text:0#Lanes:0#Direction
+          - destination:arrow:0#To:0#Lanes:0#Direction
+          - destination:arrow:ref:0#Lanes:0#Direction
+          - junction:name:0#Language
+          - junction:ref
+          - destination:0#To:0#Language:0#Lanes:0#Direction
+          - destination:country:0#To:0#Lanes:0#Direction
+          - destination:ref:0#To:0#Lanes:0#Direction
+          - destination:loc_ref
+          - destination:street:0#To:0#Language:0#Lanes:0#Direction
+          - destination:symbol:0#To:0#Lanes:0#Direction
+          - destination:network:0#To:0#Lanes:0#Direction
+          - destination:distance:0#To:0#Lanes:0#Direction
+      - name: maxspeed
+        properties:
+          - maxspeed
+      - name: maxspeed_tags
+        properties:
+          - maxspeed:0#Transportation Mode For Speed:0#Direction:0#Conditional
+          - maxspeed:advisory:0#Transportation Mode For Speed:0#Direction:0#Conditional
+          - maxspeed:origin:0#Transportation Mode For Speed:0#Direction:0#Conditional
+          - maxspeed:variable:0#Direction
+          - maxspeed:verification:0#Direction
+      - name: gers_identifier
+        properties:
+          - gers_identifier
+      - name: osm_identifier
+        properties:
+          - osm_identifier:0#Interpolation Type
+      - name: speed_profile
+        properties:
+          - speed:free_flow:0#Direction
+          - speed:profile_ids:0#Direction
+          - speed:week:0#Direction
+          - speed:weekday:0#Direction
+          - speed:weekend:0#Direction
+      - name: toll_tags
+        properties:
+          - toll:0#Direction
+          - toll:1#Lanes:0#Direction For Lane
+          - toll:hov
+          - payment:electronic_toll_subscription
+      - name: lane_property_tags
+        properties:
+          - payment:1#Payment Method:1#Lanes:0#Direction For Lane
+          - lanes:0#Direction For Lane
+          - lanes:reversible
+          - exit_entrance:1#Lanes:0#Direction For Lane
+          - turn:1#Lanes:0#Direction For Lane
+          - toll:hov
+          - toll:1#Lanes:0#Direction For Lane
+          - 1#Lanes:1#Transportation And Purpose Mode:0#Direction For Lane
+          - 1#Lanes:1#Transportation And Purpose Mode:reversible
+          - hov:clean_fuel
+          - hov:1#Lanes:0#Direction For Lane
+          - hov:minimum
+          - divider:1#Lanes
+      - name: dual_carriageway
+        properties:
+          - dual_carriageway
+      - name: plural_junction
+        properties:
+          - plural_junction
+      - name: controlled_access
+        properties:
+          - controlled_access
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: route_number_info_tags
+        properties:
+          - ref:0#Language
+          - int_ref:0#Language
+          - nat_ref:0#Language
+          - reg_ref:0#Language
+  - name: building
+    features:
+      - Building Footprint
+      - Building Part
+    columns:
+      - name: building
+        properties:
+          - building
+      - name: building_part
+        properties:
+          - building:part
+      - name: building_group
+        properties:
+          - building_group
+      - name: height
+        properties:
+          - height
+      - name: layer
+        properties:
+          - layer
+      - name: location
+        properties:
+          - location
+      - name: construction
+        properties:
+          - construction
+      - name: extrusion
+        properties:
+          - extrusion
+      - name: roof_shape
+        properties:
+          - roof:shape
+      - name: roof_orientation
+        properties:
+          - roof:orientation
+      - name: roof_direction
+        properties:
+          - roof:direction
+      - name: height_eave
+        properties:
+          - height:eave
+      - name: building_properties_tags
+        properties:
+          - min_height
+          - building:levels
+          - building:min_level
+          - roof_levels
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: internal_name_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+  - name: named_place
+    features:
+      - Administrative Area
+      - Non-Administrative Area
+      - Place Point
+    columns:
+      - name: boundary
+        properties:
+          - boundary
+      - name: place
+        properties:
+          - place
+      - name: admin_level
+        properties:
+          - admin_level
+      - name: ISO3166_1
+        properties:
+          - ISO3166-1
+      - name: ISO3166_1_alpha2
+        properties:
+          - ISO3166-1:alpha2
+      - name: ISO3166_1_alpha3
+        properties:
+          - ISO3166-1:alpha3
+      - name: ISO3166_1_numeric
+        properties:
+          - ISO3166-1:numeric
+      - name: ISO3166_2
+        properties:
+          - ISO3166-2
+      - name: commercial_vehicle
+        properties:
+          - commercial_vehicle
+      - name: weight_min_hgv
+        properties:
+          - weight:min:hgv
+      - name: display_language_tags
+        properties:
+          - no_display_language
+          - mandatory_display_language
+      - name: driving_side
+        properties:
+          - driving_side
+      - name: time_zone_and_daylight_saving_time_tags
+        properties:
+          - daylight_period
+          - timezone
+          - utc_daylight_offset
+          - utc_offset
+      - name: index_info_tags
+        properties:
+          - index:level
+          - index:alt_level
+          - index:priority:1#Index Level
+          - index:address_relevant
+          - index:identity:1#Index Level:1#Language
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+      - name: official_language
+        properties:
+          - official_language
+      - name: default_language
+        properties:
+          - default_language
+      - name: place_code
+        properties:
+          - place_code
+      - name: postal_code
+        properties:
+          - postal_code
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: capital
+        properties:
+          - capital
+      - name: draw_scale_tags
+        properties:
+          - draw_scale_min
+          - draw_scale_max
+          - draw_scale_min:name:0#Side:0#Language
+          - draw_scale_max:name:0#Side:0#Language
+      - name: display_class
+        properties:
+          - display_class
+  - name: location_of_interest
+    features:
+      - ATM
+      - ATV Dealer
+      - Aboriginal Land
+      - Accountant Office
+      - Adult Gaming Center
+      - Advertising Agency Office
+      - Aerialway Station
+      - Agrarian
+      - Agricultural Engines
+      - Airport
+      - Airport Runway
+      - Alcohol Shop
+      - Allotments
+      - Alpine Hut
+      - Alternative Healthcare
+      - Ambulance Station
+      - Amusement Arcade
+      - Animal Boarding
+      - Animal Breeding
+      - Animal Shelter
+      - Anime Shop
+      - Antiques
+      - Apartment
+      - Appliances Store
+      - Apron
+      - Aquarium
+      - Arch
+      - Archaeological Site
+      - Archipelago
+      - Architect Office
+      - Arete
+      - Art Shop
+      - Arts Center
+      - Artwork
+      - Assembly Point
+      - Association Office
+      - Atelier
+      - Audiologist
+      - Baby Goods
+      - Baby Hatch
+      - Bag Shop
+      - Bail Bond Agent
+      - Bakery
+      - Bakery Shop
+      - Baking Oven
+      - Bandstand
+      - Bank
+      - Bar
+      - Barbecue
+      - Bare Rock
+      - Basket Maker
+      - Bathroom Furnishing
+      - Battlefield
+      - Beach
+      - Beach Club
+      - Beach Resort
+      - Beauty Shop
+      - Bed Shop
+      - Beekeeper
+      - Beer Garden
+      - Bench
+      - Beverage Shop
+      - Bicycle Parking
+      - Bicycle Rental
+      - Bicycle Repair
+      - Bicycle Shop
+      - Bird Hide
+      - Blacksmith
+      - Blood Bank
+      - Blood Donation Center
+      - Blowhole
+      - Boat Builder
+      - Boat Dealer
+      - Boat Parts
+      - Boat Rental
+      - Boat Sharing
+      - Book Shop
+      - Bookbinder
+      - Bookmaker
+      - Border Control
+      - Boutique
+      - Bowling Alley
+      - Breakwater
+      - Brewery
+      - Brewing Supplies
+      - Brothel
+      - Brownfield
+      - Builder
+      - Built Up Area
+      - Bungalow
+      - Bus Dealer
+      - Bus Station
+      - Butcher
+      - Cabin
+      - Cabinet Maker
+      - Cafe
+      - Cafeteria
+      - Camera Shop
+      - Camp Site
+      - Candle Shop
+      - Cannabis Shop
+      - Cape
+      - Car Dealer
+      - Car Painter
+      - Car Parts
+      - Car Rental
+      - Car Repair
+      - Car Sharing
+      - Car Wash
+      - Caravan Dealer
+      - Caravan Site
+      - Carpenter
+      - Carpet Layer
+      - Carpet Shop
+      - Casino
+      - Castle
+      - Catalogue Shop
+      - Caterer
+      - Cave
+      - Cave Entrance
+      - Cemetery
+      - Ceramics Shop
+      - Chalet
+      - Charging Location
+      - Charity Office
+      - Charity Shop
+      - Cheese Shop
+      - Chemist
+      - Childcare
+      - Chimney Sweeper
+      - Chocolate Shop
+      - Christmas Shop
+      - Cinema
+      - Cleaning Services
+      - Cliff
+      - Clinic
+      - Clock
+      - Clock Maker
+      - Clothes Shop
+      - Club
+      - Coffee Shop
+      - Coffee Store
+      - Collector Shop
+      - College
+      - Comedy Club
+      - Commercial Area
+      - Commercial Plaza
+      - Common Ground
+      - Community Center
+      - Company
+      - Computer Shop
+      - Computer Software
+      - Confectionery
+      - Confectionery Shop
+      - Conference Center
+      - Construction Company
+      - Construction Site
+      - Consultation Firm
+      - Convenience Store
+      - Cooper
+      - Copy Shop
+      - Cosmetics Store
+      - Cottage
+      - Counselling Center
+      - Country Store
+      - Courier Office
+      - Courthouse
+      - Cove
+      - Coworking Office
+      - Craft Shop
+      - Crematorium
+      - Cultural Center
+      - Curtain Shop
+      - Dairy Shop
+      - Dance Venue
+      - Defibrillator
+      - Deli Shop
+      - Dental Technician
+      - Dentist
+      - Department Store
+      - Diplomatic Office
+      - Disc Golf Course
+      - Distillery
+      - Diversified Financials
+      - Do It Yourself
+      - Doctor
+      - Dog Park
+      - Dog Toilet
+      - Door Construction
+      - Doors Shop
+      - Dress Maker
+      - Drinking Water
+      - Driving School
+      - Dry Cleaning
+      - Dune
+      - E-Cigarette Store
+      - Earth Bank
+      - Educational Institution Office
+      - Electrical Shop
+      - Electrician
+      - Electronics Repair
+      - Electronics Shop
+      - Embroiderer
+      - Emergency Amenity
+      - Emergency Phone
+      - Emergency Ward Entrance
+      - Emergency Water Tank
+      - Employment Agency
+      - Energy Shop
+      - Energy Supplier
+      - Engineer Office
+      - Engraver
+      - Entertainment
+      - Equipment Rental
+      - Erotic Shop
+      - Escape Game
+      - Events Venue
+      - Fabric Shop
+      - Factory
+      - Factory Outlet
+      - Farm
+      - Farm Shop
+      - Farmland
+      - Farmyard
+      - Fashion Accessories
+      - Fast Food
+      - Fell
+      - Ferry Terminal
+      - Financial Office
+      - Fire Hydrant
+      - Fire Pit
+      - Fire Station
+      - Fireplace Store
+      - Fishing
+      - Fishing Equipments
+      - Fitness Center
+      - Fitness Station
+      - Floorer
+      - Flooring Shop
+      - Florist
+      - Flowerbed
+      - Flying Club
+      - Food Court
+      - Food Market
+      - Food Outlet
+      - Food Sharing Box
+      - Foreign Exchange
+      - Forestry Office
+      - Fort
+      - Fountain
+      - Frames Shop
+      - Frozen Food
+      - Fuel Shop
+      - Fuel Station
+      - Fumarole
+      - Funeral Director
+      - Funeral Hall
+      - Furniture Store
+      - Gallery
+      - Gallows
+      - Gambling
+      - Games Shop
+      - Garages
+      - Garden
+      - Garden Center
+      - Garden Furniture
+      - Gardener
+      - Gas Shop
+      - General Adult Entertainment
+      - General Artificial Ground
+      - General Arts And Culture
+      - General Business
+      - General Driving
+      - General Eat And Drink
+      - General Education
+      - General Emergency Services
+      - General Facilities
+      - General Finance
+      - General Government And Public Services
+      - General Healthcare
+      - General Leisure
+      - General Location Of Interest
+      - General Lodging
+      - General Managed Green
+      - General Military
+      - General Office
+      - General Outdoor
+      - General Sport
+      - General Store
+      - General Transport
+      - Geodesist Office
+      - Geyser
+      - Gift Shop
+      - Give Box
+      - Glacier
+      - Glaziery
+      - Glaziery Shop
+      - Gold Exchange
+      - Goldsmith
+      - Golf Course
+      - Golf Shop
+      - Government Office
+      - Graphic Designer
+      - Grassland Area
+      - Greenfield
+      - Greengrocer
+      - Greenhouse Horticulture
+      - Grinding Mill
+      - Grit Bin
+      - Grocery
+      - Groundskeeping
+      - Guest House
+      - HVAC
+      - Hackerspace
+      - Hairdresser
+      - Hairdresser Supply
+      - Handicraft
+      - Harbour
+      - Harbour Master
+      - Hardware Store
+      - Health Food
+      - Hearing Aids
+      - Heath
+      - Helipad
+      - Heliport
+      - Herbalist
+      - Hifi Shop
+      - Highway Services
+      - Hill
+      - Historic Aircraft
+      - Historic Bomb Crater
+      - Historic Boundary Stone
+      - Historic Building
+      - Historic Cannon
+      - Historic Church
+      - Historic City Gate
+      - Historic Creamery
+      - Historic Farm
+      - Historic Locomotive
+      - Historic Manor
+      - Historic Milestone
+      - Historic Monastery
+      - Historic Monument
+      - Historic Pa
+      - Historic Pillory
+      - Historic Railway Car
+      - Historic Ship
+      - Historic Tank
+      - Historic Vehicle
+      - Historic Wayside Cross
+      - Historic Wreck
+      - Holiday Rental
+      - Horse Riding
+      - Hospice
+      - Hospital
+      - Hostel
+      - Hot Spring
+      - Hotel
+      - Household Linen
+      - Houseware
+      - Hunting Shop
+      - Hunting Stand
+      - Ice Cream Shop
+      - Ice Rink
+      - Industrial Area
+      - Information Center
+      - Insulator
+      - Insurance Office
+      - Interior Decoration
+      - Interior Work
+      - Internet Cafe
+      - Island
+      - Islet
+      - Isthmus
+      - Jetski Dealer
+      - Jeweller
+      - Jewelry Store
+      - Joiner
+      - Juice Bar
+      - Karaoke Lounge
+      - Key Cutter
+      - Kindergarten
+      - Kiosk
+      - Kitchen Studio
+      - Kneipp Water Cure
+      - Laboratory
+      - Landfill
+      - Language School
+      - Laundry
+      - Lawyer Office
+      - Leather Store
+      - Leisure Center
+      - Leisure Park
+      - Library
+      - Lighting Shop
+      - Local Specialities
+      - Locale
+      - Locksmith
+      - Locksmith Shop
+      - Logistics Office
+      - Lottery Shop
+      - Lounger
+      - Love Hotel
+      - Mall
+      - Managed Grass
+      - Marina
+      - Marine Electronics
+      - Marketplace
+      - Massage Parlour
+      - Meadow
+      - Medical Supply
+      - Memorial
+      - Metal Construction
+      - Military Airfield
+      - Military Area
+      - Military Base
+      - Military Checkpoint
+      - Military Surplus
+      - Miniature Golf
+      - Mint Maker
+      - Mobile Shop
+      - Model Shop
+      - Monastery
+      - Money Lender
+      - Moraine
+      - Motel
+      - Motorcycle Dealer
+      - Motorcycle Parking
+      - Motorcycle Rental
+      - Motorcycle Repair
+      - Motoring Organization Office
+      - Mountain Pass
+      - Moving Company
+      - Museum
+      - Music School
+      - Music Store
+      - Musical Instrument Maker
+      - Musical Instrument Store
+      - NGO Office
+      - National Park
+      - Natural Area
+      - Nature Reserve
+      - Newsagent
+      - Newspaper Office
+      - Nightclub
+      - Notary Office
+      - Nutrition Supplements
+      - Nuts Shop
+      - Oasis
+      - Obelisk
+      - Observatory
+      - Oil Mill
+      - Optician
+      - Optician Shop
+      - Orchard
+      - Organ Builder
+      - Organic Shop
+      - Outdoor Store
+      - Outpost
+      - Paint Shop
+      - Painter
+      - Palaeontological Site
+      - Pan
+      - Parcel Locker
+      - Parking Facility
+      - Parquet Layer
+      - Party Shop
+      - Pasta Store
+      - Pastry Shop
+      - Paver
+      - Pawn Shop
+      - Payment Center
+      - Payment Terminal
+      - Peak
+      - Pedestrian Subway
+      - Perfumery
+      - Pest Control
+      - Pet Grooming
+      - Pet Shop
+      - Pet Supplies
+      - Pharmacy
+      - Photo Booth
+      - Photo Store
+      - Photographer
+      - Photographic Laboratory
+      - Physiotherapist
+      - Piano Tuner
+      - Picnic Site
+      - Picnic Table
+      - Pier
+      - Pitch
+      - Place Of Mourning
+      - Place Of Worship
+      - Plain
+      - Planetarium
+      - Plant Hire Shop
+      - Plant Nursery
+      - Plasterer
+      - Plateau
+      - Playground
+      - Plumber
+      - Podiatrist
+      - Police Station
+      - Political Party Office
+      - Post Box
+      - Post Depot
+      - Post Office
+      - Pottery
+      - Pottery Shop
+      - Preparation School
+      - Printer
+      - Printer Ink Shop
+      - Printmaker
+      - Prison
+      - Protected Area
+      - Psychotherapist
+      - Pub
+      - Public Amenity
+      - Public Bath
+      - Public Bookcase
+      - Public Kitchen
+      - Public Telephone
+      - Public Transport Platform
+      - Public Transport Station
+      - Public Transport Ticket Counter
+      - Pyrotechnics Store
+      - Quango Office
+      - Quarry
+      - Radiotechnics Store
+      - Railway Ground
+      - Railway Halt
+      - Railway Station
+      - Ranger Station
+      - Rapids
+      - Real Estate
+      - Recreation Ground
+      - Recycling Facility
+      - Reef
+      - Refugee Site
+      - Religion Office
+      - Religious Area
+      - Religious Goods
+      - Rental Car Parking
+      - Repair Shop
+      - Rescue Station
+      - Research Institute
+      - Research Office
+      - Reservoir
+      - Residential Complex
+      - Resort
+      - Rest Area
+      - Rest Camps
+      - Restaurant
+      - Retail Area
+      - Retail Outlet
+      - Ridge
+      - Rigger
+      - River Crossing
+      - Road Rescue
+      - Rock
+      - Roofer
+      - Ruins
+      - Rune Stone
+      - Saddle
+      - Saddler
+      - Sailmaker
+      - Sample Collection Center
+      - Sand
+      - Sanitary Dump Station
+      - Sauna
+      - Sawmill
+      - Scaffolder
+      - School
+      - Scouts
+      - Scree
+      - Scrub
+      - Scuba Diving Store
+      - Sculptor
+      - Seafood Shop
+      - Second Hand Store
+      - Security Gate
+      - Security Office
+      - Security Shop
+      - Sewing Shop
+      - Shelter
+      - Shingle
+      - Shoal
+      - Shoe Store
+      - Shoemaker
+      - Shop
+      - Shopping Service
+      - Shower
+      - Shrubbery
+      - Signmaker
+      - Sinkhole
+      - Ski Dealer
+      - Slipway
+      - Snowmobile Dealer
+      - Social Center
+      - Social Facility
+      - Specialty Food
+      - Spices Shop
+      - Sports Center
+      - Sports Club
+      - Sports Hall
+      - Sports Shop
+      - Spring
+      - Stadium
+      - Stand Builder
+      - Stationery
+      - Stock Exchange
+      - Stonemason
+      - Stop Position
+      - Storage Rental
+      - Stove Fitter
+      - Stripclub
+      - Studio
+      - Stupa
+      - Subway Entrance
+      - Summer Camp
+      - Sun Protection Maker
+      - Supermarket
+      - Surveyor Office
+      - Swimming Pool
+      - Swimming Pool Equipments
+      - Swingerclub
+      - Tailor
+      - Tattoo Parlour
+      - Tax Advisor
+      - Taxi Stand
+      - Taxiway
+      - Tea House
+      - Tea Store
+      - Telecommunication Office
+      - Telecommunication Shop
+      - Terminal
+      - Theater
+      - Theme Park
+      - Therapist
+      - Ticket Shop
+      - Tiler
+      - Tiles Shop
+      - Tinsmith
+      - Tobacco Shop
+      - Toilet
+      - Toll Gantry
+      - Toll Plaza
+      - Tomb
+      - Tool Hire Shop
+      - Toolmaker
+      - Tour Guide
+      - Tourist Attraction
+      - Townhall
+      - Toy Library
+      - Toy Shop
+      - Track
+      - Trade Shop
+      - Traditional Windmill
+      - Traffic Office
+      - Trailer Dealer
+      - Trailhead
+      - Train Station Entrance
+      - Training Center
+      - Tram Stop
+      - Trampoline Park
+      - Travel Agency
+      - Travel Agent
+      - Trolley Bay
+      - Trophy Store
+      - Truck Dealer
+      - Truck Repair
+      - Truck Stop
+      - Truck Wash
+      - Tundra
+      - Turner
+      - Tyres Shop
+      - Union Office
+      - University
+      - Upholsterer
+      - Utilities
+      - Vacuum Cleaner Store
+      - Valley
+      - Van Dealer
+      - Variety Store
+      - Vehicle Inspection
+      - Vending Machine
+      - Veterinary
+      - Video Games Store
+      - Video Parlour
+      - Viewpoint
+      - Villa
+      - Village Green
+      - Vineyard
+      - Visa Office
+      - Volcanic Caldera Rim
+      - Volcanic Lava Field
+      - Volcano
+      - Waste Basket
+      - Waste Disposal
+      - Watch Shop
+      - Watchmaker
+      - Water Park
+      - Water Point
+      - Water Shop
+      - Water Utility Office
+      - Water Well Driller
+      - Wayside Shrine
+      - Weapon Store
+      - Wedding Planner
+      - Weighbridge
+      - Wetland
+      - Wholesale Store
+      - Wilderness Hut
+      - Window Blind Shop
+      - Window Constructors
+      - Windows Store
+      - Wine Shop
+      - Winery
+      - Winter Sports
+      - Woods
+      - Wool Shop
+      - Zoo
+    columns:
+      - name: contact_info_tags
+        properties:
+          - email
+          - website
+          - fax
+          - phone
+          - phone:central_answering_service
+          - opening_hours
+      - name: brand_info_tags
+        properties:
+          - brand:0#Language
+          - brand:wikidata
+      - name: alt_category
+        properties:
+          - alt_category
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+      - name: rich_content_info
+        properties:
+          - rich_content_info
+      - name: address_tags
+        properties:
+          - addr:1#Address Component:0#Language
+          - tokenized:addr:1#Address Component:1#Language
+      - name: source_identifier_tags
+        properties:
+          - source_identifier
+          - source_identifier:internal
+      - name: popularity
+        properties:
+          - popularity
+      - name: emergencyphone
+        properties:
+          - emergency:phone
+      - name: services_and_facilities_tags
+        properties:
+          - car_repair
+          - caravans
+          - drinking_water
+          - emergency_phone
+          - fireplace
+          - first_aid_kit
+          - fuel_station
+          - hotel
+          - internet_access
+          - kiosk
+          - laundry
+          - motel
+          - parking_facility
+          - picnic_site
+          - restaurant
+          - sanitary_dump_station
+          - shower
+          - snacks
+          - telephone
+          - tents
+          - toilets
+          - toilets:wheelchair
+          - wheelchair
+      - name: out_of_business
+        properties:
+          - out_of_business
+      - name: importance
+        properties:
+          - importance
+      - name: confidence_tags
+        properties:
+          - confidence:feature
+          - confidence:property:1#Key
+          - confidence:member:1#Member Role
+      - name: location_provenance
+        properties:
+          - location_provenance
+      - name: theatre_type
+        properties:
+          - theatre:type
+      - name: theatre_genre
+        properties:
+          - theatre:genre
+      - name: industrial
+        properties:
+          - industrial
+      - name: engineering
+        properties:
+          - engineering
+      - name: company
+        properties:
+          - company
+      - name: factory_product
+        properties:
+          - product
+      - name: insurance
+        properties:
+          - insurance
+      - name: hazmat
+        properties:
+          - hazmat
+      - name: refrigeration_power
+        properties:
+          - refrigeration_power
+      - name: reservable
+        properties:
+          - reservable
+      - name: secured
+        properties:
+          - secured
+      - name: hgv
+        properties:
+          - hgv
+      - name: motorcar
+        properties:
+          - motorcar
+      - name: payment_payment_method
+        properties:
+          - payment:0#Payment Method
+      - name: self_service
+        properties:
+          - self_service
+      - name: access
+        properties:
+          - access
+      - name: hydrogen_standard
+        properties:
+          - hydrogen_standard
+      - name: repair
+        properties:
+          - repair
+      - name: passport_control
+        properties:
+          - passport_control
+      - name: cocktails
+        properties:
+          - cocktails
+      - name: karaoke
+        properties:
+          - karaoke
+      - name: wine
+        properties:
+          - wine
+      - name: cuisine
+        properties:
+          - cuisine
+      - name: diet_type
+        properties:
+          - diet:1#Diet Type
+      - name: school_type
+        properties:
+          - school:type
+      - name: vending
+        properties:
+          - vending
+      - name: diplomatic
+        properties:
+          - diplomatic
+      - name: post_office_type
+        properties:
+          - post_office_type
+      - name: social_facility
+        properties:
+          - social_facility
+      - name: social_facility_for
+        properties:
+          - social_facility:for
+      - name: emergency
+        properties:
+          - emergency
+      - name: hospital_grade
+        properties:
+          - hospital_grade
+      - name: discotheque
+        properties:
+          - discotheque
+      - name: jazz_club
+        properties:
+          - jazz_club
+      - name: private_club
+        properties:
+          - private_club
+      - name: drive_in
+        properties:
+          - drive_in
+      - name: zoo
+        properties:
+          - zoo
+      - name: attraction
+        properties:
+          - attraction
+      - name: garden_type
+        properties:
+          - garden:type
+      - name: park
+        properties:
+          - park
+      - name: atv
+        properties:
+          - atv
+      - name: 4wd
+        properties:
+          - 4wd
+      - name: hiking
+        properties:
+          - hiking
+      - name: mtb
+        properties:
+          - mtb
+      - name: horse
+        properties:
+          - horse
+      - name: carpool
+        properties:
+          - carpool
+      - name: bus
+        properties:
+          - bus
+      - name: denomination
+        properties:
+          - denomination
+      - name: tickets_public_transport
+        properties:
+          - tickets:public_transport
+      - name: marketplace
+        properties:
+          - marketplace
+      - name: cannabis_medical
+        properties:
+          - cannabis:medical
+      - name: cannabis_recreational
+        properties:
+          - cannabis:recreational
+      - name: beauty
+        properties:
+          - beauty
+      - name: ski
+        properties:
+          - ski
+      - name: ferry_terminal
+        properties:
+          - ferry_terminal
+      - name: gateway
+        properties:
+          - gateway
+      - name: terminal
+        properties:
+          - terminal
+      - name: aerodrome_type
+        properties:
+          - aerodrome:type
+      - name: faa
+        properties:
+          - faa
+      - name: icao
+        properties:
+          - icao
+      - name: iata
+        properties:
+          - iata
+      - name: network
+        properties:
+          - network
+      - name: passenger
+        properties:
+          - passenger
+      - name: station
+        properties:
+          - station
+      - name: castle_type
+        properties:
+          - castle_type
+      - name: memorial
+        properties:
+          - memorial
+      - name: crop
+        properties:
+          - crop
+      - name: trees
+        properties:
+          - trees
+      - name: wetland
+        properties:
+          - wetland
+      - name: meadow
+        properties:
+          - meadow
+      - name: residential
+        properties:
+          - residential
+      - name: military
+        properties:
+          - military
+      - name: information
+        properties:
+          - information
+      - name: headquarters
+        properties:
+          - headquarters
+      - name: operator
+        properties:
+          - operator
+      - name: drive_through
+        properties:
+          - drive_through
+      - name: factory_outlet
+        properties:
+          - factory_outlet
+      - name: capacity
+        properties:
+          - capacity
+      - name: gers_identifier
+        properties:
+          - gers_identifier
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: postal_information
+    features:
+      - Postal Area
+      - Postal Point
+    columns:
+      - name: boundary
+        properties:
+          - boundary
+      - name: postal
+        properties:
+          - postal
+      - name: postal_code
+        properties:
+          - postal_code
+      - name: postal_code_main
+        properties:
+          - postal_code_main
+      - name: postal_code_sub
+        properties:
+          - postal_code_sub
+      - name: postal_delivery
+        properties:
+          - postal_delivery
+      - name: postal_matching
+        properties:
+          - postal_matching
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: label
+        properties:
+          - label
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+  - name: inland_water
+    features:
+      - Inland Water Body
+      - Inland Water Line
+    columns:
+      - name: natural
+        properties:
+          - natural
+      - name: zoomlevel_min
+        properties:
+          - zoomlevel_min
+      - name: optional_label_zoomlevel_tags
+        properties:
+          - zoomlevel_min:label
+          - zoomlevel_max:label
+      - name: zoomlevel_max
+        properties:
+          - zoomlevel_max
+      - name: water
+        properties:
+          - water
+      - name: intermittent
+        properties:
+          - intermittent
+      - name: bridge
+        properties:
+          - bridge
+      - name: tunnel
+        properties:
+          - tunnel
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+  - name: address_point
+    features:
+      - Address Point
+    columns:
+      - name: address_point
+        properties:
+          - address_point
+      - name: address_tags
+        properties:
+          - addr:1#Address Component:0#Language
+          - tokenized:addr:1#Address Component:1#Language
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: turn_restriction
+    features:
+      - Turn Restriction
+    columns:
+      - name: type
+        properties:
+          - type
+      - name: restriction
+        properties:
+          - restriction
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: from
+        properties:
+          - from
+      - name: to
+        properties:
+          - to
+      - name: via
+        properties:
+          - via
+  - name: lane_connectivity
+    features:
+      - Lane Connectivity
+    columns:
+      - name: type
+        properties:
+          - type
+      - name: connectivity
+        properties:
+          - connectivity
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+      - name: from
+        properties:
+          - from
+      - name: via
+        properties:
+          - via
+      - name: to
+        properties:
+          - to
+  - name: traffic_sign
+    features:
+      - Built-Up Area Sign
+      - End Of All Restrictions Sign
+      - Give Way Sign
+      - Hazard Sign
+      - Lane Added Sign
+      - Lane Ends Left Sign
+      - Lane Ends Right Sign
+      - Maximum Speed Sign
+      - Overtaking Restriction Sign
+      - Stop Sign
+      - Traffic Sign Along Road
+      - Variable Traffic Sign
+    columns:
+      - name: traffic_sign
+        properties:
+          - traffic_sign
+      - name: type
+        properties:
+          - type
+      - name: city_limit
+        properties:
+          - city_limit
+      - name: name
+        properties:
+          - name
+      - name: alt_name
+        properties:
+          - alt_name
+      - name: city_limit_with_maxspeed
+        properties:
+          - city_limit_with_maxspeed
+      - name: cancellation_transportation_mode_conditional
+        properties:
+          - cancellation:1#Transportation Mode:0#Conditional
+      - name: hazard
+        properties:
+          - hazard
+      - name: maxspeed_transportation_mode_conditional
+        properties:
+          - maxspeed:0#Transportation Mode:0#Conditional
+      - name: source_maxspeed
+        properties:
+          - source:maxspeed
+      - name: overtaking_transportation_mode_conditional
+        properties:
+          - overtaking:0#Transportation Mode:0#Conditional
+      - name: traffic_sign_position
+        properties:
+          - traffic_sign:position
+      - name: traffic_sign_direction
+        properties:
+          - traffic_sign:direction
+      - name: along_road
+        properties:
+          - along_road
+      - name: confidence_existence
+        properties:
+          - confidence_existence
+      - name: traffic_sign_distance_tags
+        properties:
+          - traffic_sign:distance
+          - traffic_sign:offset
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: traffic_signal
+    features:
+      - Traffic Signals
+      - Traffic Signals Along Road
+      - Stop Line
+      - Stop Line Along Road
+      - Traffic Signals With Stop Line
+      - Traffic Signals With Stop Line Superior
+    columns:
+      - name: highway
+        properties:
+          - highway
+      - name: type
+        properties:
+          - type
+      - name: road_marking
+        properties:
+          - road_marking
+      - name: traffic_signals_position
+        properties:
+          - traffic_signals:position
+      - name: traffic_signals_direction
+        properties:
+          - traffic_signals:direction
+      - name: traffic_signals
+        properties:
+          - traffic_signals
+      - name: along_road
+        properties:
+          - along_road
+      - name: stop_line_virtual
+        properties:
+          - stop_line:virtual
+      - name: stop_line_direction
+        properties:
+          - stop_line:direction
+      - name: stop_line
+        properties:
+          - stop_line
+      - name: traffic_signals_signal_group
+        properties:
+          - traffic_signals:signal_group
+          - stop_line:primary
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: signpost
+    features:
+      - Motorway Junction
+      - Signpost
+    columns:
+      - name: highway
+        properties:
+          - highway
+      - name: type
+        properties:
+          - type
+      - name: name_language_signed
+        properties:
+          - name:0#Language:signed
+      - name: alt_name_language_signed
+        properties:
+          - alt_name:0#Language:signed
+      - name: ref_side
+        properties:
+          - ref:0#Side
+      - name: noname
+        properties:
+          - noname
+      - name: noref
+        properties:
+          - noref
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+      - name: signpost_exit_info_tags
+        properties:
+          - junction:name:1#Language:1#Row And Cell
+          - junction:ref:1#Row And Cell
+      - name: signpost_shield_info_tags
+        properties:
+          - ref:shield:0#Language:1#Row And Cell
+          - ref_name:shield:0#Language:1#Row And Cell
+      - name: other_signpost_info_tags
+        properties:
+          - distance
+          - time
+          - bicycle
+          - foot
+          - hiking
+      - name: phoneme
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+      - name: signpost_destination_info_tags
+        properties:
+          - destination:0#To:0#Language:0#Row And Cell
+          - destination:country:0#To
+          - destination:other:1#Language:1#Row And Cell
+          - destination:ref:0#To:0#Language:0#Row And Cell
+          - destination:ref_name:0#To:1#Language:1#Row And Cell
+          - destination:loc_ref
+          - destination:street:0#To:0#Language:0#Row And Cell
+          - destination:symbol:0#To:0#Row And Cell
+          - destination:network:0#To
+          - ambiguous:1#Row And Cell
+      - name: signpost_arrow_info_tags
+        properties:
+          - destination:arrow:0#To
+          - destination:arrow:ref
+      - name: signpost_color_info_tags
+        properties:
+          - colour:arrow
+          - colour:back
+          - colour:text
+          - destination:colour:0#To
+          - destination:colour:ref:0#To
+          - destination:colour:arrow
+          - destination:colour:text
+      - name: from
+        properties:
+          - from
+      - name: intersection
+        properties:
+          - intersection
+      - name: via
+        properties:
+          - via
+      - name: to
+        properties:
+          - to
+      - name: sign
+        properties:
+          - sign
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: boundary
+    features:
+      - Administrative Boundary
+    columns:
+      - name: boundary
+        properties:
+          - boundary
+      - name: maritime
+        properties:
+          - maritime
+      - name: geopol_display
+        properties:
+          - geopol_display
+      - name: draw_scale_tags
+        properties:
+          - draw_scale_min
+          - draw_scale_max
+          - draw_scale_min:name:0#Side:0#Language
+          - draw_scale_max:name:0#Side:0#Language
+      - name: name_info_property_tags
+        properties:
+          - 1#Key:pronunciation:1#Language For Phoneme
+          - abbr_name:0#Side:0#Language
+          - alt_name:0#Side:0#Language
+          - loc_name:0#Side:0#Language
+          - name:0#Side:0#Language
+          - nickname:0#Side:0#Language
+          - official_name:0#Side:0#Language
+          - short_alt_name:0#Side:0#Short Name Type:0#Language
+          - short_name:0#Side:0#Short Name Type:0#Language
+          - tokenized:alt_name:0#Side:1#Language
+          - tokenized:name:0#Side:1#Language
+          - tokenized:nickname:0#Side:1#Language
+          - tokenized:official_name:0#Side:1#Language
+          - tokenized:short_alt_name:0#Side:0#Short Name Type:1#Language
+          - tokenized:short_name:0#Side:0#Short Name Type:1#Language
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: address_range
+    features:
+      - Address Range
+      - House Number
+    columns:
+      - name: addr_interpolation
+        properties:
+          - addr:interpolation
+      - name: addr_housenumber_language
+        properties:
+          - addr:housenumber:0#Language
+      - name: addr_constant
+        properties:
+          - addr:constant
+      - name: addr_intermediate_language
+        properties:
+          - addr:intermediate:0#Language
+      - name: addr_street_language
+        properties:
+          - addr:street:1#Language
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: ev_charging
+    features:
+      - Charging Location
+      - Charging Station
+      - Charging Equipment
+      - Charge Point Location
+      - Charging Station Location
+    columns:
+      - name: amenity
+        properties:
+          - amenity
+      - name: type
+        properties:
+          - type
+      - name: man_made
+        properties:
+          - man_made
+      - name: charging_when_closed
+        properties:
+          - charging_when_closed
+      - name: parking
+        properties:
+          - parking
+      - name: payment_service_provider
+        properties:
+          - payment:service_provider
+      - name: owner
+        properties:
+          - owner
+      - name: sub_operator
+        properties:
+          - sub_operator
+      - name: access
+        properties:
+          - access
+      - name: private
+        properties:
+          - private
+      - name: premises
+        properties:
+          - premises
+      - name: operator
+        properties:
+          - operator
+      - name: capacity
+        properties:
+          - capacity
+      - name: station_id
+        properties:
+          - station_id
+      - name: generated
+        properties:
+          - generated
+      - name: charging_location
+        properties:
+          - charging_location
+      - name: charging_equipment
+        properties:
+          - charging_equipment
+      - name: charging_station_location
+        properties:
+          - charging_station_location
+      - name: charge_point_location
+        properties:
+          - charge_point_location
+      - name: evse_id
+        properties:
+          - evse_id
+      - name: evse_uid
+        properties:
+          - evse_uid
+      - name: socket_socket_type_socket_format
+        properties:
+          - socket:1#Socket Type:0#Socket Format
+      - name: socket_socket_type_socket_format_voltage
+        properties:
+          - socket:1#Socket Type:0#Socket Format:voltage
+      - name: socket_socket_type_socket_format_current
+        properties:
+          - socket:1#Socket Type:0#Socket Format:current
+      - name: socket_socket_type_socket_format_power_type
+        properties:
+          - socket:1#Socket Type:0#Socket Format:power_type
+      - name: socket_socket_type_socket_format_output
+        properties:
+          - socket:1#Socket Type:0#Socket Format:output
+      - name: level
+        properties:
+          - level
+      - name: parking_space
+        properties:
+          - parking_space
+      - name: payment_cards
+        properties:
+          - payment:cards
+      - name: payment_credit_cards
+        properties:
+          - payment:credit_cards
+      - name: payment_debit_cards
+        properties:
+          - payment:debit_cards
+      - name: authentication_rfid
+        properties:
+          - authentication:rfid
+      - name: smart_charging_profile
+        properties:
+          - smart_charging_profile
+      - name: charging_preferences
+        properties:
+          - charging_preferences
+      - name: remotely_controllable
+        properties:
+          - remotely_controllable
+      - name: authentication_token_group
+        properties:
+          - authentication:token_group
+      - name: unlock_connector
+        properties:
+          - unlock_connector
+      - name: plug_and_charge
+        properties:
+          - plug_and_charge
+      - name: reservation
+        properties:
+          - reservation
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: road_access
+    features:
+      - Road Access
+      - Routing Point
+    columns:
+      - name: type
+        properties:
+          - type
+      - name: routing_node
+        properties:
+          - routing_node
+      - name: routing
+        properties:
+          - routing
+      - name: road_access
+        properties:
+          - road_access
+      - name: road_access_routing
+        properties:
+          - road_access:routing
+      - name: side
+        properties:
+          - side
+      - name: location_provenance
+        properties:
+          - location_provenance
+      - name: access_from
+        properties:
+          - access_from
+      - name: access_via
+        properties:
+          - access_via
+      - name: access_to
+        properties:
+          - access_to
+      - name: additional_road_access
+        properties:
+          - additional_road_access
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: landmark
+    features:
+      - Landmark
+      - Landmark With Building Footprint
+      - Landmark Footprint
+      - Landmark With Landmark Footprint
+    columns:
+      - name: landmark
+        properties:
+          - landmark
+      - name: type
+        properties:
+          - type
+      - name: landmark_footprint
+        properties:
+          - landmark_footprint
+      - name: model_3d_reference
+        properties:
+          - model_3d_reference
+      - name: building_footprint
+        properties:
+          - building_footprint
+      - name: layer_identifier_tags
+        properties:
+          - layer_id
+          - layer_id:1#Key
+      - name: qa_info_tags
+        properties:
+          - qa:feature
+          - qa:property:1#Key
+          - qa:member:1#Member Role
+      - name: license_tags
+        properties:
+          - license
+          - license:1#Key
+      - name: license_zone
+        properties:
+          - license_zone
+      - name: osm_identifier
+        properties:
+          - osm_identifier
+      - name: feedback_tags
+        properties:
+          - feedback:feature
+          - feedback:property:1#Key
+          - feedback:member:1#Member Role
+          - feedback:geometry
+      - name: geopolitical
+        properties:
+          - geopolitical
+  - name: unsupported
+    features:
+      - unsupported
+    columns:
+      - name: unsupported
+        properties:
+          - unsupported
