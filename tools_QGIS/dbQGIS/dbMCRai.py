@@ -1832,77 +1832,151 @@ def fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h
 	qtMsgBox(message)
 
 
-def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords):
+def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, h3):
 	"""Natural water polygons (natural=water tag) from both polygons and relations_geometries.
-	Optimized query based on tested SQL - filters by natural=water before spatial operations.
+	Supports both ST_ (polygon) and H3 (tile) filtering modes.
+	Uses modern server-side H3 approach with h3_polyfillash3string + h3_kring + h3_toparent.
 	"""
 	extentStr = "'" + extentCoords + "'"
-
-	sql = f"""
-	-- Natural Water Geometry (natural=water)
-	-- Optimized: filter by tag before expensive spatial operations
-	WITH polys_spatial_filtered AS (
+	
+	if h3 == True:
+		# Modern H3 approach: server-side tile generation with multi-resolution matching
+		sql = f"""
+		-- Natural Water Geometry (natural=water) - SERVER-SIDE H3 with k-ring expansion
+		WITH bbox AS (
+			SELECT ST_GEOMFROMWKT({extentStr}) AS g
+		),
+		bbox_h3_base AS (
+			-- Generate base H3 tiles at resolution 8 from bbox polygon (server-side)
+			SELECT explode(h3_polyfillash3string(ST_ASWKT(bbox.g), 8)) AS h3_tile
+			FROM bbox
+		),
+		bbox_h3_tiles AS (
+			-- Expand with k-ring=1 to capture edge hexagons and avoid missing geometries
+			SELECT DISTINCT explode(h3_kring(h3_tile, 1)) AS h3_tile
+			FROM bbox_h3_base
+		),
+		polygons_filtered AS (
+			SELECT
+				'polygons' AS source,
+				p.product,
+				p.element_type,
+				p.osm_identifier,
+				p.license_zone,
+				p.tags,
+				p.geometry,
+				p.h3_index,
+				p.h3_resolution
+			FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
+			WHERE p.product = '{product_version}'
+			  AND p.license_zone = '{license_zone}'
+			  AND p.tags['natural'] = 'water'
+			  AND p.element_type != 'RELATION'
+			  AND p.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+			  AND p.h3_index != '0'
+		),
+		relations_filtered AS (
+			SELECT
+				'relations_geometries' AS source,
+				r.product,
+				r.element_type,
+				r.osm_identifier,
+				r.license_zone,
+				r.tags,
+				r.geometry,
+				r.h3_index,
+				r.h3_resolution
+			FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries r
+			WHERE r.product = '{product_version}'
+			  AND r.license_zone = '{license_zone}'
+			  AND r.tags['natural'] = 'water'
+			  AND r.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+			  AND r.h3_index != '0'
+		),
+		combined_filtered AS (
+			SELECT * FROM polygons_filtered
+			UNION ALL
+			SELECT * FROM relations_filtered
+		)
+		SELECT 
+			c.source,
+			c.product,
+			c.element_type,
+			c.osm_identifier,
+			c.license_zone,
+			c.tags['natural'] AS natural,
+			c.tags['water'] AS water,
+			c.tags['intermittent'] AS intermittent,
+			c.tags['bridge'] AS bridge,
+			c.tags['tunnel'] AS tunnel,
+			c.tags['name'] AS name,
+			c.tags['alt_name'] AS alt_name,
+			CAST(c.tags AS STRING) AS tags,
+			c.geometry
+		FROM combined_filtered c
+		INNER JOIN bbox_h3_tiles h ON (
+			-- Multi-resolution matching: handles geometries indexed at any resolution
+			(c.h3_resolution = 8 AND c.h3_index = h.h3_tile)
+			OR
+			(c.h3_resolution < 8 AND c.h3_index = h3_toparent(h.h3_tile, c.h3_resolution))
+			OR
+			(c.h3_resolution > 8 AND h3_toparent(c.h3_index, 8) = h.h3_tile)
+		)
+		ORDER BY c.product, c.source, c.osm_identifier
+		;"""
+	else:
+		# Traditional ST_ intersection approach
+		sql = f"""
+		-- Natural Water Geometry (natural=water) - ST_Intersects approach
 		SELECT
 			'polygons' AS source,
 			product,
 			element_type,
 			osm_identifier,
 			license_zone,
-			geometry,
-			tags
+			tags['natural'] AS natural,
+			tags['water'] AS water,
+			tags['intermittent'] AS intermittent,
+			tags['bridge'] AS bridge,
+			tags['tunnel'] AS tunnel,
+			tags['name'] AS name,
+			tags['alt_name'] AS alt_name,
+			CAST(tags AS STRING) AS tags,
+			geometry
 		FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
 		WHERE product = '{product_version}'
 		  AND license_zone = '{license_zone}'
 		  AND tags['natural'] = 'water'
 		  AND element_type != 'RELATION'
 		  AND geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
-		  AND ST_Intersects(
-				ST_GeomFromWKT({extentStr}),
-				ST_GeomFromWKT(geometry)
-			  )
-	),
-	rels_spatial_filtered AS (
+		  AND ST_Intersects(ST_GEOMFROMWKT({extentStr}), ST_GEOMFROMWKT(geometry))
+
+		UNION ALL
+
 		SELECT
 			'relations_geometries' AS source,
 			product,
 			element_type,
 			osm_identifier,
 			license_zone,
-			geometry,
-			tags
+			tags['natural'] AS natural,
+			tags['water'] AS water,
+			tags['intermittent'] AS intermittent,
+			tags['bridge'] AS bridge,
+			tags['tunnel'] AS tunnel,
+			tags['name'] AS name,
+			tags['alt_name'] AS alt_name,
+			CAST(tags AS STRING) AS tags,
+			geometry
 		FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
 		WHERE product = '{product_version}'
 		  AND license_zone = '{license_zone}'
 		  AND tags['natural'] = 'water'
 		  AND geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
-		  AND ST_Intersects(
-				ST_GeomFromWKT({extentStr}),
-				ST_GeomFromWKT(geometry)
-			  )
-	),
-	combined_filtered AS (
-		SELECT * FROM polys_spatial_filtered
-		UNION ALL
-		SELECT * FROM rels_spatial_filtered
-	)
-	SELECT
-		source,
-		product,
-		element_type,
-		osm_identifier,
-		license_zone,
-		tags['natural'] AS natural,
-		tags['water'] AS water,
-		tags['intermittent'] AS intermittent,
-		tags['bridge'] AS bridge,
-		tags['tunnel'] AS tunnel,
-		tags['name'] AS name,
-		tags['alt_name'] AS alt_name,
-		CAST(tags AS STRING) AS tags,
-		geometry
-	FROM combined_filtered
-	ORDER BY product, source, osm_identifier
-	;""".format(product_version=product_version, license_zone=license_zone, extentStr=extentStr)
+		  AND ST_Intersects(ST_GEOMFROMWKT({extentStr}), ST_GEOMFROMWKT(geometry))
+
+		ORDER BY product, source, osm_identifier
+		;"""
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2209,9 +2283,6 @@ def fHexesFromExtent(extent_layer):
 
 	layer = proj_to_geo(extent_layer)
 	ext_poly = poly_from_extent(layer)
-	# Convert to format expected by h3: [[lat1, lng1], [lat2, lng2], ...]
-	# polygon = [[p[1], p[0]] for p in ext_poly]  # swap to lat,lng order
-	hex_ids = set()
 
 	h3resolution=config['mcr']['h3resolution']
 		
@@ -2229,27 +2300,27 @@ def fHexesFromExtent(extent_layer):
 		print(f"H3 Cancelled")
 		return "cancel"
 
-	# Get the bounding box and create a grid of points
-	min_lat = min(p[1] for p in ext_poly)
-	max_lat = max(p[1] for p in ext_poly)
-	min_lng = min(p[0] for p in ext_poly)
-	max_lng = max(p[0] for p in ext_poly)
+	# Use proper polygon filling instead of point sampling to avoid missing tiles
+	# Create GeoJSON-like structure for h3.polyfill
+	# ext_poly format: [(xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)]
+	# h3.polygon_to_cells needs: [[lat, lng], [lat, lng], ...] - note lat/lng order!
+	polygon_coords = [[p[1], p[0]] for p in ext_poly]  # swap to [lat, lng] order
+	geojson_polygon = {
+		'type': 'Polygon',
+		'coordinates': [polygon_coords]
+	}
 	
-	# Calculate step size based on resolution level (rough approximation)
-	step = max(0.001, (max_lat - min_lat) / (level*10))  # adjust step size based on extent
+	# Use h3.polygon_to_cells for accurate coverage (replaces old point-sampling method)
+	hex_ids = h3.polygon_to_cells(geojson_polygon, level)
 	
-	# Sample points within the bounding box
-	lat = min_lat
-	while lat <= max_lat:
-			lng = min_lng
-			while lng <= max_lng:
-					hex_ids.add(h3.latlng_to_cell(lat, lng, level))
-					lng += step
-			lat += step
+	# Expand by k-ring=1 to ensure edge geometries aren't missed
+	expanded_hex_ids = set()
+	for hex_id in hex_ids:
+		expanded_hex_ids.update(h3.grid_ring(hex_id, 1))
+		expanded_hex_ids.add(hex_id)
 	
-	print(f"Hex IDs within extent poly: {str(len(hex_ids))}")
-	# print(f"Hex IDs list: {hex_ids}")
-	return hex_ids
+	print(f"Base hex IDs: {len(hex_ids)}, Expanded (k-ring=1): {len(expanded_hex_ids)}")
+	return expanded_hex_ids
 
 
 def fMainUI():
@@ -2276,6 +2347,7 @@ def fMainUI():
 	'All Polygons Intersect',
 	'--',
 	'Water (natural)',
+	'--',
 	'Admin Areas',
 	'Admin Point Places',
 	'Inland Water',
@@ -2354,7 +2426,7 @@ def fMainUI():
 	elif process == 'All Polygons Intersect':
 		fAllPolyIntersect(product_version, license_zone, extentCoords)
 	elif process == 'Water (natural)':
-		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords)
+		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Admin Areas':
 		fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Admin Point Places':
