@@ -1611,6 +1611,117 @@ def fProcessBuildingsOld(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
+
+def fProcBuildingFootprintsNew(product_version, license_zone, extentCoords):
+	"""BuildingFootprints (new): Create a single-session TEMP VIEW with parsed geometries and stable row numbers for safe/streamed export.
+	This runs a CREATE OR REPLACE TEMP VIEW, a VERIFY COUNT, and an EXPORT SELECT ordered by rn. Run the whole script as a single batch in DBeaver (same connection/tab).
+	"""
+	extent = "'" + extentCoords + "'"
+
+	sql = """
+-- Buildings extraction: prefer parts when they fully cover the outline
+-- Pattern: Single-session TEMP VIEW to stage parsed geometries and stable row numbers
+-- NOTE: Run the entire CREATE → VERIFY → EXPORT sequence as a single execution (same connection/tab) in dBeaver
+--       so the TEMP VIEW remains accessible for export. Use Export Query (streamed) and small fetch size (~2000).
+
+CREATE OR REPLACE TEMP VIEW tmp_buildings_footprints AS
+WITH
+  -- bbox/query geometry (replace the WKT with your extent)
+  q AS (
+    SELECT
+      ST_GeomFromWKT({extent}) AS qg,
+      ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+  ),
+
+  -- Candidate polygons (building or building:part) parsed once — push product/license filters down early
+  polys_src AS (
+    SELECT orbis_id, product, license_zone, tags, building, geometry
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+    WHERE product = '{product_version}'
+      AND license_zone = '{license_zone}'
+  ),
+
+  -- Pre-parse WKT (parse geometry only); envelope prefilter and exact checks in next CTE
+  polys_pre AS (
+    SELECT
+      p.orbis_id,
+      p.product,
+      p.license_zone,
+      p.tags,
+      p.building,
+      p.geometry,
+      ST_GeomFromWKT(p.geometry) AS g
+    FROM polys_src p
+    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
+  ),
+
+  -- Spatially filter using envelopes (fast) then exact geometry test
+  polys_spatial_filtered AS (
+    SELECT
+      p.orbis_id,
+      p.product,
+      p.license_zone,
+      p.tags,
+      p.building,
+      p.geometry,
+      p.g,
+      ST_Envelope(p.g) AS env
+    FROM polys_pre p
+    CROSS JOIN q
+    WHERE ST_Intersects(ST_Envelope(p.g), q.qenv)
+      AND ST_Intersects(q.qg, p.g)
+  ),
+
+  -- Footprints-only output: pick polygons with building='yes' and relations with building tag
+  polygons_out AS (
+    SELECT
+      NULL AS parent_relation_id,
+      p.orbis_id AS orbis_id,
+      p.tags AS tags,
+      ST_ASTEXT(p.g) AS geometry,
+      'outline' AS role,
+      'polygons' AS source
+    FROM polys_spatial_filtered p
+    WHERE p.building = 'yes'
+  )
+
+-- Add a stable row number for safe paging/exporting
+SELECT
+  ROW_NUMBER() OVER (ORDER BY orbis_id) AS rn,
+  parent_relation_id,
+  orbis_id,
+  tags,
+  geometry,
+  role,
+  source
+FROM polygons_out;
+
+-- === VERIFY (run immediately after CREATE in same session) ===
+-- Check total rows before exporting
+SELECT COUNT(*) AS total_rows FROM tmp_buildings_footprints;
+
+-- === EXPORT (order by stable rn) ===
+-- Use: Export Query (streamed) in dBeaver with small fetch size (~2000). Or page with WHERE rn > x AND rn <= y
+SELECT rn, parent_relation_id, orbis_id, tags, geometry, role, source
+FROM tmp_buildings_footprints
+ORDER BY rn;
+
+-- Example for paged export (replace x,y):
+-- SELECT rn, parent_relation_id, orbis_id, tags, geometry, role, source
+-- FROM tmp_buildings_footprints
+-- WHERE rn > 0 AND rn <= 2000
+-- ORDER BY rn;
+""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+
+	# Put script on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single batch: CREATE → VERIFY → EXPORT.\nUse Export Query (streamed) with small fetch size (~2000)."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+
 def fTurnRestrictions(product_version, license_zone, extentCoords):
 	extentStr = "'" + extentCoords + "'"
 
@@ -2296,6 +2407,7 @@ def fMainUI():
 	'All Polygons Intersect',
 	'--',
 	'Water (natural)',
+	'BuildingFootprints (new)',
 	'--',
 	'Admin Areas',
 	'Admin Point Places',
@@ -2370,12 +2482,16 @@ def fMainUI():
 
 	if process == 'Get bounding POLYGON':
 		fGetBoundingPolygon(extent_layer)
+
+	elif process == 'Water (natural)':
+		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords)
+	elif process == 'BuildingFootprints (new)':
+		fProcBuildingFootprintsNew(product_version, license_zone, extentCoords)
+
 	elif process == 'All Polygons Contain':
 		fAllPolyContains(product_version, license_zone, extentCoords)
 	elif process == 'All Polygons Intersect':
 		fAllPolyIntersect(product_version, license_zone, extentCoords)
-	elif process == 'Water (natural)':
-		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords)
 	elif process == 'Admin Areas':
 		fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Admin Point Places':
