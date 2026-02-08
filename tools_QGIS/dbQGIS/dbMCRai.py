@@ -1677,7 +1677,7 @@ WITH
 SELECT
   parent_relation_id,
   orbis_id,
-  tags,
+  CAST(tags AS STRING) AS tags,
   building,
   building_part,
   building_group,
