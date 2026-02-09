@@ -1,0 +1,5 @@
+# Requirements for Synonyms2Access.py
+# No external (pip) packages required — uses Python Standard Library only.
+# Recommended Python version: 3.7+
+# To verify your environment:
+#   python3 -V
