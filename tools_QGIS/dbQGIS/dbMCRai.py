@@ -1611,7 +1611,234 @@ def fProcessBuildingsOld(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcBuildingRelations_SpatialOpt(product_version, license_zone, extentCoords, menu_name=None):
+
+def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=None):
+	"""Natural water polygons (natural=water tag) from both polygons and relations_geometries.
+	Optimized query based on tested SQL - filters by natural=water before spatial operations.
+	"""
+	extentStr = "'" + extentCoords + "'"
+
+	sql = f"""
+	-- {menu_name if menu_name else 'Natural Water Geometry (natural=water)'}
+	-- Natural Water Geometry (natural=water)
+	-- Confluence-optimized: pre-parse geometries and bbox prefilter
+	WITH
+	q AS (
+	  SELECT
+	    ST_GeomFromWKT({extentStr}) AS qg,
+	    ST_Envelope(ST_GeomFromWKT({extentStr})) AS qenv
+	),
+	polys_pre AS (
+	  SELECT
+	    p.*,
+	    ST_GeomFromWKT(p.geometry) AS g
+	  FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
+	  WHERE p.product = '{product_version}'
+	    AND p.license_zone = '{license_zone}'
+	    AND p.tags['natural'] = 'water'
+	    AND p.element_type != 'RELATION'
+	    AND p.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+	),
+	polys_spatial_filtered AS (
+	  SELECT
+	    'polygons' AS source,
+	    p.product,
+	    p.element_type,
+	    p.osm_identifier,
+	    p.license_zone,
+	    p.tags,
+	    p.g,
+	    ST_Envelope(p.g) AS env,
+	    p.geometry
+	  FROM polys_pre p
+	  CROSS JOIN q
+	  WHERE ST_Intersects(ST_Envelope(p.g), q.qenv)
+	    AND ST_Intersects(q.qg, p.g)
+	),
+	rels_pre AS (
+	  SELECT
+	    r.*,
+	    ST_GeomFromWKT(r.geometry) AS g
+	  FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries r
+	  WHERE r.product = '{product_version}'
+	    AND r.license_zone = '{license_zone}'
+	    AND r.tags['natural'] = 'water'
+	    AND r.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
+	),
+	rels_spatial_filtered AS (
+	  SELECT
+	    'relations_geometries' AS source,
+	    r.product,
+	    r.element_type,
+	    r.osm_identifier,
+	    r.license_zone,
+	    r.tags,
+	    r.g,
+	    ST_Envelope(r.g) AS env,
+	    r.geometry
+	  FROM rels_pre r
+	  CROSS JOIN q
+	  WHERE ST_Intersects(ST_Envelope(r.g), q.qenv)
+	    AND ST_Intersects(q.qg, r.g)
+	),
+	combined_filtered AS (
+	  SELECT * FROM polys_spatial_filtered
+	  UNION ALL
+	  SELECT * FROM rels_spatial_filtered
+	)
+	SELECT
+	  source,
+	  product,
+	  element_type,
+	  osm_identifier,
+	  license_zone,
+	  tags['natural'] AS natural,
+	  tags['water'] AS water,
+	  tags['intermittent'] AS intermittent,
+	  tags['bridge'] AS bridge,
+	  tags['tunnel'] AS tunnel,
+	  tags['name'] AS name,
+	  tags['alt_name'] AS alt_name,
+	  CAST(tags AS STRING) AS tags,
+	  geometry
+	FROM combined_filtered
+	ORDER BY product, source, osm_identifier
+	;""".format(product_version=product_version, license_zone=license_zone, extentStr=extentStr)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe Water (natural=water) query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+
+def fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=None):
+	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
+	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
+	"""
+	extent = "'" + extentCoords + "'"
+
+	sql = f"""
+-- {menu_name if menu_name else 'Buildings extraction: export-only pattern with parts (no ordering)'}
+-- Buildings extraction: export-only pattern with parts (no ordering)
+-- Single statement that streams results for export (no ORDER / ROW_NUMBER). Run this as a single execution in DBeaver.
+
+WITH
+  q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
+  polys_src AS (
+    SELECT orbis_id, product, license_zone, tags, building, geometry
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+  ),
+  polys_pre AS (
+    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
+    FROM polys_src p
+    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
+  ),
+  polys_spatial_filtered AS (
+    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
+    FROM polys_pre p
+    CROSS JOIN q
+    WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
+  ),
+  -- Find relations whose members reference our spatially-filtered polygons using an array-test (no explode) and restrict to polygonal relation geometry
+  rel_pick AS (
+    SELECT p.orbis_id AS poly_orbis_id,
+           MIN(r.orbis_id) AS parent_relation_id
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.relations r
+    JOIN polys_spatial_filtered p
+      ON r.product = p.product
+      AND r.license_zone = p.license_zone
+    WHERE r.product = '{product_version}'
+      AND r.license_zone = 'NLD'
+      AND r.geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+      AND SIZE(FILTER(r.members, x -> x.id = p.orbis_id AND x.role IN ('outline','part'))) > 0
+    GROUP BY p.orbis_id
+  ),
+  polygons_out AS (
+    -- include both outlines and parts, expose requested properties as columns (extracted from tags)
+    SELECT
+      rp.parent_relation_id AS parent_relation_id,
+      p.orbis_id AS orbis_id,
+--      p.license_zone AS license_zone,
+      p.tags AS tags,
+      p.g AS g,
+      CASE WHEN p.building = 'yes' THEN 'outline' WHEN p.tags['building:part'] IS NOT NULL THEN 'part' ELSE 'outline' END AS role,
+--      'polygons' AS source,
+      p.tags['building'] AS building,
+      p.tags['building:part'] AS building_part,
+      p.tags['building_group'] AS building_group,
+      p.tags['height'] AS height,
+      p.tags['layer'] AS layer,
+      p.tags['location'] AS location,
+      p.tags['construction'] AS construction,
+      p.tags['extrusion'] AS extrusion,
+      p.tags['roof:shape'] AS roof_shape,
+      p.tags['roof:orientation'] AS roof_orientation,
+      p.tags['roof:direction'] AS roof_direction,
+      p.tags['height:eave'] AS height_eave,
+      p.tags['min_height'] AS min_height,
+      p.tags['building:min_level'] AS building_min_level,
+      p.tags['building:levels'] AS building_levels,
+--      map_filter(p.tags, (k,v) -> k IN ('min_height','building:levels','building:min_level','roof_levels')) AS building_properties_tags,
+--      map_filter(p.tags, (k,v) -> k LIKE 'layer_id%') AS layer_identifier_tags,
+--      map_filter(p.tags, (k,v) -> k LIKE 'qa%') AS qa_info_tags,
+--      map_filter(p.tags, (k,v) -> k LIKE 'license%') AS license_tags,
+      p.tags['osm_identifier'] AS osm_identifier
+--      map_filter(p.tags, (k,v) -> k LIKE 'feedback%') AS feedback_tags,
+--      p.tags['geopolitical'] AS geopolitical,
+--      map_filter(p.tags, (k,v) -> (k LIKE 'name%' OR k LIKE 'abbr_name' OR k LIKE 'alt_name' OR k LIKE 'loc_name' OR k LIKE 'nickname' OR k LIKE 'official_name' OR k LIKE 'short_name' OR k LIKE 'short_alt_name' OR k LIKE 'tokenized:%')) AS internal_name_tags
+    FROM polys_spatial_filtered p
+    LEFT JOIN rel_pick rp ON rp.poly_orbis_id = p.orbis_id
+    WHERE (p.building = 'yes' OR p.tags['building:part'] IS NOT NULL)
+  )
+
+SELECT
+  parent_relation_id,
+  orbis_id,
+  CAST(tags AS STRING) AS tags,
+  building,
+  building_part,
+  building_group,
+  height,
+  layer,
+  location,
+  construction,
+  extrusion,
+  roof_shape,
+  roof_orientation,
+  roof_direction,
+  height_eave,
+  min_height,
+  building_min_level,
+  building_levels,
+--  building_properties_tags,
+--  layer_identifier_tags,
+--  qa_info_tags,
+--  license_tags,
+--  license_zone,
+  osm_identifier,
+--  feedback_tags,
+--  geopolitical,
+--  internal_name_tags,
+  ST_ASTEXT(g) AS geometry,
+  role
+--  source
+FROM polygons_out
+;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
+
+	# Put script on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single statement.\nUse Export Query (streamed) with small fetch size (~2000)."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+
+def fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=None):
 	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
 	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
 	"""
@@ -1714,465 +1941,90 @@ FROM polygons_out
 	qtMsgBox(message)
 
 
-def fProcBuildingFootprintsAndParts_SpatialOpt(product_version, license_zone, extentCoords, menu_name=None):
-	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
-	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
-	"""
+def fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=None):
+	"""LOI: Artificial Ground - envelope-prefiltered extraction for polygonal LOIs."""
 	extent = "'" + extentCoords + "'"
 
 	sql = f"""
--- {menu_name if menu_name else 'Buildings extraction: export-only pattern with parts (no ordering)'}
--- Buildings extraction: export-only pattern with parts (no ordering)
--- Single statement that streams results for export (no ORDER / ROW_NUMBER). Run this as a single execution in DBeaver.
+-- {menu_name if menu_name else 'LOI Artificial Ground'}
+-- LOI: Artificial Ground (spatial opt)
+-- Filters: product_version, license_zone, extent (WKT)
+-- Uses envelope pre-filter + exact ST_Intersects for efficiency
 
 WITH
-  q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
-  polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
-  ),
-  polys_pre AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
-    FROM polys_src p
-    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
-  ),
-  polys_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
-    FROM polys_pre p
-    CROSS JOIN q
-    WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
-  ),
-  polygons_out AS (
-    -- include both outlines and parts, expose requested properties as columns (extracted from tags)
-    SELECT
-      NULL AS parent_relation_id,
-      p.orbis_id AS orbis_id,
-      p.license_zone AS license_zone,
-      p.tags AS tags,
-      p.g AS g,
-      CASE WHEN p.building = 'yes' THEN 'outline' WHEN p.tags['building:part'] IS NOT NULL THEN 'part' ELSE 'outline' END AS role,
-      'polygons' AS source,
-      p.tags['building'] AS building,
-      p.tags['building:part'] AS building_part,
-      p.tags['building_group'] AS building_group,
-      p.tags['height'] AS height,
-      p.tags['layer'] AS layer,
-      p.tags['location'] AS location,
-      p.tags['construction'] AS construction,
-      p.tags['extrusion'] AS extrusion,
-      p.tags['roof:shape'] AS roof_shape,
-      p.tags['roof:orientation'] AS roof_orientation,
-      p.tags['roof:direction'] AS roof_direction,
-      p.tags['height:eave'] AS height_eave,
-      map_filter(p.tags, (k,v) -> k IN ('min_height','building:levels','building:min_level','roof_levels')) AS building_properties_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'layer_id%') AS layer_identifier_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'qa%') AS qa_info_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'license%') AS license_tags,
-      p.tags['osm_identifier'] AS osm_identifier,
-      map_filter(p.tags, (k,v) -> k LIKE 'feedback%') AS feedback_tags,
-      p.tags['geopolitical'] AS geopolitical,
-      map_filter(p.tags, (k,v) -> (k LIKE 'name%' OR k LIKE 'abbr_name' OR k LIKE 'alt_name' OR k LIKE 'loc_name' OR k LIKE 'nickname' OR k LIKE 'official_name' OR k LIKE 'short_name' OR k LIKE 'short_alt_name' OR k LIKE 'tokenized:%')) AS internal_name_tags
-    FROM polys_spatial_filtered p
-    WHERE (p.building = 'yes' OR p.tags['building:part'] IS NOT NULL)
-  )
-
-SELECT
-  parent_relation_id,
-  orbis_id,
-  CAST(tags AS STRING) AS tags,
-  building,
-  building_part,
-  building_group,
-  height,
-  layer,
-  location,
-  construction,
-  extrusion,
-  roof_shape,
-  roof_orientation,
-  roof_direction,
-  height_eave,
-  building_properties_tags,
-  layer_identifier_tags,
-  qa_info_tags,
-  license_tags,
-  license_zone,
-  osm_identifier,
-  feedback_tags,
-  geopolitical,
-  internal_name_tags,
-  ST_ASTEXT(g) AS geometry,
-  role,
-  source
-FROM polygons_out
-;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
-
-	# Put script on the clipboard
-	clipboard = QgsApplication.clipboard()
-	clipboard.setText(sql)
-
-	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single statement.\nUse Export Query (streamed) with small fetch size (~2000)."""
-	print(message + "\n======= clipboard! =======")
-	qtMsgBox(message)
-
-
-def fProcBuildingFootprintsAndParts_poly_relgeo_SpatialOpt(product_version, license_zone, extentCoords, menu_name=None):
-	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
-	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
-	"""
-	extent = "'" + extentCoords + "'"
-
-	sql = f"""
--- {menu_name if menu_name else 'Buildings extraction: export-only pattern with parts (no ordering)'}
--- Buildings extraction: export-only pattern with parts (no ordering)
--- Single statement that streams results for export (no ORDER / ROW_NUMBER). Run this as a single execution in DBeaver.
-
-WITH
-  q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
-  polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
-  ),
-  polys_pre AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
-    FROM polys_src p
-    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
-  ),
-  polys_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
-    FROM polys_pre p
-    CROSS JOIN q
-    WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
-  ),
-  -- Relations geometries (building outlines/parts) — collect these separately and spatially filter
-  relations_geoms_src AS (
-    SELECT orbis_id, product, license_zone, tags, geom_type, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries rg
-    WHERE product = '{product_version}'
-      AND license_zone = '{license_zone}'
-  ),
-  relations_pre AS (
-    SELECT
-      rg.orbis_id AS orbis_id,
-      rg.product AS product,
-      rg.license_zone AS license_zone,
-      rg.tags AS tags,
-      rg.geom_type AS geom_type,
-      ST_GeomFromWKT(regexp_replace(rg.geometry, '^SRID=[0-9]+;', '')) AS g
-    FROM relations_geoms_src rg
-    WHERE (rg.tags['building'] IS NOT NULL OR rg.tags['building:part'] IS NOT NULL)
-      AND rg.geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-  ),
-  relations_spatial_filtered AS (
-    SELECT
-      r.orbis_id AS orbis_id,
-      r.product AS product,
-      r.license_zone AS license_zone,
-      r.tags AS tags,
-      r.g AS g,
-      ST_Envelope(r.g) AS env
-    FROM relations_pre r
-    CROSS JOIN q
-    WHERE ST_Intersects(ST_Envelope(r.g), q.qenv) AND ST_Intersects(q.qg, r.g)
-  ),
-  polygons_out AS (
-    -- include both outlines and parts from polygons only (skip relation-matching here)
-    SELECT
-      NULL AS parent_relation_id,
-      p.orbis_id AS orbis_id,
-      p.license_zone AS license_zone,
-      p.tags AS tags,
-      p.g AS g,
-      CASE WHEN p.building = 'yes' THEN 'outline' WHEN p.tags['building:part'] IS NOT NULL THEN 'part' ELSE 'outline' END AS role,
-      'polygons' AS source,
-      p.tags['building'] AS building,
-      p.tags['building:part'] AS building_part,
-      p.tags['building_group'] AS building_group,
-      p.tags['height'] AS height,
-      p.tags['layer'] AS layer,
-      p.tags['location'] AS location,
-      p.tags['construction'] AS construction,
-      p.tags['extrusion'] AS extrusion,
-      p.tags['roof:shape'] AS roof_shape,
-      p.tags['roof:orientation'] AS roof_orientation,
-      p.tags['roof:direction'] AS roof_direction,
-      p.tags['height:eave'] AS height_eave,
-      map_filter(p.tags, (k,v) -> k IN ('min_height','building:levels','building:min_level','roof_levels')) AS building_properties_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'layer_id%') AS layer_identifier_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'qa%') AS qa_info_tags,
-      map_filter(p.tags, (k,v) -> k LIKE 'license%') AS license_tags,
-      p.tags['osm_identifier'] AS osm_identifier,
-      map_filter(p.tags, (k,v) -> k LIKE 'feedback%') AS feedback_tags,
-      p.tags['geopolitical'] AS geopolitical,
-      map_filter(p.tags, (k,v) -> (k LIKE 'name%' OR k LIKE 'abbr_name' OR k LIKE 'alt_name' OR k LIKE 'loc_name' OR k LIKE 'nickname' OR k LIKE 'official_name' OR k LIKE 'short_name' OR k LIKE 'short_alt_name' OR k LIKE 'tokenized:%')) AS internal_name_tags
-    FROM polys_spatial_filtered p
-    WHERE (p.building = 'yes' OR p.tags['building:part'] IS NOT NULL)
-  ),
-  relations_out AS (
-    -- include outlines and parts from relation geometries
-    SELECT
-      NULL AS parent_relation_id,
-      r.orbis_id AS orbis_id,
-      r.license_zone AS license_zone,
-      r.tags AS tags,
-      r.g AS g,
-      CASE WHEN r.tags['building'] IS NOT NULL THEN 'outline' WHEN r.tags['building:part'] IS NOT NULL THEN 'part' ELSE 'outline' END AS role,
-      'relations_geometries' AS source,
-      r.tags['building'] AS building,
-      r.tags['building:part'] AS building_part,
-      r.tags['building_group'] AS building_group,
-      r.tags['height'] AS height,
-      r.tags['layer'] AS layer,
-      r.tags['location'] AS location,
-      r.tags['construction'] AS construction,
-      r.tags['extrusion'] AS extrusion,
-      r.tags['roof:shape'] AS roof_shape,
-      r.tags['roof:orientation'] AS roof_orientation,
-      r.tags['roof:direction'] AS roof_direction,
-      r.tags['height:eave'] AS height_eave,
-      map_filter(r.tags, (k,v) -> k IN ('min_height','building:levels','building:min_level','roof_levels')) AS building_properties_tags,
-      map_filter(r.tags, (k,v) -> k LIKE 'layer_id%') AS layer_identifier_tags,
-      map_filter(r.tags, (k,v) -> k LIKE 'qa%') AS qa_info_tags,
-      map_filter(r.tags, (k,v) -> k LIKE 'license%') AS license_tags,
-      r.tags['osm_identifier'] AS osm_identifier,
-      map_filter(r.tags, (k,v) -> k LIKE 'feedback%') AS feedback_tags,
-      r.tags['geopolitical'] AS geopolitical,
-      map_filter(r.tags, (k,v) -> (k LIKE 'name%' OR k LIKE 'abbr_name' OR k LIKE 'alt_name' OR k LIKE 'loc_name' OR k LIKE 'nickname' OR k LIKE 'official_name' OR k LIKE 'short_name' OR k LIKE 'short_alt_name' OR k LIKE 'tokenized:%')) AS internal_name_tags
-    FROM relations_spatial_filtered r
-  )
-
-SELECT
-  parent_relation_id,
-  orbis_id,
-  CAST(tags AS STRING) AS tags,
-  building,
-  building_part,
-  building_group,
-  height,
-  layer,
-  location,
-  construction,
-  extrusion,
-  roof_shape,
-  roof_orientation,
-  roof_direction,
-  height_eave,
-  building_properties_tags,
-  layer_identifier_tags,
-  qa_info_tags,
-  license_tags,
-  license_zone,
-  osm_identifier,
-  feedback_tags,
-  geopolitical,
-  internal_name_tags,
-  ST_ASTEXT(g) AS geometry,
-  role,
-  source
-FROM polygons_out
-UNION ALL
-SELECT
-  parent_relation_id,
-  orbis_id,
-  CAST(tags AS STRING) AS tags,
-  building,
-  building_part,
-  building_group,
-  height,
-  layer,
-  location,
-  construction,
-  extrusion,
-  roof_shape,
-  roof_orientation,
-  roof_direction,
-  height_eave,
-  building_properties_tags,
-  layer_identifier_tags,
-  qa_info_tags,
-  license_tags,
-  license_zone,
-  osm_identifier,
-  feedback_tags,
-  geopolitical,
-  internal_name_tags,
-  ST_ASTEXT(g) AS geometry,
-  role,
-  source
-FROM relations_out
-;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
-
-	# Put script on the clipboard
-	clipboard = QgsApplication.clipboard()
-	clipboard.setText(sql)
-
-	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single statement.\nUse Export Query (streamed) with small fetch size (~2000)."""
-	print(message + "\n======= clipboard! =======")
-	qtMsgBox(message)
-
-
-def fProcBuildingFootprints_SpatialOpt(product_version, license_zone, extentCoords, menu_name=None):
-	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
-	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
-	"""
-	extent = "'" + extentCoords + "'"
-
-	sql = f"""
--- {menu_name if menu_name else 'Buildings extraction: export-only pattern (no ordering)'}
--- Buildings extraction: export-only pattern (no ordering)
--- Single statement that streams results for export (no ORDER / ROW_NUMBER). Run this as a single execution in DBeaver.
-
-WITH
-  q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
-  polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
-  ),
-  polys_pre AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
-    FROM polys_src p
-    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
-  ),
-  polys_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g
-    FROM polys_pre p CROSS JOIN q
-    WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
-  ),
-  polygons_out AS (
-    SELECT NULL AS parent_relation_id, p.tags AS tags, p.g AS g, 'outline' AS role, 'polygons' AS source
-    FROM polys_spatial_filtered p
-    WHERE p.building = 'yes'
-  )
-SELECT parent_relation_id, tags, ST_ASTEXT(g) AS geometry, role, source
-FROM polygons_out
-;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
-
-	# Put script on the clipboard
-	clipboard = QgsApplication.clipboard()
-	clipboard.setText(sql)
-
-	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single statement.\nUse Export Query (streamed) with small fetch size (~2000)."""
-	print(message + "\n======= clipboard! =======")
-	qtMsgBox(message)
-
-
-# fExecBuildingFootprintsNew removed — prefer running the CREATE → VERIFY → EXPORT batch directly in DBeaver (same connection/tab) to avoid executing long-running SQL from the QGIS Python environment.
-
-
-def fProcBuildingFootprints_TempView(product_version, license_zone, extentCoords, menu_name=None):
-	"""BuildingFootprints (new): Create a single-session TEMP VIEW with parsed geometries and stable row numbers for safe/streamed export.
-	This runs a CREATE OR REPLACE TEMP VIEW, a VERIFY COUNT, and an EXPORT SELECT ordered by rn. Run the whole script as a single batch in DBeaver (same connection/tab).
-	"""
-	extent = "'" + extentCoords + "'"
-
-	sql = f"""
--- {menu_name if menu_name else 'BuildingFootprints (temp view)'}
-
--- Buildings extraction: prefer parts when they fully cover the outline
--- Pattern: Single-session TEMP VIEW to stage parsed geometries and stable row numbers
--- NOTE: Run the entire CREATE → VERIFY → EXPORT sequence as a single execution (same connection/tab) in dBeaver
---       so the TEMP VIEW remains accessible for export. Use Export Query (streamed) and small fetch size (~2000).
-
-CREATE OR REPLACE TEMP VIEW tmp_buildings_footprints AS
-WITH
-  -- bbox/query geometry (replace the WKT with your extent)
   q AS (
-    SELECT
-      ST_GeomFromWKT({extent}) AS qg,
-      ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+    SELECT ST_GeomFromWKT({extent}) AS qg,
+           ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
   ),
 
-  -- Candidate polygons (building or building:part) parsed once — push product/license filters down early
-  polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
+  loi_polys_src AS (
+    SELECT orbis_id, product, license_zone, tags, geometry
     FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
     WHERE product = '{product_version}'
       AND license_zone = '{license_zone}'
+      AND (
+        tags['landuse'] IN ('artificial_ground','brownfield','builtup_area','construction','farmyard','garages','greenfield','landfill','quarry','railway','residential')
+        OR tags['aeroway'] IN ('runway','apron','taxiway')
+        OR tags['man_made'] IN ('breakwater','pier')
+        OR tags['leisure'] = 'common'
+      )
   ),
 
-  -- Pre-parse WKT (parse geometry only); envelope prefilter and exact checks in next CTE
-  polys_pre AS (
-    SELECT
-      p.orbis_id,
-      p.product,
-      p.license_zone,
-      p.tags,
-      p.building,
-      p.geometry,
-      ST_GeomFromWKT(p.geometry) AS g
-    FROM polys_src p
-    WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
+  loi_relgeo_src AS (
+    SELECT orbis_id, product, license_zone, tags AS tags, geometry, geom_type
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+    WHERE product = '{product_version}'
+      AND license_zone = '{license_zone}'
+      AND geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+      AND (
+        tags['landuse'] IN ('artificial_ground','brownfield','builtup_area','construction','farmyard','garages','greenfield','landfill','quarry','railway','residential')
+        OR tags['aeroway'] IN ('runway','apron','taxiway')
+        OR tags['man_made'] IN ('breakwater','pier')
+        OR tags['leisure'] = 'common'
+      )
   ),
 
-  -- Spatially filter using envelopes (fast) then exact geometry test
-  polys_spatial_filtered AS (
-    SELECT
-      p.orbis_id,
-      p.product,
-      p.license_zone,
-      p.tags,
-      p.building,
-      p.geometry,
-      p.g,
-      ST_Envelope(p.g) AS env
-    FROM polys_pre p
+  loi_pre AS (
+    SELECT orbis_id, product, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'polygons' AS source
+    FROM loi_polys_src
+    UNION ALL
+    SELECT orbis_id, product, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'relations_geometries' AS source
+    FROM loi_relgeo_src
+  ),
+
+  loi_spatial_filtered AS (
+    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.geometry, p.g, ST_Envelope(p.g) AS env, p.source
+    FROM loi_pre p
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(p.g), q.qenv)
       AND ST_Intersects(q.qg, p.g)
   ),
 
-  -- Footprints-only output: pick polygons with building='yes' and relations with building tag
-  polygons_out AS (
+  loi_out AS (
     SELECT
-      NULL AS parent_relation_id,
       p.orbis_id AS orbis_id,
+      p.source AS source,
       p.tags AS tags,
-      ST_ASTEXT(p.g) AS geometry,
-      'outline' AS role,
-      'polygons' AS source
-    FROM polys_spatial_filtered p
-    WHERE p.building = 'yes'
+      p.tags['landuse'] AS landuse,
+      p.tags['aeroway'] AS aeroway,
+      p.tags['man_made'] AS man_made,
+      p.tags['leisure'] AS leisure,
+      p.tags['name'] AS name,
+      p.tags['osm_identifier'] AS osm_identifier,
+      ST_ASTEXT(p.g) AS geometry
+    FROM loi_spatial_filtered p
   )
 
--- Add a stable row number for safe paging/exporting
-SELECT
-  ROW_NUMBER() OVER (ORDER BY orbis_id) AS rn,
-  parent_relation_id,
-  orbis_id,
-  tags,
-  geometry,
-  role,
-  source
-FROM polygons_out;
-
--- === VERIFY (run immediately after CREATE in same session) ===
--- Check total rows before exporting
-SELECT COUNT(*) AS total_rows FROM tmp_buildings_footprints;
-
--- === EXPORT (order by stable rn) ===
--- Use: Export Query (streamed) in dBeaver with small fetch size (~2000). Or page with WHERE rn > x AND rn <= y
-SELECT rn, parent_relation_id, orbis_id, tags, geometry, role, source
-FROM tmp_buildings_footprints
-ORDER BY rn;
-
--- Example for paged export (replace x,y):
--- SELECT rn, parent_relation_id, orbis_id, tags, geometry, role, source
--- FROM tmp_buildings_footprints
--- WHERE rn > 0 AND rn <= 2000
--- ORDER BY rn;
+SELECT * FROM loi_out;
 """.format(product_version=product_version, license_zone=license_zone, extent=extent)
 
-	# Put script on the clipboard
+	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
 	clipboard.setText(sql)
 
-	message = """\nThe BuildingFootprints (new) script is on the clipboard.\nPaste and run it in DBeaver as a single batch: CREATE → VERIFY → EXPORT.\nUse Export Query (streamed) with small fetch size (~2000)."""
+	message = """\nThe LOI Artificial Ground query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
-
 
 
 def fTurnRestrictions(product_version, license_zone, extentCoords):
@@ -2392,108 +2244,6 @@ def fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h
 	clipboard.setText(sql)
 
 	message = """\nThe query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
-	print(message + "\n======= clipboard! =======")
-	qtMsgBox(message)
-
-
-def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=None):
-	"""Natural water polygons (natural=water tag) from both polygons and relations_geometries.
-	Optimized query based on tested SQL - filters by natural=water before spatial operations.
-	"""
-	extentStr = "'" + extentCoords + "'"
-
-	sql = f"""
-	-- {menu_name if menu_name else 'Natural Water Geometry (natural=water)'}
-	-- Natural Water Geometry (natural=water)
-	-- Confluence-optimized: pre-parse geometries and bbox prefilter
-	WITH
-	q AS (
-	  SELECT
-	    ST_GeomFromWKT({extentStr}) AS qg,
-	    ST_Envelope(ST_GeomFromWKT({extentStr})) AS qenv
-	),
-	polys_pre AS (
-	  SELECT
-	    p.*,
-	    ST_GeomFromWKT(p.geometry) AS g
-	  FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
-	  WHERE p.product = '{product_version}'
-	    AND p.license_zone = '{license_zone}'
-	    AND p.tags['natural'] = 'water'
-	    AND p.element_type != 'RELATION'
-	    AND p.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
-	),
-	polys_spatial_filtered AS (
-	  SELECT
-	    'polygons' AS source,
-	    p.product,
-	    p.element_type,
-	    p.osm_identifier,
-	    p.license_zone,
-	    p.tags,
-	    p.g,
-	    ST_Envelope(p.g) AS env,
-	    p.geometry
-	  FROM polys_pre p
-	  CROSS JOIN q
-	  WHERE ST_Intersects(ST_Envelope(p.g), q.qenv)
-	    AND ST_Intersects(q.qg, p.g)
-	),
-	rels_pre AS (
-	  SELECT
-	    r.*,
-	    ST_GeomFromWKT(r.geometry) AS g
-	  FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries r
-	  WHERE r.product = '{product_version}'
-	    AND r.license_zone = '{license_zone}'
-	    AND r.tags['natural'] = 'water'
-	    AND r.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
-	),
-	rels_spatial_filtered AS (
-	  SELECT
-	    'relations_geometries' AS source,
-	    r.product,
-	    r.element_type,
-	    r.osm_identifier,
-	    r.license_zone,
-	    r.tags,
-	    r.g,
-	    ST_Envelope(r.g) AS env,
-	    r.geometry
-	  FROM rels_pre r
-	  CROSS JOIN q
-	  WHERE ST_Intersects(ST_Envelope(r.g), q.qenv)
-	    AND ST_Intersects(q.qg, r.g)
-	),
-	combined_filtered AS (
-	  SELECT * FROM polys_spatial_filtered
-	  UNION ALL
-	  SELECT * FROM rels_spatial_filtered
-	)
-	SELECT
-	  source,
-	  product,
-	  element_type,
-	  osm_identifier,
-	  license_zone,
-	  tags['natural'] AS natural,
-	  tags['water'] AS water,
-	  tags['intermittent'] AS intermittent,
-	  tags['bridge'] AS bridge,
-	  tags['tunnel'] AS tunnel,
-	  tags['name'] AS name,
-	  tags['alt_name'] AS alt_name,
-	  CAST(tags AS STRING) AS tags,
-	  geometry
-	FROM combined_filtered
-	ORDER BY product, source, osm_identifier
-	;""".format(product_version=product_version, license_zone=license_zone, extentStr=extentStr)
-
-	# Put query on the clipboard
-	clipboard = QgsApplication.clipboard()
-	clipboard.setText(sql)
-
-	message = """\nThe Water (natural=water) query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
@@ -2861,12 +2611,9 @@ def fMainUI():
 	'All Polygons Intersect',
 	'--',
 	'Water (natural)',
-	'Buildings w Relations (spatial opt)',
-	'BuildingFootprints&Parts (spatial opt)',
-	'--',
-	'BuildingFootprints&Parts poly+rel_geo (spatial opt)',
-	'BuildingFootprints (spatial opt)',
-	'BuildingFootprints (temp view)',
+	'Buildings with Relations Optimised',
+	'Buildings w/o Relations Optimised',
+	'LOI Artificial Ground',
 	'--',
 	'Admin Areas',
 	'Admin Point Places',
@@ -2903,7 +2650,6 @@ def fMainUI():
 	'Draw H3 tiles',
 	'List H3 tiles',
 	'-----------',
-	'LOIs',
 	'Everything Ways',
 	'Everything Roads',
 	'Everything Rels',
@@ -2944,16 +2690,12 @@ def fMainUI():
 
 	elif process == 'Water (natural)':
 		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'Buildings w Relations (spatial opt)':
-		fProcBuildingRelations_SpatialOpt(product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'BuildingFootprints&Parts (spatial opt)':
-		fProcBuildingFootprintsAndParts_SpatialOpt(product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'BuildingFootprints&Parts poly+rel_geo (spatial opt)':
-		fProcBuildingFootprintsAndParts_poly_relgeo_SpatialOpt(product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'BuildingFootprints (spatial opt)':
-		fProcBuildingFootprints_SpatialOpt(product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'BuildingFootprints (temp view)':
-		fProcBuildingFootprints_TempView(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Buildings with Relations Optimised':
+		fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Buildings w/o Relations Optimised':
+		fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'LOI Artificial Ground':
+		fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=process)
 
 	elif process == 'All Polygons Contain':
 		fAllPolyContains(product_version, license_zone, extentCoords)
