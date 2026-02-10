@@ -1743,19 +1743,21 @@ WITH
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
   ),
-  -- Find relations whose members reference our spatially-filtered polygons using an array-test (no explode) and restrict to polygonal relation geometry
+  -- exploded-members approach: explode relation members to make an equi-join possible
   rel_pick AS (
-    SELECT p.orbis_id AS poly_orbis_id,
+    SELECT m.id AS poly_orbis_id,
            MIN(r.orbis_id) AS parent_relation_id
     FROM pu_orbis_platform_prod_catalog.map_central_repository.relations r
     JOIN polys_spatial_filtered p
       ON r.product = p.product
       AND r.license_zone = p.license_zone
+    LATERAL VIEW EXPLODE(r.members) AS m
     WHERE r.product = '{product_version}'
-      AND r.license_zone = 'NLD'
+      AND r.license_zone = '{license_zone}'
       AND r.geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-      AND SIZE(FILTER(r.members, x -> x.id = p.orbis_id AND x.role IN ('outline','part'))) > 0
-    GROUP BY p.orbis_id
+      AND m.role IN ('outline','part')
+      AND m.id = p.orbis_id
+    GROUP BY m.id
   ),
   polygons_out AS (
     -- include both outlines and parts, expose requested properties as columns (extracted from tags)
@@ -2023,6 +2025,301 @@ SELECT * FROM loi_out;
 	clipboard.setText(sql)
 
 	message = """\nThe LOI Artificial Ground query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+
+def fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, menu_name=None):
+	"""Transportation Line extraction (envelope-prefiltered lines).
+
+	Builds a streaming-friendly SQL query for Transportation Line features (road, rail, ferry).
+	Commented out fields (reserved for v2 relation work): parent_relation_id, route, service, tracktype, electrified, sign
+	Filters: product_version, license_zone, extent (WKT)
+	Uses envelope pre-filter + exact ST_Intersects for efficiency
+	"""
+	extent = "'" + extentCoords + "'"
+
+	sql = f"""
+-- {menu_name if menu_name else 'Transportation Line Extraction'}
+-- Transportation Line extraction: envelope-prefiltered, spatially filtered, relation-ready (relations fields commented out for v2)
+-- Commented out fields (reserved for v2 relation work): parent_relation_id, route, service, tracktype, electrified, sign
+-- Filters: product_version, license_zone, extent (WKT)
+
+WITH
+  q AS (
+    SELECT ST_GeomFromWKT({extent}) AS qg,
+           ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+  ),
+
+  lines_src AS (
+    SELECT orbis_id, product, license_zone, tags, geometry
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+  ),
+
+  lines_pre AS (
+    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
+    FROM lines_src l
+    -- quick property filter: include features that look like transportation lines
+    WHERE l.tags['highway'] IS NOT NULL
+       OR l.tags['railway'] IS NOT NULL
+       OR l.tags['route'] = 'ferry'
+       OR l.tags['ferry'] IS NOT NULL
+       OR l.tags['transportation'] IS NOT NULL
+  ),
+
+  lines_spatial_filtered AS (
+    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
+    FROM lines_pre l
+    CROSS JOIN q
+    WHERE ST_Intersects(ST_Envelope(l.g), q.qenv)
+      AND ST_Intersects(q.qg, l.g)
+  ),
+
+  -- (relations handled in v2) -- keeping placeholder rel_pick CTE removed for now to keep query compact
+
+  lines_out AS (
+    SELECT
+--      rp.parent_relation_id AS parent_relation_id, -- commented out for now; handled in v2 (parent relations)
+      l.orbis_id AS orbis_id,
+      l.tags AS tags,
+      l.g AS g,
+
+      -- feature-group guess
+      CASE
+        WHEN l.tags['highway'] IS NOT NULL THEN 'road'
+        WHEN l.tags['railway'] IS NOT NULL THEN 'railway'
+        WHEN l.tags['route'] = 'ferry' OR l.tags['ferry'] IS NOT NULL THEN 'ferry'
+        ELSE 'transportation_line'
+      END AS feature_group,
+
+      -- commonly useful properties extracted from tags
+      l.tags['name'] AS name,
+      l.tags['ref'] AS ref,
+      l.tags['highway'] AS highway,
+      l.tags['railway'] AS railway,
+--      l.tags['route'] AS route, -- commented out for v2 relation work
+--      l.tags['service'] AS service, -- commented out for v2 relation work
+      l.tags['oneway'] AS oneway,
+      l.tags['lanes'] AS lanes,
+      l.tags['layer'] AS layer,
+      l.tags['maxspeed'] AS maxspeed,
+      l.tags['surface'] AS surface,
+--      l.tags['tracktype'] AS tracktype, -- commented out for v2 relation work
+--      l.tags['electrified'] AS electrified, -- commented out for v2 relation work
+      l.tags['bridge'] AS bridge,
+      l.tags['tunnel'] AS tunnel,
+      l.tags['routing_class'] AS routing_class,
+--      l.tags['sign'] AS sign, -- commented out for v2 relation work
+      l.tags['osm_identifier'] AS osm_identifier
+
+    FROM lines_spatial_filtered l
+    -- LEFT JOIN rel_pick rp ON rp.line_orbis_id = l.orbis_id -- relations omitted for v2
+  )
+
+SELECT
+--  parent_relation_id, -- commented out for now; handled in v2
+  orbis_id,
+  CAST(tags AS STRING) AS tags,
+  feature_group,
+  name,
+  ref,
+  highway,
+  railway,
+--  route, -- commented out for v2
+--  service, -- commented out for v2
+  oneway,
+  lanes,
+  layer,
+  maxspeed,
+  surface,
+--  tracktype, -- commented out for v2
+--  electrified, -- commented out for v2
+  bridge,
+  tunnel,
+  routing_class,
+--  sign, -- commented out for v2
+  osm_identifier,
+  ST_ASTEXT(g) AS geometry
+FROM lines_out;
+""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe Transportation Line query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+def fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, menu_name=None):
+	"""Transportation Line extraction (envelope-prefiltered lines).
+
+	Builds a streaming-friendly SQL query for Transportation Line features (road, rail, ferry).
+	Includes raw tag fields `curvature:linear` and `gradient:linear`.
+	Also extracts speed tags: `speed:free_flow`, `speed:week`, `speed:weekday`, `speed:weekend`. Note: tag `speed:profile_ids` may reference external speed profile records (mentioned here for later resolution).
+	Elevation / vertical constraints may be present in tags (examples: `height`, `min_height`, `maxheight`, `absolute_height`, `tunnel:height`, `bridge:height`, `clearance`) — these are only mentioned here for awareness.
+	-- NOTE: The following fields are currently COMMENTED OUT pending experiments and implementation of length-weighted calculations: `speed_profile_ids`, `curvature_linear`, `curvature_avg_abs`, `gradient_linear`, `gradient_avg_abs`. These require careful handling (token parsing, interval lengths) before enabling.
+	TODO (vNext): compute cheap summary stats (curvature_min, curvature_avg_abs, curvature_max, gradient_min, gradient_avg_abs, gradient_max). Note: averages should be computed from absolute values to avoid sign cancellation.
+	Commented out fields (reserved for v2 relation work): parent_relation_id, route, service, tracktype, electrified, sign
+	Filters: product_version, license_zone, extent (WKT)
+	Uses envelope pre-filter + exact ST_Intersects for efficiency
+	"""
+	extent = "'" + extentCoords + "'"
+
+	sql = f"""
+-- {menu_name if menu_name else 'Transportation Line Extraction'}
+-- Transportation Line extraction: envelope-prefiltered, spatially filtered, relation-ready (relations fields commented out for v2)
+-- Commented out fields (reserved for v2 relation work): parent_relation_id, route, service, tracktype, electrified, sign
+-- Filters: product_version, license_zone, extent (WKT)
+
+WITH
+  q AS (
+    SELECT ST_GeomFromWKT({extent}) AS qg,
+           ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+  ),
+
+  lines_src AS (
+    SELECT orbis_id, product, license_zone, tags, geometry
+    FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+  ),
+
+  lines_pre AS (
+    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
+    FROM lines_src l
+    -- quick property filter: include features that look like transportation lines
+    WHERE l.tags['highway'] IS NOT NULL
+       OR l.tags['railway'] IS NOT NULL
+       OR l.tags['route'] = 'ferry'
+       OR l.tags['ferry'] IS NOT NULL
+       OR l.tags['transportation'] IS NOT NULL
+  ),
+
+  lines_spatial_filtered AS (
+    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
+    FROM lines_pre l
+    CROSS JOIN q
+    WHERE ST_Intersects(ST_Envelope(l.g), q.qenv)
+      AND ST_Intersects(q.qg, l.g)
+  ),
+
+  -- (relations handled in v2) -- keeping placeholder rel_pick CTE removed for now to keep query compact
+
+  lines_out AS (
+    SELECT
+--      rp.parent_relation_id AS parent_relation_id, -- commented out for now; handled in v2 (parent relations)
+      l.orbis_id AS orbis_id,
+      l.tags AS tags,
+      l.g AS g,
+
+      -- feature-group guess
+      CASE
+        WHEN l.tags['highway'] IS NOT NULL THEN 'road'
+        WHEN l.tags['railway'] IS NOT NULL THEN 'railway'
+        WHEN l.tags['route'] = 'ferry' OR l.tags['ferry'] IS NOT NULL THEN 'ferry'
+        ELSE 'transportation_line'
+      END AS feature_group,
+
+      -- commonly useful properties extracted from tags
+      l.tags['name'] AS name,
+      l.tags['ref'] AS ref,
+      l.tags['highway'] AS highway,
+      l.tags['railway'] AS railway,
+--      l.tags['route'] AS route, -- commented out for v2 relation work
+--      l.tags['service'] AS service, -- commented out for v2 relation work
+      l.tags['oneway'] AS oneway,
+      l.tags['lanes'] AS lanes,
+      l.tags['dual_carriageway'] AS dual_carriageway,
+      l.tags['sidewalk'] AS sidewalk,
+      l.tags['layer'] AS layer,
+      l.tags['maxspeed'] AS maxspeed,
+      l.tags['speed:free_flow'] AS speed_free_flow,
+      l.tags['speed:week'] AS speed_week,
+      l.tags['speed:weekday'] AS speed_weekday,
+      l.tags['speed:weekend'] AS speed_weekend,
+--      l.tags['speed:profile_ids'] AS speed_profile_ids, -- COMMENTED: pending profile resolution/experiments
+      l.tags['surface'] AS surface,
+--      l.tags['curvature:linear'] AS curvature_linear, -- COMMENTED: pending experiments (length-weighted parsing)
+--      l.tags['gradient:linear'] AS gradient_linear, -- COMMENTED: pending experiments (length-weighted parsing)
+      -- cheap unweighted summary stats computed from token values (tokens like 'offset#value' or 'start-end#value')
+      CASE WHEN l.tags['curvature:linear'] IS NOT NULL AND size(filter(split(l.tags['curvature:linear'],';'), x -> x <> '')) > 0 THEN
+        array_min(transform(filter(split(l.tags['curvature:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)))
+      ELSE NULL END AS curvature_min,
+--      CASE WHEN l.tags['curvature:linear'] IS NOT NULL AND size(filter(split(l.tags['curvature:linear'],';'), x -> x <> '')) > 0 THEN
+--        aggregate(transform(filter(split(l.tags['curvature:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)), CAST(0.0 AS DOUBLE), (acc, x) -> acc + abs(x)) / size(filter(split(l.tags['curvature:linear'],';'), x -> x <> ''))
+--      ELSE NULL END AS curvature_avg_abs, -- COMMENTED: pending length-weighted experiments
+      CASE WHEN l.tags['curvature:linear'] IS NOT NULL AND size(filter(split(l.tags['curvature:linear'],';'), x -> x <> '')) > 0 THEN
+        array_max(transform(filter(split(l.tags['curvature:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)))
+      ELSE NULL END AS curvature_max,
+      CASE WHEN l.tags['gradient:linear'] IS NOT NULL AND size(filter(split(l.tags['gradient:linear'],';'), x -> x <> '')) > 0 THEN
+        array_min(transform(filter(split(l.tags['gradient:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)))
+      ELSE NULL END AS gradient_min,
+--      CASE WHEN l.tags['gradient:linear'] IS NOT NULL AND size(filter(split(l.tags['gradient:linear'],';'), x -> x <> '')) > 0 THEN
+--        aggregate(transform(filter(split(l.tags['gradient:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)), CAST(0.0 AS DOUBLE), (acc, x) -> acc + abs(x)) / size(filter(split(l.tags['gradient:linear'],';'), x -> x <> ''))
+--      ELSE NULL END AS gradient_avg_abs, -- COMMENTED: pending length-weighted experiments
+      CASE WHEN l.tags['gradient:linear'] IS NOT NULL AND size(filter(split(l.tags['gradient:linear'],';'), x -> x <> '')) > 0 THEN
+        array_max(transform(filter(split(l.tags['gradient:linear'],';'), x -> x <> ''), x -> CAST(element_at(split(x,'#'), -1) AS DOUBLE)))
+      ELSE NULL END AS gradient_max,
+--      l.tags['tracktype'] AS tracktype, -- commented out for v2 relation work
+--      l.tags['electrified'] AS electrified, -- commented out for v2 relation work
+      l.tags['bridge'] AS bridge,
+      l.tags['tunnel'] AS tunnel,
+      l.tags['routing_class'] AS routing_class,
+--      l.tags['sign'] AS sign, -- commented out for v2 relation work
+      l.tags['osm_identifier'] AS osm_identifier
+
+    FROM lines_spatial_filtered l
+    -- LEFT JOIN rel_pick rp ON rp.line_orbis_id = l.orbis_id -- relations omitted for v2
+  )
+
+SELECT
+--  parent_relation_id, -- commented out for now; handled in v2
+  orbis_id,
+  CAST(tags AS STRING) AS tags,
+  feature_group,
+  name,
+  ref,
+  highway,
+  railway,
+--  route, -- commented out for v2
+--  service, -- commented out for v2
+  oneway,
+  lanes,
+  dual_carriageway,
+  sidewalk,
+  layer,
+  maxspeed,
+  speed_free_flow,
+  speed_week,
+  speed_weekday,
+  speed_weekend,
+--  speed_profile_ids, -- COMMENTED: pending profile resolution
+  surface,
+--  curvature_linear, -- COMMENTED: pending experiments
+  curvature_min,
+--  curvature_avg_abs, -- COMMENTED: pending length-weighted experiments
+  curvature_max,
+--  gradient_linear, -- COMMENTED: pending experiments
+  gradient_min,
+--  gradient_avg_abs, -- COMMENTED: pending length-weighted experiments
+  gradient_max,
+--  tracktype, -- commented out for v2
+--  electrified, -- commented out for v2
+  bridge,
+  tunnel,
+  routing_class,
+--  sign, -- commented out for v2
+  osm_identifier,
+  ST_ASTEXT(g) AS geometry
+FROM lines_out;
+""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe Transportation Line query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
@@ -2614,6 +2911,8 @@ def fMainUI():
 	'Buildings with Relations Optimised',
 	'Buildings w/o Relations Optimised',
 	'LOI Artificial Ground',
+	'Network wo Relations',
+	'Network Detailed wo Relations',
 	'--',
 	'Admin Areas',
 	'Admin Point Places',
@@ -2696,6 +2995,10 @@ def fMainUI():
 		fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'LOI Artificial Ground':
 		fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Network wo Relations':
+		fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Network Detailed wo Relations':
+		fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
 
 	elif process == 'All Polygons Contain':
 		fAllPolyContains(product_version, license_zone, extentCoords)
