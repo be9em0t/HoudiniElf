@@ -11,7 +11,18 @@ import os, sys
 # print("loaded sys")
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 # print("Current script's directory:", current_script_dir)
+# Add parent dir for legacy imports
 sys.path.append(os.path.dirname(current_script_dir))
+# Also add local 'modules' folder (contains sub_* helper modules) so imports like sub_H3_grid work
+modules_dir = os.path.join(current_script_dir, 'modules')
+if os.path.isdir(modules_dir):
+	# put modules dir at front so it shadows any system installs if needed
+	sys.path.insert(0, modules_dir)
+	# sanity check: report missing expected helpers (helps debug import problems)
+	expected_helpers = ['sub_H3_grid.py']
+	missing_helpers = [h for h in expected_helpers if not os.path.exists(os.path.join(modules_dir, h))]
+	if missing_helpers:
+		print(f"Warning: missing helper modules in {modules_dir}: {missing_helpers}")
 import imp
 # import importlib
 # importlib.reload(my_module)
@@ -67,9 +78,12 @@ print("Connected to databricks")
 # ventura_usr = config['orbis2']['ventura_usr']
 # ventura_pass = config['orbis2']['ventura_pass']
 
-import sub_H3_grid
-imp.reload(sub_H3_grid)
-from sub_H3_grid import *
+try:
+	import sub_H3_grid
+	imp.reload(sub_H3_grid)
+	from sub_H3_grid import *
+except ModuleNotFoundError:
+	print("Warning: 'sub_H3_grid' module not found in path; some features will be disabled. Look for 'modules/sub_H3_grid.py'")
 
 def fGetExtentPolygonCoords(extent_layer):
 	root = QgsProject.instance().layerTreeRoot()

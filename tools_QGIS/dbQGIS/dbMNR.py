@@ -4,7 +4,24 @@
 import os, sys
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 # print("Current script's directory:", current_script_dir)
+# Add parent dir for legacy imports
 sys.path.append(os.path.dirname(current_script_dir))
+# Also add local 'modules' folder (contains sub_* helper modules) so imports like sub_MNR_Buildings work
+modules_dir = os.path.join(current_script_dir, 'modules')
+if os.path.isdir(modules_dir):
+	# put modules dir at front so it shadows any system installs if needed
+	sys.path.insert(0, modules_dir)
+	# sanity check: report missing expected helpers (helps debug import problems)
+	expected_helpers = [
+		'sub_MNR_Buildings.py','sub_MNR_AdminArea.py','sub_MNR_PostalDistricts.py','sub_MNR_OtherAreas.py','sub_MNR_APTs.py',
+		'sub_MNR_CityCenters.py','sub_MNR_LandUse.py','sub_MNR_Maneuver.py','sub_MNR_TrafficSign.py','sub_MNR_TrafficLight.py',
+		'sub_MNR_NetworkZ.py','sub_MNR_NetworkZ_uuid.py','sub_MNR_NetworkZ_GSC.py','sub_MNR_POIs.py','sub_MNR_EVs.py',
+		'sub_MNR_EVs2.py','sub_MNR_EVsDBeaver.py','sub_MNR_SpeedProfilesZ.py','sub_MNR_SpeedProfiles.py','sub_MNR_TrafficSpeed.py',
+		'sub_MNR_Curvature.py','sub_MNR_Water.py','sub_Add_Centroid.py'
+	]
+	missing_helpers = [h for h in expected_helpers if not os.path.exists(os.path.join(modules_dir, h))]
+	if missing_helpers:
+		print(f"Warning: missing helper modules in {modules_dir}: {missing_helpers}")
 import imp
 
 from unittest import result
