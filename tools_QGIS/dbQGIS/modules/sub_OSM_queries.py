@@ -11,7 +11,8 @@ from qgis.PyQt.QtGui import *
 
 
 # manually append script folder 'cause fucking QGIS
-import imp
+# import imp
+import importlib as imp
 sys.path.append('d:/Work/OneDrive/Dev/Python/TT_Qgis_Workspace/MNR_automation')
 import b9PyQGIS
 imp.reload(b9PyQGIS)

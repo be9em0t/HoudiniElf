@@ -21,12 +21,13 @@ if os.path.isdir(modules_dir):
 	missing_helpers = [h for h in expected_helpers if not os.path.exists(os.path.join(modules_dir, h))]
 	if missing_helpers:
 		print(f"Warning: missing helper modules in {modules_dir}: {missing_helpers}")
-import imp
-
+# import imp
+import importlib as imp
 
 import geopandas as gpd
 # from unittest import result
 import b9PyQGIS
+# imp.reload(b9PyQGIS)
 imp.reload(b9PyQGIS)
 from b9PyQGIS import *
 from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject, QgsFeature, QgsField, QgsGeometry
@@ -68,10 +69,13 @@ imp.reload(sub_Unique_Fields_Compare)
 from sub_Unique_Fields_Compare import *
 
 # read config file
-iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+# Python 3.12+: imp.find_module is removed, use the imported module file path
+# iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 config = configparser.ConfigParser()
 config.read(iniFile)
 dirCommonGeopack = config['directories']['dirCommonGeopack']
+
 
 # Get the current project instance
 project = QgsProject.instance()

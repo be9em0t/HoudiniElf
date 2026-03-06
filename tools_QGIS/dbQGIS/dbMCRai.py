@@ -813,90 +813,55 @@ def fProcessNetworkSpeeds(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessNetworkMajor(product_version, license_zone, extentCoords):
+def fProcNetworkMajor(product_version, license_zone, extentCoords, menu_name=None):
 	extentStr = "'" + extentCoords + "'"
-
-	# sql = """
-	# -- Maxscpeed is not captured when in variants
-	# -- Check for Z-Level
-	# select
-	# orbis_id, 
-	# highway,
-	# railway, 
-	# CASE	
-	# 	WHEN route = 'ferry' THEN 'ferry'
-	# 	ELSE NULL
-	# 	END AS ferry_line,
-	# CASE 
-	# 	WHEN highway IN ('living_street','motorway','motorway_link','primary_link','primary','residential','construction','secondary_link','secondary','tertiary_link','tertiary','trunk_link','trunk','unclassified','road') THEN 'road_major'
-	# 	WHEN highway IN ('bridleway','cycleway','footway','path','pedestrian','service','steps','track') THEN 'road_minor'
-	# 	WHEN highway is null THEN null
-	# 	ELSE 'highway'
-	# 	END AS road_line,
-	# CASE	
-	# 	WHEN railway IN 
-	# 	('funicular','light_rail','miniature','monorail','narrow_gauge','preserved','construction','rail','subway','tram') THEN 'rail_core'
-	# 	WHEN railway IN ('abandoned','disused','proposed') THEN 'rail_other'
-	# 	ELSE null
-	# 	END AS railway_line,
-	# bridge, tunnel,
-	# tags['navigability'] AS navigability,
-	# tags['routing_class'] AS routing_class,
-	# tags['controlled_access'] AS controlled_access,
-	# tags['dual_carriageway'] AS dual_carriageway,
-	# tags['lanes'] AS lanes,
-	# tags["sidewalk"] AS sidewalk,
-	# tags["speed:free_flow"] AS speed_free_flow,
-	# tags["speed:week"] AS speed_week,
-	# tags["speed:weekday"] AS speed_weekday,
-	# tags["speed:weekend"] AS speed_weekend,
-	# tags["oneway"] AS oneway,
-	# CASE 
-	# 	WHEN name IS NOT NULL THEN name
-	# 	WHEN tags['name:en-Latn'] IS NOT NULL THEN tags['name:en-Latn']
-	# 	WHEN tags['name:fr-Latn'] IS NOT NULL THEN tags['name:fr-Latn']
-	# 	WHEN tags['name:de-Latn'] IS NOT NULL THEN tags['name:de-Latn']
-	# 	WHEN tags['name:es-Latn'] IS NOT NULL THEN tags['name:es-Latn']
-	# 	WHEN tags['name:it-Latn'] IS NOT NULL THEN tags['name:it-Latn']
-	# 	WHEN tags['name:pt-Latn'] IS NOT NULL THEN tags['name:pt-Latn']
-	# 	WHEN tags['name:ca-Latn'] IS NOT NULL THEN tags['name:ca-Latn']
-	# 	END AS name,
-	# --STRING_AGG(key || '=>' || value, ';') FILTER (WHERE key LIKE 'name:%' and key !~ 'pronunciation') AS name_values,
-	# tags['maxspeed'] AS maxspeed,
-	# --STRING_AGG(key || '=>' || value, ';') FILTER (WHERE key LIKE 'maxspeed:%' AND key NOT LIKE '%verification%') AS maxspeed_values,
-	# layer, 
-	# tags['layer_id'] AS layer_id,
-	# tags['zoomlevel_min'] AS zoomlevel_min,
-	# --z_order,
-	# geometry
-
-	# FROM 
-	# pu_orbis_platform_prod_catalog.map_central_repository.lines
-
-	# WHERE (
-	# "highway" is not null or
-	# "railway" is not null or
-	# "route" = 'ferry'
-	# )
-
-	# AND
-	# ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-	# AND 
-	# product = '{product_version}'
-	# AND
-	# license_zone like '%{license_zone}%' 
-	# """.format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	menu = menu_name if menu_name else 'Transportation Line Extraction'
 
 	sql = """
-	-- road network with lanes, speeds 
+	-- {menu}
+	-- road network with lanes, speeds (optimized: parse WKT once, envelope prefilter, push filters early)
 WITH bbox AS (
-	SELECT ST_GEOMFROMWKT({extent}) AS g
+	SELECT ST_GEOMFROMWKT({extent}) AS g,
+		ST_Envelope(ST_GEOMFROMWKT({extent})) AS genv
+),
+lines_filtered AS (
+	SELECT
+		orbis_id,
+		highway,
+		railway,
+		route,
+		bridge,
+		tunnel,
+		tags,
+		COALESCE(oneway, tags['oneway']) AS oneway,
+		COALESCE(name, tags['name:en-Latn']) AS name,
+		tags['navigability'] AS navigability,
+		tags['routing_class'] AS routing_class,
+		tags['controlled_access'] AS controlled_access,
+		tags['dual_carriageway'] AS dual_carriageway,
+		tags['lanes'] AS lanes,
+		tags['sidewalk'] AS sidewalk,
+		tags['speed:free_flow'] AS speed_free_flow,
+		tags['speed:week'] AS speed_week,
+		tags['speed:weekday'] AS speed_weekday,
+		tags['speed:weekend'] AS speed_weekend,
+		tags['maxspeed'] AS maxspeed,
+		layer,
+		tags['layer_id'] AS layer_id,
+		tags['zoomlevel_min'] AS zoomlevel_min,
+		geometry,
+		ST_GEOMFROMWKT(geometry) AS g,
+		ST_Envelope(ST_GEOMFROMWKT(geometry)) AS env
+	FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+	WHERE (highway IS NOT NULL OR railway IS NOT NULL OR route = 'ferry')
+		AND product = '{product_version}'
+		AND license_zone LIKE '%{license_zone}%'
 )
 
-	select
-	orbis_id, 
+SELECT
+	orbis_id,
 	highway,
-	railway, 
+	railway,
 	CASE	
 		WHEN route = 'ferry' THEN 'ferry'
 		ELSE NULL
@@ -904,27 +869,27 @@ WITH bbox AS (
 	CASE 
 		WHEN highway IN ('living_street','motorway','motorway_link','primary_link','primary','residential','construction','secondary_link','secondary','tertiary_link','tertiary','trunk_link','trunk','unclassified','road') THEN 'road_major'
 		WHEN highway IN ('bridleway','cycleway','footway','path','pedestrian','service','steps','track') THEN 'road_minor'
-		WHEN highway is null THEN null
+		WHEN highway IS NULL THEN NULL
 		ELSE 'highway'
 		END AS road_line,
 	CASE	
 		WHEN railway IN 
 		('funicular','light_rail','miniature','monorail','narrow_gauge','preserved','construction','rail','subway','tram') THEN 'rail_core'
 		WHEN railway IN ('abandoned','disused','proposed') THEN 'rail_other'
-		ELSE null
+		ELSE NULL
 		END AS railway_line,
 	bridge, tunnel,
-	tags['navigability'] AS navigability,
-	tags['routing_class'] AS routing_class,
-	tags['controlled_access'] AS controlled_access,
-	tags['dual_carriageway'] AS dual_carriageway,
-	tags['lanes'] AS lanes,
-	tags["sidewalk"] AS sidewalk,
-	tags["speed:free_flow"] AS speed_free_flow,
-	tags["speed:week"] AS speed_week,
-	tags["speed:weekday"] AS speed_weekday,
-	tags["speed:weekend"] AS speed_weekend,
-	tags["oneway"] AS oneway,
+	navigability,
+	routing_class,
+	controlled_access,
+	dual_carriageway,
+	lanes,
+	sidewalk,
+	speed_free_flow,
+	speed_week,
+	speed_weekday,
+	speed_weekend,
+	oneway,
 	CASE 
 		WHEN name IS NOT NULL THEN name
 		WHEN tags['name:en-Latn'] IS NOT NULL THEN tags['name:en-Latn']
@@ -935,32 +900,18 @@ WITH bbox AS (
 		WHEN tags['name:pt-Latn'] IS NOT NULL THEN tags['name:pt-Latn']
 		WHEN tags['name:ca-Latn'] IS NOT NULL THEN tags['name:ca-Latn']
 		END AS name,
-	--STRING_AGG(key || '=>' || value, ';') FILTER (WHERE key LIKE 'name:%' and key !~ 'pronunciation') AS name_values,
-	tags['maxspeed'] AS maxspeed,
-	--STRING_AGG(key || '=>' || value, ';') FILTER (WHERE key LIKE 'maxspeed:%' AND key NOT LIKE '%verification%') AS maxspeed_values,
+	maxspeed,
 	layer, 
-	tags['layer_id'] AS layer_id,
-	tags['zoomlevel_min'] AS zoomlevel_min,
+	layer_id,
+	zoomlevel_min,
 	--z_order,
 	geometry
 
-	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.lines, 
-	bbox
-
-	WHERE (
-	"highway" is not null or
-	"railway" is not null or
-	"route" = 'ferry'
-	)
-
-	AND
-	ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
-	AND 
-	product = '{product_version}'
-	AND
-	license_zone like '%{license_zone}%' 
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+FROM lines_filtered lf
+JOIN bbox b
+	ON ST_Intersects(b.genv, lf.env) -- cheap envelope filter
+	AND ST_Intersects(b.g, lf.g)     -- exact geometry filter
+	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -971,68 +922,52 @@ WITH bbox AS (
 	qtMsgBox(message)
 
 
-def fProcessNetworkSimple(product_version, license_zone, extentCoords):
+def fProcNetworkSimple(product_version, license_zone, extentCoords, menu_name=None):
 	extentStr = "'" + extentCoords + "'"
-
-	# sql = """
-	# select
-	# orbis_id, 
-	# highway,
-	# railway, 
-	# bridge, tunnel,
-	# tags['navigability'] AS navigability,
-	# tags['routing_class'] AS routing_class,
-	# tags['maxspeed'] AS maxspeed,
-	# layer, 
-	# geometry
-	# FROM 
-	# pu_orbis_platform_prod_catalog.map_central_repository.lines
-	# WHERE 
-	# ("highway" is not null 
-	# or 
-	# tags['routing_class'] is not null
-	# )
-	# AND
-	# ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-	# AND 
-	# product = '{product_version}'
-	# AND
-	# license_zone like '%{license_zone}%' 
-	# """.format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	menu = menu_name if menu_name else 'Transportation Line Extraction'
 
 	sql = """
-	-- road network simple 
-	WITH bbox AS (
-		SELECT ST_GEOMFROMWKT({extent}) AS g
-	)
-	select
+	-- {menu}
+	-- road network simple (optimized: parse WKT once, envelope prefilter, push filters early)
+WITH bbox AS (
+	SELECT ST_GEOMFROMWKT({extent}) AS g,
+		ST_Envelope(ST_GEOMFROMWKT({extent})) AS genv
+),
+lines_filtered AS (
+	SELECT
+		orbis_id,
+		highway,
+		railway,
+		bridge,
+		tunnel,
+		tags['navigability'] AS navigability,
+		tags['routing_class'] AS routing_class,
+		tags['maxspeed'] AS maxspeed,
+		layer,
+		geometry,
+		ST_GEOMFROMWKT(geometry) AS g,
+		ST_Envelope(ST_GEOMFROMWKT(geometry)) AS env
+	FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+	WHERE (highway IS NOT NULL OR tags['routing_class'] IS NOT NULL)
+		AND product = '{product_version}'
+		AND license_zone LIKE '%{license_zone}%'
+)
+
+SELECT
 	orbis_id, 
 	highway,
 	railway, 
 	bridge, tunnel,
-	tags['navigability'] AS navigability,
-	tags['routing_class'] AS routing_class,
-	tags['maxspeed'] AS maxspeed,
+	navigability,
+	routing_class,
+	maxspeed,
 	layer, 
 	geometry
-
-	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.lines,
-	bbox
-
-	WHERE 
-	("highway" is not null 
-	or 
-	tags['routing_class'] is not null
-	)
-	AND
-	ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
-	AND 
-	product = '{product_version}'
-	AND
-	license_zone like '%{license_zone}%' 
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
-
+FROM lines_filtered lf
+JOIN bbox b
+	ON ST_Intersects(b.genv, lf.env) -- cheap envelope prefilter
+	AND ST_Intersects(b.g, lf.g)     -- exact geometry check
+	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
 	clipboard.setText(sql)
@@ -2473,82 +2408,91 @@ ST_Intersects(g, bbox)
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h3):
-	if h3 == True:
-		hextiles = fHexesFromExtent(extent_layer)
-		bounds = hexListToChildString(hextiles)
-		h3_index = 'AND h3_index != \'0\''
-	else:
-		extentStr = "'" + extentCoords + "'"
-		bounds = 	f"ST_Intersects(ST_GEOMFROMWKT({extentStr}), ST_GEOMFROMWKT(geometry))"
-		h3_index = ''
+def fProcLandUse(extent_layer, product_version, license_zone, extentCoords, menu_name=None):
+	"""Land use polygons (envelope-prefiltered, ST-CTE optimized).
+	"""
+	menu = menu_name if menu_name else 'Land Use'
+	extentStr = "'" + extentCoords + "'"
 
-	sql = f"""
-	-- all landuse-realated polygons
-	SELECT
-	orbis_id,
-	tags['aeroway'] as aeroway, 
-	tags['landuse'] as landuse,  
-	tags['leisure'] as leisure, 
-	tags['military'] as military, 
-	tags['natural'] as natural, 
-	tags['tourism'] as tourism,
-	tags['amenity'] as amenity,
-	CAST(tags AS STRING) AS tags,
-	geometry 
-	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.polygons
-	WHERE 
-	geom_type in ('ST_POLYGON','ST_MULTIPOLYGON')
-	 AND (
-		 tags['aeroway'] IS NOT NULL 
-		 OR tags['landuse'] IS NOT NULL 
-		 OR tags['leisure'] IS NOT NULL 
-		 OR tags['military'] IS NOT NULL 
-		 OR tags['natural'] IS NOT NULL 
-		 OR tags['tourism'] IS NOT NULL
-		 OR tags['amenity'] IS NOT NULL
-	 )
-	AND {bounds}
-	AND 
-	product = '{product_version}'
-	AND
-	license_zone like '%{license_zone}%' 
-	{h3_index}
+	sql = """
+-- {menu}
+WITH q AS (
+  SELECT ST_GeomFromWKT({extent}) AS qg,
+         ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+),
+polys_src AS (
+  SELECT orbis_id, tags, geometry
+  FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+  WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+    AND product = '{product_version}'
+    AND license_zone LIKE '%{license_zone}%'
+),
+polys_pre AS (
+  SELECT p.orbis_id, p.tags, p.geometry,
+         ST_GeomFromWKT(p.geometry) AS g,
+         ST_Envelope(ST_GeomFromWKT(p.geometry)) AS env
+  FROM polys_src p
+  WHERE (p.tags['aeroway'] IS NOT NULL
+     OR p.tags['landuse'] IS NOT NULL
+     OR p.tags['leisure'] IS NOT NULL
+     OR p.tags['military'] IS NOT NULL
+     OR p.tags['natural'] IS NOT NULL
+     OR p.tags['tourism'] IS NOT NULL
+     OR p.tags['amenity'] IS NOT NULL)
+),
+rels_src AS (
+  SELECT orbis_id, tags, geometry
+  FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+  WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+    AND product = '{product_version}'
+    AND license_zone LIKE '%{license_zone}%'
+),
+rels_pre AS (
+  SELECT r.orbis_id, r.tags, r.geometry,
+         ST_GeomFromWKT(r.geometry) AS g,
+         ST_Envelope(ST_GeomFromWKT(r.geometry)) AS env
+  FROM rels_src r
+  WHERE (r.tags['aeroway'] IS NOT NULL
+     OR r.tags['landuse'] IS NOT NULL
+     OR r.tags['leisure'] IS NOT NULL
+     OR r.tags['military'] IS NOT NULL
+     OR r.tags['natural'] IS NOT NULL
+     OR r.tags['tourism'] IS NOT NULL
+     OR r.tags['amenity'] IS NOT NULL)
+)
 
-	UNION
+SELECT orbis_id,
+       tags['aeroway'] AS aeroway,
+       tags['landuse'] AS landuse,
+       tags['leisure'] AS leisure,
+       tags['military'] AS military,
+       tags['natural'] AS natural,
+       tags['tourism'] AS tourism,
+       tags['amenity'] AS amenity,
+       CAST(tags AS STRING) AS tags,
+       geometry
+FROM polys_pre p
+CROSS JOIN q
+WHERE ST_Intersects(q.qenv, p.env)
+  AND ST_Intersects(q.qg, p.g)
 
-	SELECT
-	orbis_id,
-	tags['aeroway'] as aeroway, 
-	tags['landuse'] as landuse,  
-	tags['leisure'] as leisure, 
-	tags['military'] as military, 
-	tags['natural'] as natural, 
-	tags['tourism'] as tourism,
-	tags['amenity'] as amenity,
-	CAST(tags AS STRING) AS tags,
-	geometry 
-	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
-	WHERE 
-	geom_type in ('ST_POLYGON','ST_MULTIPOLYGON')
-	 AND (
-		 tags['aeroway'] IS NOT NULL 
-		 OR tags['landuse'] IS NOT NULL 
-		 OR tags['leisure'] IS NOT NULL 
-		 OR tags['military'] IS NOT NULL 
-		 OR tags['natural'] IS NOT NULL 
-		 OR tags['tourism'] IS NOT NULL
-		 OR tags['amenity'] IS NOT NULL
-	 ) 
-	AND {bounds} 
-	AND 
-	product = '{product_version}'
-	AND
-	license_zone like '%{license_zone}%' 
-	{h3_index}
-	;"""
+UNION
+
+SELECT orbis_id,
+       tags['aeroway'] AS aeroway,
+       tags['landuse'] AS landuse,
+       tags['leisure'] AS leisure,
+       tags['military'] AS military,
+       tags['natural'] AS natural,
+       tags['tourism'] AS tourism,
+       tags['amenity'] AS amenity,
+       CAST(tags AS STRING) AS tags,
+       geometry
+FROM rels_pre r
+CROSS JOIN q
+WHERE ST_Intersects(q.qenv, r.env)
+  AND ST_Intersects(q.qg, r.g)
+;""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2924,23 +2868,23 @@ def fMainUI():
 	'Water (natural)',
 	'Buildings with Relations Optimised',
 	'Buildings w/o Relations Optimised',
+	'Land Use (older)',
 	'LOI Artificial Ground',
 	'Network wo Relations',
 	'Network Detailed wo Relations',
+	'Network Major with Lanes, Curv, Grad (older)',
+	'Network Simple (for large areas, older)',
 	'--',
 	'Admin Areas',
 	'Admin Point Places',
 	'Inland Water',
 	'Ocean Water',
-	'Land Use',
 	'Buildings with parts',
 	'Buildings with parts H3',
 	'Buildings with relations',
 	'Buildings (Old)',
 	'EV_Charging',
 	'Network with Speeds',
-	'Network Major with Lanes, Curv, Grad',
-	'Network Simple (for large areas)',
 	'Network Elevation (h3)',
 	'Network Junctions (h3)',
 	'--',
@@ -3003,16 +2947,22 @@ def fMainUI():
 
 	elif process == 'Water (natural)':
 		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Land Use (older)':
+		fProcLandUse(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'LOI Artificial Ground':
+		fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'Buildings with Relations Optimised':
 		fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'Buildings w/o Relations Optimised':
 		fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
-	elif process == 'LOI Artificial Ground':
-		fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'Network wo Relations':
 		fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'Network Detailed wo Relations':
 		fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Network Major with Lanes, Curv, Grad (older)':
+		fProcNetworkMajor(product_version, license_zone, extentCoords, menu_name=process)
+	elif process == 'Network Simple (for large areas, older)':
+		fProcNetworkSimple(product_version, license_zone, extentCoords, menu_name=process)
 
 	elif process == 'All Polygons Contain':
 		fAllPolyContains(product_version, license_zone, extentCoords)
@@ -3026,8 +2976,6 @@ def fMainUI():
 		fProcessInlandWater(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Ocean Water':
 		fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords, h3)
-	elif process == 'Land Use':
-		fProcessLandUse(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Buildings with parts':
 		fProcessBuildingsWithParts(product_version, license_zone, extentCoords)
 	elif process == 'Buildings with parts H3':
@@ -3038,10 +2986,6 @@ def fMainUI():
 		fProcessBuildingsOld(product_version, license_zone, extentCoords)
 	elif process == 'Network with Speeds':
 		fProcessNetworkSpeeds(product_version, license_zone, extentCoords)
-	elif process == 'Network Major with Lanes, Curv, Grad':
-		fProcessNetworkMajor(product_version, license_zone, extentCoords)
-	elif process == 'Network Simple (for large areas)':
-		fProcessNetworkSimple(product_version, license_zone, extentCoords)
 	elif process == 'Network Elevation (h3)':
 		fProcessNetworkElevation(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Network Junctions (h3)':

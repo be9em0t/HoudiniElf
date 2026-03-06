@@ -27,7 +27,8 @@ from urllib.parse import quote
 # from qgis.PyQt.QtWidgets import (QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QLabel,QMessageBox)
 
 # manually append script folder 'cause fucking QGIS
-import imp
+# import imp
+import importlib as imp
 sys.path.append('d:/Work/OneDrive/Dev/Python/TT_Qgis_Workspace/MNR_automation')
 import b9PyQGIS
 imp.reload(b9PyQGIS)
@@ -51,7 +52,8 @@ def fExportPDFMain():
 
 def fProcessChoice():
 	# read location coords from config file
-	iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+	# iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+	iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 	# print(iniFile)
 	config = configparser.ConfigParser()
 	config.read(iniFile)

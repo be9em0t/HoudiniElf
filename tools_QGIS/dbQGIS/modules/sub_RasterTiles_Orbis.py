@@ -17,11 +17,15 @@ from qgis.PyQt.QtWidgets import QInputDialog, QMessageBox, QProgressDialog, QApp
 from qgis.PyQt.QtCore import Qt
 from qgis.utils import iface
 import time
-import imp
+# import imp
+import importlib as imp
 import configparser
+import b9PyQGIS
+imp.reload(b9PyQGIS)
 
 # read config file
-iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+# iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 config = configparser.ConfigParser()
 config.read(iniFile)
 rasterZoom = config['common']['raster-zoom']

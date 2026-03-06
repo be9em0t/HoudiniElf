@@ -21,7 +21,8 @@ License: X/MIT
 """
 import os
 import configparser
-import imp
+# import imp
+import importlib as imp
 from qgis.utils import iface
 import b9PyQGIS
 imp.reload(b9PyQGIS)
@@ -88,7 +89,8 @@ def main(extent_layer):
 def dataPrep(mylayer):
 	# read config file
 	print("Reading config")
-	iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+	# iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+	iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 	config = configparser.ConfigParser()
 	config.read(iniFile)
 	dirCommonGeopack = config['directories']['dirCommonGeopack']

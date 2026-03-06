@@ -24,8 +24,9 @@ import geopandas as gpd
 from dbfread import DBF
 import sys, os
 import re
-import imp # allow module reload
 sys.path.append('d:/Work/OneDrive/Dev/Python/TT_Qgis_Workspace/MNR_automation')
+# import imp # allow module reload
+import importlib as imp
 import b9PyQGIS
 imp.reload(b9PyQGIS)
 from b9PyQGIS import *

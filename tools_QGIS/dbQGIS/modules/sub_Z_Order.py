@@ -28,8 +28,8 @@ import os, sys
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 # print("Current script's directory:", current_script_dir)
 sys.path.append(os.path.dirname(current_script_dir))
-import imp
-
+# import imp
+import importlib as imp
 
 import b9PyQGIS
 imp.reload(b9PyQGIS)
