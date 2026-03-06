@@ -23,9 +23,8 @@ if os.path.isdir(modules_dir):
 	missing_helpers = [h for h in expected_helpers if not os.path.exists(os.path.join(modules_dir, h))]
 	if missing_helpers:
 		print(f"Warning: missing helper modules in {modules_dir}: {missing_helpers}")
-import imp
-# import importlib
-# importlib.reload(my_module)
+# import imp
+import importlib as imp
 
 from unittest import result
 import b9PyQGIS
@@ -56,7 +55,8 @@ from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QComboBox, QPushButton, QL
 
 # read config file
 print("Reading config")
-iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+# iniFile = os.path.dirname( imp.find_module('b9PyQGIS')[1] ) + "/" + 'b9QGISdata.ini'
+iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 # spec = importlib.util.find_spec('b9PyQGIS')
 # iniFile = os.path.dirname(spec.origin) + "/b9QGISdata.ini"
 config = configparser.ConfigParser()
