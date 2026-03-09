@@ -1,4 +1,6 @@
 # Add meter distance from ZeroIsland as text field
+print(f"Loading module:\n{__name__} -> {__file__}")
+print("Needs LatLonTools plugn to work")
 
 from qgis.core import *
 from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject
@@ -6,7 +8,6 @@ from qgis.utils import *
 from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import *
 # import processing
-
 # from qgis.PyQt.QtWidgets import (QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QLabel,QMessageBox)
 
 

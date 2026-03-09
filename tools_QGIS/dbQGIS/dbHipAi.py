@@ -6,9 +6,8 @@
 
 # append script folder
 # from databricks import sql
-print(f"Loading module:\n{__name__} -> {__file__}")
-
 import os, sys
+import traceback
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 # print("Current script's directory:", current_script_dir)
 # Add parent dir for legacy imports
@@ -33,7 +32,7 @@ import b9PyQGIS
 imp.reload(b9PyQGIS)
 from b9PyQGIS import *
 from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject, QgsFeature, QgsField, QgsGeometry
-from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QLineEdit
+from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QLineEdit, QInputDialog
 from qgis.PyQt.QtCore import QVariant
 
 
@@ -455,7 +454,8 @@ def fGetHDLayer(extent_layer):
 
 	elem = config['hdmap_options']['selected']
 	index = keys.index(elem) if elem in keys else 0
-	selected_key, ok = QInputDialog.getItem(mainWindow, "HD layers", "Select HD Layer:", keys, index, False)
+	parent_widget = iface.mainWindow() if 'iface' in globals() else None
+	selected_key, ok = QInputDialog.getItem(parent_widget, "HD layers", "Select HD Layer:", keys, index, False)
 	if ok and selected_key:
 			HDlayerID = hdmap_dict[selected_key]
 			print(f"You selected HD layer: {selected_key} → LayerID: {HDlayerID}")
@@ -698,7 +698,8 @@ def fOverture(extent_layer):
 
 	# Input item from drop down list
 	options=["address","bathymetry","building","building_part","division","division_area","division_boundary","place","segment","connector","infrastructure","land","land_cover","land_use","water"] #alternatively, vlayer.dataProvider().fields().names()
-	type, ok = QInputDialog.getItem(parent, "Select:", "Geometry types", options, 2, False)
+	parent_widget = iface.mainWindow() if 'iface' in globals() else None
+	type, ok = QInputDialog.getItem(parent_widget, "Select:", "Geometry types", options, 2, False)
 	outfile = f"overture_{type}"
 	overtureCommand = f"""overturemaps download --bbox={coordinate_bbox} -f geojson --type={type} --output={outfile}.geojson"""
 
@@ -1275,10 +1276,15 @@ def fHIP_Dialog(export_list, process_list, utility_list, centroidLocations, OGRL
 
 	# display dialog:
 	dialog = MultiInputDialog()
-	result = dialog.exec_()
+	# Qt6 removed exec_(), while Qt5 supports both in many bindings.
+	result = dialog.exec() if hasattr(dialog, 'exec') else dialog.exec_()
+
+	accepted_code = getattr(QDialog, 'Accepted', None)
+	if accepted_code is None and hasattr(QDialog, 'DialogCode'):
+		accepted_code = QDialog.DialogCode.Accepted
 
 	# write config
-	if result == QDialog.Accepted:
+	if result == accepted_code:
 			choiceExport, choiceProcess, choiceUtility, choiceSelectedProcess, choiceLocation, choiceExtentLayerName, choiceExtentLayer = dialog.get_selection()
 			config['hip']['last_export'] = choiceExport
 			config['hip']['last_process'] = choiceProcess
@@ -1385,7 +1391,9 @@ def fMainUI():
 	try:
 		selected_process, selected_location, extent_layerName, extent_layer = fHIP_Dialog(export_list, process_list, utility_list, centroidLocations, OGRLayerNames, OGRLayers)
 		print("choiceSelectedProcess: {} \nchoiceLocation: {} \nchoiceExtentLayerName: {} \nchoiceExtentLayer: {}".format(selected_process, selected_location, extent_layerName, extent_layer))
-	except:
+	except Exception:
+			print("Failed to open HIP dialog:")
+			traceback.print_exc()
 			selected_process='Exit'
 
 	if selected_process == 'Export Points to Hip':
