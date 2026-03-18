@@ -266,6 +266,18 @@ def fGetFieldUniqueVals():
 
 	print (result_string)
 
+
+def fOverlapClusters():
+	# on the selected layer
+	# call fFixGeometries(layer) from b9PyQGIS.py
+	# then call sub_OverlapClusters.py
+
+def fOverlapClustersZorder():
+	# on the selected layer
+	# call fFixGeometries(layer) from b9PyQGIS.py
+	# then call sub_landuse_Zorder.py
+
+
 def fKeepUniqueByField():
 	#select a field, compare rows and leave only the first one in case of duplicate values
 	layer = iface.activeLayer()
@@ -1356,6 +1368,8 @@ def fMainUI():
 		'Reproject to UTM Zone',
 		'Convert to WGT84',
 		'---- layer edit -----',
+		'Find overlap clusters'
+		'LandUse z_order inside overlap clusters'
 		'Keep Unique Rows by Single Field (HD Cleanup)',
 		'Add EPs along MNR edges',
 		'Add Chainage Points',
@@ -1485,6 +1499,12 @@ def fMainUI():
 		sub_Z_Order.compute_z_order_for_active_layer(invert_z=False)
 	elif selected_process == 'List Unique Values of a Field':
 		fGetFieldUniqueVals()
+
+	elif selected_process == 'Find overlap clusters':
+		fOverlapClusters()
+	elif selected_process == 'LandUse z_order inside overlap clusters':
+		fOverlapClustersZorder()
+
 	elif selected_process == 'Keep Unique Rows by Single Field (HD Cleanup)':
 		fKeepUniqueByField()
 	elif selected_process == 'Drop Empty Fields of a Layer':
