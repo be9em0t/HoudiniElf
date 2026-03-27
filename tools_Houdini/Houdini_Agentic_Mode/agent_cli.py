@@ -1,7 +1,16 @@
 import argparse
 import json
+import os
+import sys
 
-from .intent_router import route_intent, execute_routed_intent
+try:
+    from .intent_router import route_intent, execute_routed_intent
+except ImportError:
+    # Allow running as script from this directory: add parent path to sys.path
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    from intent_router import route_intent, execute_routed_intent
 
 
 def main():
@@ -31,7 +40,28 @@ def main():
     }
 
     if not args.dry_run:
-        output['result'] = execute_routed_intent(routed)
+        try:
+            from .rpc_bridge import check_houdini_rpc
+        except ImportError:
+            from rpc_bridge import check_houdini_rpc
+
+        health = check_houdini_rpc()
+        if health != 'rpc_ok':
+            output['error'] = health
+            output['notes'] = (
+                'Houdini RPC is unavailable. Please verify Houdini is running and that the RPC server script is loaded. '
+                'Check that Houdini has loaded scripts/456.py or equivalent and that port 5005 on 127.0.0.1 is reachable.'
+            )
+        else:
+            try:
+                output['result'] = execute_routed_intent(routed)
+            except ConnectionError as ce:
+                output['error'] = str(ce)
+                output['notes'] = (
+                    'Houdini RPC server became unavailable during execution. Ensure Houdini is running, the RPC startup script is active, and retry.'
+                )
+            except Exception as e:
+                output['error'] = str(e)
 
     print(json.dumps(output, indent=2))
 

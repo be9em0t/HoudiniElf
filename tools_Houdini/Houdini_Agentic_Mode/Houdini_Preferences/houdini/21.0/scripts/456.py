@@ -37,10 +37,23 @@ def process_queue():
     while not cmd_queue.empty():
         conn, cmd = cmd_queue.get()
 
+        # safe execution context: only hou and no builtins are exposed
+        safe_globals = {'hou': hou, '__builtins__': {}}
+        result = None
+
         try:
-            result = str(eval(cmd))
+            try:
+                result = eval(cmd, safe_globals, {})
+            except SyntaxError:
+                local_vars = {}
+                exec(cmd, safe_globals, local_vars)
+                result = local_vars.get('result', 'ok')
+
+            if result is None:
+                result = 'ok'
+            result = str(result)
         except Exception as e:
-            result = str(e)
+            result = 'ERROR: ' + str(e)
 
         try:
             conn.sendall(result.encode())
