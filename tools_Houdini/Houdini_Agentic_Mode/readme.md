@@ -1,9 +1,9 @@
 # Houdini Agentic Mode Setup
 
 ## 1. Install Houdini RPC startup script (456.py)
-- Copy file to Houdini preferences script folder for your Houdini version:
-  - `~/WorkLocal/_AI_/HoudiniElf/tools_Houdini/Houdini_Agentic_Mode/Houdini_Preferences/houdini/21.0/scripts/456.py`
-  - Or `~/Library/Preferences/houdini/21.0/scripts/456.py`
+- Copy Houdini preferences script folder for your Houdini version:
+  - `tools_Houdini/Houdini_Agentic_Mode/Houdini_Preferences/houdini/21.0/scripts/456.py`
+ to `~/Library/Preferences/houdini/21.0/scripts/456.py`
 - Verify the script loads on Houdini startup by opening Houdini and checking console output:
   - `Houdini RPC server running on 127.0.0.1:5005`
 
@@ -17,7 +17,7 @@ python -c 'from tools_Houdini.Houdini_Agentic_Mode.rpc_bridge import check_houdi
 Expected output: `rpc_ok`
 
 ## 2.1 Architecture plan
-You’re asking for an orchestrated system that turns freeform user goals into Houdini RPC commands. Good news: this is exactly what Copilot `tools/skills/agent/mcp` should do.
+Orchestrated system that turns freeform user goals into Houdini RPC commands. Good news: this is exactly what Copilot `tools/skills/agent/mcp` should do.
 
 This maps to 4 layers:
 
@@ -27,82 +27,193 @@ This maps to 4 layers:
 4. `agent` = final user conversation flow + tool orchestration
 
 ## 2.2 Project imperatives
-- In VS Code Chat mode, require a non-bypassing MCP/skills/tools/agent implementation in all flows. The agent must route through `intent_router` and `skills_houdini` before `rpc_bridge`.
+- In VS Code Chat mode, require a non-bypassing LLM-first MCP/skills/tools/agent implementation in all flows. 
 - No silent fallbacks: on failure, return explicit error details and stop. Any fallback behavior must be a hard failure with diagnostic text.
-- LLM availability is mandatory and immediate; if `RAPTOR_MINI_API_KEY` is absent or invalid, the system must refuse request and report configuration error. No fallback interpreters or local heuristics are allowed.
+- LLM availability is mandatory and immediate; No fallback interpreters or local heuristics are allowed.
 - The project is intended to work ONLY with strong LLM models (e.g. Raptor mini (Preview)).  Do not rely on weak or unsupervised heuristics.
-- No dumb hard-coding of commands like `create pink sphere` in code paths. Flow must be:
+- Flow must be:
   - receive user intent,
-  - interpret via LLM (or skill layer mimicking LLM mapping),
+  - interpret via LLM (or skill layer supporting LLM mapping),
   - execute via tool/MCP/RPC,
   - sanity check state via RPC and return explicit result.
 
 Refer to `requirements.txt` for dependency and install instructions.
 
-## 3. Run local MCP bridge server (required for VS Code)
-From repo root:
 
-```bash
-python -m tools_Houdini.Houdini_Agentic_Mode.mcp_server
-```
-
-This starts a local HTTP MCP gateway at `http://127.0.0.1:5006`.
-
-### Copilot profile update
-In your `mcp.json`, set:
-
-```json
-"houdini-mcp": {
-  "type": "http",
-  "url": "http://127.0.0.1:5006",
-  "headers": {}
-}
-```
-
-Then restart VS Code Copilot and validate `GET /health` responds.
-
-## 4. Use CLI tool
-From repo root:
-
-```bash
-python -m tools_Houdini.Houdini_Agentic_Mode.agent_cli --intent "create a blue sphere" --dry_run
-```
-
-To execute:
-
-```bash
-python -m tools_Houdini.Houdini_Agentic_Mode.agent_cli --intent "create a blue sphere"
-```
-
-## 4. MCP layer and agent call example
-In Python:
-
-```python
-from tools_Houdini.Houdini_Agentic_Mode.mcp_houdini import preprocess_request, execute_plan
-
-req = preprocess_request('build new geo network with scatter', {'target_path': '/obj'})
-print(req)
-if req['status'] == 'ready':
-    out = execute_plan(req)
-    print(out)
-```
-
-## 5. No fallback mode
-- If RPC is unavailable, the tools return a clear message: "verify Houdini is running and that the startup RPC script is installed." 
-- If LLM config is unavailable (`RAPTOR_MINI_API_KEY` missing), the tools return explicit configuration error and refuse intent routing.
-- No fallback to clipboard/standalone Python script or local heuristic command mapping is performed automatically.
-
-## 6. Troubleshooting
+## 3. Troubleshooting
 - Ensure Houdini runs with Python support and that the script is in the correct version folder.
 - If `check_houdini_rpc()` returns failure, check firewall and local port conflict.
 - Optional: restart Houdini, then re-run the CLI.
 
-## 7. Usage hint for VS Code MCP
-- In your profile `mcp.json`, add:
-  - `houdini-mcp` server with `type: http` and URL pointing to local gateway (e.g. `http://127.0.0.1:5006`).
-  - Keep existing server entries (e.g. `tomtom-mcp`) if needed.
-- Add `tools_Houdini/Houdini_Agentic_Mode/houdini_agentic_mode.prompt.md` to `chat.agent.additionalInstructionFiles`.
-- Use the command below to validate in your widget:
-  ```bash
-  python -m tools_Houdini.Houdini_Agentic_Mode.agent_cli --intent "create a blue sphere" --dry_run
-  ```
+# Next step - build MCP server, tools, skills 
+
+You already have the hardest part working: Houdini’s **HOM RPC server**. MCP should sit **on top of that**, not replace it. Think of RPC as the transport into Houdini, and MCP as the structured API layer for AI.
+---
+## 1) What you have now (RPC)
+Houdini exposes Python over the network via `hrpyc.start_server()` and you import a remote `hou` module from another process.
+That gives:
+LLM → Python client → RPC → hou API → Houdini
+It works, but:
+- objects are proxied (slow)
+- no tool schema
+- no validation
+- no context management
+- no discoverability
+That’s exactly what MCP solves.
+---
+## 2) Target architecture with MCP
+Correct long-term structure:
+           ┌──────────────┐  
+           │  LLM Host    │ (VSCode, Cline, Claude, etc.)  
+           └──────┬───────┘  
+                  │ MCP  
+           ┌──────▼───────┐  
+           │ MCP Server   │  ← you implement this  
+           │ (Python)     │  
+           └──────┬───────┘  
+                  │ RPC  
+           ┌──────▼───────┐  
+           │ Houdini       │  
+           │ hrpyc server  │  
+           └──────────────┘
+MCP uses a client-server model where the host connects to servers exposing tools and resources over a standard protocol.
+So your MCP server is essentially:  
+**a typed wrapper around hou**.
+---
+## 3) Split responsibilities correctly
+### Houdini RPC server
+Handles:
+- scene mutation
+- geometry ops
+- node graph operations
+It should **stay minimal and dumb**.
+### MCP server
+Handles:
+- tool schema
+- argument validation
+- session state
+- batching
+- caching
+- higher-level abstractions
+This separation dramatically improves reliability and speed.
+---
+## 4) Minimal viable MCP server for Houdini
+Core components:
+### Transport
+Start with **STDIO** (simplest, lowest latency)
+### Connection bootstrap
+Your MCP server should:
+1. Start
+2. Connect to Houdini RPC
+3. Keep connection alive globally
+Example skeleton:
+# houdini_mcp_server.py  
+from mcp.server.fastmcp import FastMCP  
+import hrpyc  
+mcp = FastMCP("houdini")  
+connection, hou = hrpyc.import_remote_module()  
+@mcp.tool()  
+def create_geo(name: str):  
+    obj = hou.node("/obj")  
+    node = obj.createNode("geo", name)  
+    return node.path()
+---
+## 5) Tools vs Skills (important design decision)
+### Tools
+Atomic operations:
+- create node
+- set parm
+- cook node
+- save hip
+- export geometry
+These map almost 1-to-1 to HOM.
+### Skills
+High-level workflows:
+- “create pyro sim”
+- “build instancing network”
+- “import CSV and build scatter”
+Skills orchestrate multiple tools.
+You’ll want:
+tools/  
+    nodes.py  
+    parms.py  
+    geometry.py  
+skills/  
+    pyro.py  
+    scattering.py  
+    layout.py
+This mirrors Houdini’s own mental model and works extremely well for LLM planning.
+---
+## 6) Avoid the biggest performance trap
+**Never expose raw hou objects through MCP.**
+Bad:
+return hou.node("/obj/geo1")
+Good:
+return "/obj/geo1"
+Because:
+- RPC proxies are slow
+- MCP serializes everything to JSON
+- nested proxy objects explode latency
+This is the #1 reason RPC setups feel sluggish.
+---
+## 7) Add a command queue (huge stability gain)
+Houdini is not thread-safe. RPC calls from MCP can collide with UI operations.
+Add a dispatcher inside Houdini:
+MCP → RPC → enqueue(cmd) → Houdini main thread executes
+This prevents:
+- random crashes
+- viewport freezes
+- partial node creation
+---
+## 8) Tool granularity that works best in practice
+Too fine:
+set_parm_value(node, parm, value)
+Too coarse:
+build_city_simulation()
+Sweet spot:
+create_node(type, parent, name)  
+set_parm(node, parm, value)  
+connect_nodes(src, dst)
+This gives the LLM composability without hallucinating giant workflows.
+---
+## 9) Recommended first tool set
+Implement these first:
+### Scene
+load_hip(path)  
+save_hip(path)
+### Nodes
+create_node  
+delete_node  
+list_children  
+connect_nodes
+### Parameters
+set_parm  
+get_parm
+### Geometry
+export_geo(path)  
+import_geo(path)
+With just this, an AI can build 90% of Houdini networks.
+---
+## 10) Reliability improvements over raw RPC
+MCP lets you add:
+### Argument validation
+node: str  # must be valid path  
+parm: str  # must exist
+### Structured errors
+Instead of:
+Traceback...
+You return:
+{"error": "parm not found"}
+### Retry logic
+If Houdini is cooking, retry instead of failing.
+---
+## 11) Suggested development order
+1. **Write MCP server**
+2. Connect to Houdini RPC
+3. Implement 3 tools:
+    - `create_node`
+    - `set_parm`
+    - `connect_nodes`
+4. Test from CLI agent
+5. Add skills later
+Do **not** start with skills — they’re useless until tools are stable.
