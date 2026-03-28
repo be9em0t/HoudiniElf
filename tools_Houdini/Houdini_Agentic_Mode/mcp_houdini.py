@@ -3,6 +3,7 @@ from typing import Dict
 
 from .intent_router import route_intent, execute_routed_intent
 from .rpc_bridge import check_houdini_rpc
+from .llm_adapter import ensure_llm_configured
 
 
 def preprocess_request(user_text: str, context: Dict = None) -> Dict:
@@ -19,7 +20,25 @@ def preprocess_request(user_text: str, context: Dict = None) -> Dict:
             'raw_health': health,
         }
 
-    routed = route_intent(user_text, context)
+    # enforce LLM availability as a hard policy
+    try:
+        ensure_llm_configured()
+    except Exception as exc:
+        return {
+            'status': 'error',
+            'message': 'LLM not configured; set RAPTOR_MINI_API_KEY and retry.',
+            'raw_error': str(exc),
+        }
+
+    try:
+        routed = route_intent(user_text, context)
+    except Exception as exc:
+        return {
+            'status': 'error',
+            'message': f'Intent routing failed: {exc}',
+            'raw_error': str(exc),
+        }
+
     return {
         'status': 'ready',
         'intent': routed['intent'],

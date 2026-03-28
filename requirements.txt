@@ -1,0 +1,19 @@
+# HoudiniAgenticMode project requirements
+# This file defines the minimal runtime dependencies needed to run the Houdini agentic pipeline.
+# Layers implemented:
+# 1. tool  = low-level Houdini RPC API caller
+# 2. skill = intent-to-precondition translator
+# 3. MCP   = context/intents router + policy
+# 4. agent = final user conversation flow + tool orchestration
+#
+# This project can be run with a standard Python runtime + Houdini environment.
+# We include the recommended editable install instructions below.
+
+setuptools>=61.0
+wheel
+requests
+pytest
+
+# Optional (if auto-formatting/analysis/logging needed):
+# black
+# mypy

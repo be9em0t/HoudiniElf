@@ -2,6 +2,8 @@
 import re
 from typing import Dict, Optional
 
+from .llm_adapter import llm_translate_intent_to_houdini_code
+
 
 def _parse_color(text: str):
     colors = {
@@ -32,9 +34,10 @@ def interpret_request(user_text: str, context: Optional[Dict] = None) -> Dict:
     context = context or {}
     text = user_text.strip().lower()
 
+    # Explicit, safe metadata-only skill operations
     if 'list nodes' in text or 'enumerate nodes' in text:
         path = context.get('target_path', '/obj')
-        code = f"'\\n'.join([n.path() for n in __import__('hou').node('{path}').children()])"
+        code = f"'\\n'.join([n.path() for n in hou.node('{path}').children()])"
         return {
             'intent': 'list_nodes',
             'tool': 'run_houdini_python',
@@ -46,7 +49,7 @@ def interpret_request(user_text: str, context: Optional[Dict] = None) -> Dict:
         node_path = context.get('node_path')
         if not node_path:
             raise ValueError('inspect node requires node_path in context')
-        code = f"__import__('hou').node('{node_path}').parm('snippet').eval()"
+        code = f"hou.node('{node_path}').parm('snippet').eval()"
         return {
             'intent': 'inspect_node',
             'tool': 'run_houdini_python',
@@ -54,56 +57,14 @@ def interpret_request(user_text: str, context: Optional[Dict] = None) -> Dict:
             'explanation': f'Inspect parameter snippet for {node_path}.',
         }
 
-    if 'create' in text and 'sphere' in text:
-        radius = _parse_number(text, r'radius\s*of\s*([0-9]*\.?[0-9]+)', 1.0)
-        if radius == 1.0:
-            diameter = _parse_number(text, r'diameter\s*of\s*([0-9]*\.?[0-9]+)', 2.0)
-            radius = diameter / 2.0
-        height = _parse_number(text, r'([0-9]*\.?[0-9]+)\s*above\s*ground', 0.0)
-        color_name, (r_val, g_val, b_val) = _parse_color(text)
+    # General-purpose LLM-driven intent path.
+    llm_code = llm_translate_intent_to_houdini_code(user_text, context)
+    return {
+        'intent': 'llm_interpreted_command',
+        'tool': 'run_houdini_python',
+        'args': {'code': llm_code},
+        'explanation': 'Generated Houdini python code for user intent via LLM.',
+    }
 
-        code = f"""
-import hou
-obj = hou.node('/obj')
-if obj is None:
-    raise RuntimeError('/obj not found')
-geo = obj.createNode('geo', 'agentic_{color_name}_sphere_geo')
-geo.moveToGoodPosition()
-sph = geo.createNode('sphere', 'agentic_{color_name}_sphere')
-sph.parm('radx').set({radius})
-sph.parm('rady').set({radius})
-sph.parm('radz').set({radius})
-trans = geo.createNode('xform', 'agentic_{color_name}_sphere_xform')
-trans.setInput(0, sph)
-trans.parm('ty').set({height})
-col = geo.createNode('color', 'agentic_{color_name}_sphere_color')
-col.setInput(0, trans)
-col.parm('colorr').set({r_val})
-col.parm('colorg').set({g_val})
-col.parm('colorb').set({b_val})
-col.setDisplayFlag(True)
-col.setRenderFlag(True)
-geo.layoutChildren()
-obj.setDisplayFlag(False)
-geo.setCurrent(True, clear_all_selected=True)
-'created a {color_name} sphere in /obj at y={height}'
-"""
-        return {
-            'intent': f'create_{color_name}_sphere',
-            'tool': 'run_houdini_python',
-            'args': {'code': code},
-            'explanation': f'Create sphere with radius {radius}, color {color_name}, at height {height}.',
-        }
 
-    if 'run' in text or 'execute' in text or 'python' in text:
-        code = context.get('code')
-        if not code:
-            raise ValueError('No code provided for run_houdini_python fallback')
-        return {
-            'intent': 'run_python',
-            'tool': 'run_houdini_python',
-            'args': {'code': code},
-            'explanation': 'Execute explicit python command.',
-        }
 
-    raise ValueError(f'Unknown intent: {user_text}')

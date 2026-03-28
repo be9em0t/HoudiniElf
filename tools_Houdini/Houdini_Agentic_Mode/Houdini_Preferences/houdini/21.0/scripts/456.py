@@ -37,8 +37,14 @@ def process_queue():
     while not cmd_queue.empty():
         conn, cmd = cmd_queue.get()
 
-        # safe execution context: only hou and no builtins are exposed
-        safe_globals = {'hou': hou, '__builtins__': {}}
+        # safe execution context: allow hou and minimal safe builtins
+        safe_builtins = {
+            '__import__': __import__,
+            'True': True,
+            'False': False,
+            'None': None,
+        }
+        safe_globals = {'hou': hou, '__builtins__': safe_builtins}
         result = None
 
         try:
