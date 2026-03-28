@@ -7,14 +7,32 @@
 - Verify the script loads on Houdini startup by opening Houdini and checking console output:
   - `Houdini RPC server running on 127.0.0.1:5005`
 
-## 2. Verify RPC connection from local utility
-In your project folder, run:
+## 2. RPC and MCP verification and launch instructions:
+In your project folder:
 
+- test RPC is available
 ```bash
 python -c 'from tools_Houdini.Houdini_Agentic_Mode.rpc_bridge import check_houdini_rpc; print(check_houdini_rpc())'
 ```
-
 Expected output: `rpc_ok`
+
+- Kill stale 5007 before startup: `lsof -i :5007 -t | xargs -r kill`
+- launch python MCP Server using modeule mode: `python -m tools_Houdini.Houdini_Agentic_Mode.mcp_server --port 5007`
+- verify `curl http://127.0.0.1:5007/health`
+- test MCP is working with simple command (intent mapping via `copilot_agent`, not CLI)
+- call MCP from VS Code Chat via prompt + `chat.agent.mcpConfigurationFiles`
+- do not rely on direct 5005 HTTP; MCP should handle RPC proxying through 5007
+- optionally use VS Code tasks to auto-start the server:
+  - `.vscode/tasks.json`, run `Start Houdini MCP Server` task
+  - this avoids manual CLI startup in normal use
+
+- if RPC is not available
+    - kill houdini processes (with user permission): `pkill -f "houdini|houdinifx|houdini-bin"`
+    - restart Houdini: `tools_Houdini/Houdini_Agentic_Mode/houdini_launch.sh`
+
+extras:
+- list available LLM models
+- verify LLM availability (keys, tokens avaiable)
 
 ## 2.1 Architecture plan
 Orchestrated system that turns freeform user goals into Houdini RPC commands. Good news: this is exactly what Copilot `tools/skills/agent/mcp` should do.
@@ -217,3 +235,77 @@ If Houdini is cooking, retry instead of failing.
 4. Test from CLI agent
 5. Add skills later
 Do **not** start with skills — they’re useless until tools are stable.
+
+## 13) Copilot agent integration path
+This repository now includes a small Copilot adapter module at:
+- `tools_Houdini/Houdini_Agentic_Mode/copilot_agent.py`
+
+It maps chat intents into MCP requests:
+1. `skills_houdini.interpret_request(user_text)`
+2. `POST {mcp_url}/execute` with that payload
+
+Example usage:
+```python
+from tools_Houdini.Houdini_Agentic_Mode.copilot_agent import execute_intent
+print(execute_intent('list nodes under /obj', mcp_url='http://127.0.0.1:5007'))
+```
+
+### Minimal local Copilot chat configuration
+Add to your VS Code settings (user/workspace):
+```json
+"chat.agent.additionalInstructionFiles": [
+  "${workspaceFolder}/tools_Houdini/Houdini_Agentic_Mode/houdini_agentic_mode.prompt.md"
+],
+"chat.agent.mcpConfigurationFiles": [
+  "${workspaceFolder}/tools_Houdini/Houdini_Agentic_Mode/mcp.json"
+],
+"chat.agent.openaiToolName": "houdini-mcp"
+```
+
+Then call from chat: `list nodes under /obj` and it will route through `copilot_agent` + `mcp_server`.
+
+### Optional unified wiring (one page)
+In the same file (this README):
+- How to install Houdini RPC script
+- How to verify `check_houdini_rpc()`
+- How to start MCP server
+- How to run health + execute control commands
+- How to configure Copilot to point to local `houdini-mcp`
+
+This is already in place above; keep it synced to avoid drift.
+
+
+## 12) VS Code Copilot MCP wiring
+1. Add workspace `mcp.json`:
+```json
+{
+  "servers": {
+    "houdini-mcp": {
+      "type": "http",
+      "url": "http://127.0.0.1:5007",
+      "headers": {"Content-Type": "application/json"}
+    }
+  }
+}
+```
+2. Add to VS Code settings:
+```json
+"chat.agent.additionalInstructionFiles": [
+  "${workspaceFolder}/tools_Houdini/Houdini_Agentic_Mode/houdini_agentic_mode.prompt.md"
+],
+"chat.agent.mcpConfigurationFiles": [
+  "${workspaceFolder}/tools_Houdini/Houdini_Agentic_Mode/mcp.json"
+],
+"chat.agent.openaiToolName": "houdini-mcp"
+```
+3. Use `python -m tools_Houdini.Houdini_Agentic_Mode.mcp_server --port 5007` to start.
+
+### Example curl + health-check
+```bash
+curl -X POST http://127.0.0.1:5007/execute \
+  -H "Content-Type: application/json" \
+  -d '{"intent":"list nodes under /obj", "tool":"run_houdini_python", "args":{"code":"'\\n'.join([n.path() for n in hou.node('/obj').children()])"}}'
+
+curl http://127.0.0.1:5007/health
+```
+Expected: `{"status":"ok","rpc":"rpc_ok"}`

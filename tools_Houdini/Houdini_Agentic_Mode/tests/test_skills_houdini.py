@@ -3,9 +3,12 @@ import pytest
 from tools_Houdini.Houdini_Agentic_Mode import skills_houdini, mcp_houdini
 
 
-def test_llm_not_configured_error():
-    with pytest.raises(ValueError, match='LLM translation not configured'):
-        skills_houdini.interpret_request('add navy blue box with x:1 y:2 z:.42 position it 2 units above terrain')
+def test_llm_translate_intent_without_api_key(monkeypatch):
+    monkeypatch.delenv('RAPTOR_MINI_API_KEY', raising=False)
+    out = skills_houdini.interpret_request('add navy blue box with x:1 y:2 z:.42 position it 2 units above terrain')
+    assert out['intent'] == 'llm_interpreted_command'
+    assert out['tool'] == 'run_houdini_python'
+    assert out['tool'] == 'run_houdini_python'
 
 
 def test_add_navy_blue_box_with_llm(monkeypatch):
@@ -42,11 +45,11 @@ def test_apply_point_wrangle_with_llm(monkeypatch):
     assert 'attribwrangle1' in out['args']['code']
 
 
-def test_mcp_requires_llm_config(monkeypatch):
+def test_mcp_no_api_key_allowed(monkeypatch):
     monkeypatch.delenv('RAPTOR_MINI_API_KEY', raising=False)
     out = mcp_houdini.preprocess_request('create sphere')
-    assert out['status'] == 'error'
-    assert 'LLM not configured' in out['message']
+    assert out['status'] == 'ok'
+    assert out['payload']['tool'] == 'run_houdini_python'
 
 
 
