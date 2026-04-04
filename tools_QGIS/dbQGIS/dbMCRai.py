@@ -34,6 +34,7 @@ from b9PyQGIS import *
 from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject
 from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QLineEdit, QCheckBox
 # print("loaded qgis.core")
+import re
 
 # import sub_OSM_queries
 # imp.reload(sub_OSM_queries)
@@ -261,7 +262,48 @@ def fMCR_Dialog(product_versions, process_list, license_zones_polygon, OGRLayerN
 			# print("Orbis server IP:", choiceIP)
 			return [choiceProductVersion, choiceProcess, choiceZone, choiceExtentLayerName, choiceExtentLayerNameIndex, choiceH3] #choiceIP
 	else:
-			return 'cancel'
+		return 'cancel'
+
+
+def _normalize_product_version_for_table(product_version):
+	"""Normalize product version into table suffix format."""
+	value = (product_version or "").strip().lower()
+	value = re.sub(r'[^a-z0-9]+', '_', value)
+	return value.strip('_')
+
+
+def fGetMcrTableNames(cursor):
+	"""List table names from map_central_repository schema."""
+	cursor.execute("""
+		SELECT table_name
+		FROM pu_orbis_platform_prod_catalog.information_schema.tables
+		WHERE table_schema = 'map_central_repository'
+	""")
+	return [row[0] for row in cursor.fetchall()]
+
+
+def fResolveMcrVersionedTable(table_names, base_table, product_version):
+	"""Resolve base table to versioned table for the selected product version."""
+	if not table_names:
+		return None
+
+	product_suffix = _normalize_product_version_for_table(product_version)
+	table_names_set = set(table_names)
+
+	candidate_exact = f"{base_table}_{product_suffix}"
+	if candidate_exact in table_names_set:
+		return f"pu_orbis_platform_prod_catalog.map_central_repository.{candidate_exact}"
+
+	# fallback for legacy layout
+	if base_table in table_names_set:
+		return f"pu_orbis_platform_prod_catalog.map_central_repository.{base_table}"
+
+	# lenient fallback for variants that still end with the normalized product suffix
+	for table_name in table_names:
+		if table_name.startswith(base_table + "_") and table_name.endswith(product_suffix):
+			return f"pu_orbis_platform_prod_catalog.map_central_repository.{table_name}"
+
+	return None
 
 
 def fAllPolyIntersect(product_version, license_zone, extentCoords):
@@ -1561,7 +1603,7 @@ def fProcessBuildingsOld(product_version, license_zone, extentCoords):
 	qtMsgBox(message)
 
 
-def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=None):
+def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, polygons_table, relations_geometries_table, menu_name=None):
 	"""Natural water polygons (natural=water tag) from both polygons and relations_geometries.
 	Optimized query based on tested SQL - filters by natural=water before spatial operations.
 	"""
@@ -1581,9 +1623,8 @@ def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords,
 	  SELECT
 	    p.*,
 	    ST_GeomFromWKT(p.geometry) AS g
-	  FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons p
-	  WHERE p.product = '{product_version}'
-	    AND p.license_zone = '{license_zone}'
+	  FROM {polygons_table} p
+	  WHERE p.license_zone = '{license_zone}'
 	    AND p.tags['natural'] = 'water'
 	    AND p.element_type != 'RELATION'
 	    AND p.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
@@ -1591,7 +1632,7 @@ def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords,
 	polys_spatial_filtered AS (
 	  SELECT
 	    'polygons' AS source,
-	    p.product,
+	    '{product_version}' AS product,
 	    p.element_type,
 	    p.osm_identifier,
 	    p.license_zone,
@@ -1608,16 +1649,15 @@ def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords,
 	  SELECT
 	    r.*,
 	    ST_GeomFromWKT(r.geometry) AS g
-	  FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries r
-	  WHERE r.product = '{product_version}'
-	    AND r.license_zone = '{license_zone}'
+	  FROM {relations_geometries_table} r
+	  WHERE r.license_zone = '{license_zone}'
 	    AND r.tags['natural'] = 'water'
 	    AND r.geom_type IN ('ST_POLYGON', 'ST_MULTIPOLYGON')
 	),
 	rels_spatial_filtered AS (
 	  SELECT
 	    'relations_geometries' AS source,
-	    r.product,
+	    '{product_version}' AS product,
 	    r.element_type,
 	    r.osm_identifier,
 	    r.license_zone,
@@ -1652,7 +1692,13 @@ def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords,
 	  geometry
 	FROM combined_filtered
 	ORDER BY product, source, osm_identifier
-	;""".format(product_version=product_version, license_zone=license_zone, extentStr=extentStr)
+	;""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extentStr=extentStr,
+		polygons_table=polygons_table,
+		relations_geometries_table=relations_geometries_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2849,8 +2895,34 @@ def fMainUI():
 	fetched = cursor.fetchall()
 	product_versions = [row[0] for row in fetched]
 	product_versions.sort(reverse=True)
+	mcr_table_names = fGetMcrTableNames(cursor)
+	print(f"Loaded {len(mcr_table_names)} tables from map_central_repository")
 
-	cursor.execute("SELECT distinct license_zone FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons")
+	# Resolve an existing polygons table for license zone list (legacy base table may not exist).
+	last_product_version = config['mcr']['last_product_version']
+	if last_product_version in product_versions:
+		license_zone_seed_product = last_product_version
+	elif product_versions:
+		license_zone_seed_product = product_versions[0]
+	else:
+		license_zone_seed_product = ""
+
+	license_zone_table = fResolveMcrVersionedTable(mcr_table_names, 'polygons', license_zone_seed_product)
+	if not license_zone_table:
+		polygon_like_tables = sorted(
+			[t for t in mcr_table_names if t == 'polygons' or t.startswith('polygons_')]
+		)
+		if polygon_like_tables:
+			license_zone_table = f"pu_orbis_platform_prod_catalog.map_central_repository.{polygon_like_tables[-1]}"
+
+	if not license_zone_table:
+		message = "\nCould not find any polygons table in map_central_repository to load license zones."
+		print(message)
+		qtMsgBox(message)
+		return
+
+	print(f"Loading license zones from: {license_zone_table}")
+	cursor.execute(f"SELECT distinct license_zone FROM {license_zone_table}")
 	fetched = cursor.fetchall()
 	license_zones_polygon = [row[0] for row in fetched if len(row[0])==3]
 	license_zones_polygon.sort(reverse=False)
@@ -2946,7 +3018,32 @@ def fMainUI():
 		fGetBoundingPolygon(extent_layer)
 
 	elif process == 'Water (natural)':
-		fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
+		water_polygons_table = fResolveMcrVersionedTable(mcr_table_names, 'polygons', product_version)
+		water_relations_geometries_table = fResolveMcrVersionedTable(mcr_table_names, 'relations_geometries', product_version)
+		if not water_polygons_table or not water_relations_geometries_table:
+			message = (
+				f"\nCould not resolve versioned tables for product '{product_version}'.\n"
+				f"Resolved polygons: {water_polygons_table}\n"
+				f"Resolved relations_geometries: {water_relations_geometries_table}\n"
+				"Please verify available tables in map_central_repository."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Water (natural) tables for '{product_version}': "
+			f"polygons={water_polygons_table}, "
+			f"relations_geometries={water_relations_geometries_table}"
+		)
+		fProcWaterNatural(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			water_polygons_table,
+			water_relations_geometries_table,
+			menu_name=process
+		)
 	elif process == 'Land Use (older)':
 		fProcLandUse(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
 	elif process == 'LOI Artificial Ground':
