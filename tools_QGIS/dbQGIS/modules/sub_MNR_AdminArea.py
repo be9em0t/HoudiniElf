@@ -5,6 +5,7 @@ from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject
 from qgis.utils import *
 from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit
 
 # manually append script folder 'cause fucking QGIS
 # import imp
@@ -290,6 +291,59 @@ def fLoadAdminAreasBasic(mnrServer,mnrSchema,extentCoords):
 	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
+	return newLayer
+
+
+def fLoadAdminAreaByName(mnrServer, mnrSchema, clipLayer, extentCoords):
+	# Prompt user for name to search
+	searchText, ok = QInputDialog.getText(iface.mainWindow(), "Admin Area by name", "Enter name to search:")
+	if not ok:
+		return 'cancel'
+	search = searchText.strip()
+	if search == "":
+		return 'cancel'
+
+	# Sanitize single quotes for SQL
+	search_esc = search.replace("'", "''")
+
+	matViewPrefix = "b9view" + mnrSchema[0:8] + "_"
+	matViewResultTable = matViewPrefix + "adm_byname"
+
+	queryDropLine = "DROP TABLE IF EXISTS " + matViewResultTable + " CASCADE;"
+
+	# Build query: join admin_area -> names and filter by ILIKE within the chosen extent
+	queryMNRLine = f"""
+	CREATE TABLE {matViewResultTable} AS
+	SELECT DISTINCT
+		adm.feat_id,
+		adm.feat_type,
+		name."name",
+		name.iso_lang_code,
+		adm.geom
+	FROM {mnrSchema}.mnr_admin_area adm
+	LEFT JOIN {mnrSchema}.mnr_admin_area2nameset aa2ns ON adm.feat_id = aa2ns.admin_area_id
+	LEFT JOIN {mnrSchema}.mnr_nameset ns ON aa2ns.nameset_id = ns.nameset_id
+	LEFT JOIN {mnrSchema}.mnr_nameset2name ns2n ON ns.nameset_id = ns2n.nameset_id
+	LEFT JOIN {mnrSchema}.mnr_name name ON ns2n.name_id = name.name_id
+	WHERE lower(name."name") ILIKE lower('%{search_esc}%')
+	AND ST_Intersects(adm.geom, ST_GeomFromText('{extentCoords}', 4326));
+	"""
+
+	print("\n" + queryDropLine)
+	print("\n" + queryMNRLine)
+
+	b9PyQGIS.fPostGISexec(mnrServer, queryDropLine)
+	b9PyQGIS.fPostGISexec(mnrServer, queryMNRLine)
+
+	print("\nLoading postgres layer ... ")
+	uri = QgsDataSourceUri()
+	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
+	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
+	if newLayer:
+		# clip to provided clipLayer and apply symbology
+		newLayer = fClipExtent(newLayer, clipLayer)
+		fSymbol(newLayer)
 	return newLayer
 
 

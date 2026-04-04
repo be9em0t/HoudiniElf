@@ -13,6 +13,8 @@ from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject
 from qgis.utils import *
 from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import *
+# small UI import
+from qgis.PyQt.QtWidgets import QInputDialog
 # from qgis.PyQt.QtWidgets import (QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QLabel,QMessageBox)
 
 
@@ -51,6 +53,51 @@ def fLoadCityCenters(mnrServer,mnrSchema,extentCoords):
 	ccFields = b9PyQGIS.fFieldsFromString("cc.", "feat_type,name,admin_class,type_admin_area,type_admin_place,type_neighborhood,geom")
 	queryMNRLine =  "CREATE TABLE " + matViewResultTable + " as \nSELECT " + ccFields + " \nFROM " + mnrSchema + ".mnr_citycenter cc " + " \nWHERE ST_Intersects(" + geomField + ",ST_GeomFromText(" + extentStr + ",4326)) ;"
 	
+	print("\n" + queryDropLine)
+	print("\n" + queryMNRLine)
+
+	b9PyQGIS.fPostGISexec(mnrServer, queryDropLine)
+	b9PyQGIS.fPostGISexec(mnrServer, queryMNRLine)
+
+	print("\nLoading postgres layer ... ")
+	uri = QgsDataSourceUri()
+	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	uri.setDataSource("public", matViewResultTable, geomField, aKeyColumn="feat_id")
+	newlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
+	return newlayer
+
+
+def fLoadCityCentersByName(mnrServer, mnrSchema, clipLayer, extentCoords):
+	# Prompt for search term
+	searchText, ok = QInputDialog.getText(iface.mainWindow(), "City Centers by name", "Enter name to search:")
+	if not ok:
+		return 'cancel'
+	search = searchText.strip()
+	if search == "":
+		return 'cancel'
+
+	search_esc = search.replace("'", "''")
+
+	matViewPrefix = "b9view" + mnrSchema[0:8] + "_"
+	matViewResultTable = matViewPrefix + "cc_byname"
+
+	queryDropLine = "DROP TABLE IF EXISTS " + matViewResultTable + " CASCADE;"
+
+	ccFields = b9PyQGIS.fFieldsFromString("cc.", "feat_type,name,admin_class,type_admin_area,type_admin_place,type_neighborhood,geom")
+
+	# Join to nameset/name to enable ILIKE search, limit to the provided extent
+	queryMNRLine = f"""
+CREATE TABLE {matViewResultTable} AS
+SELECT DISTINCT {ccFields}, name."name" AS matched_name
+FROM {mnrSchema}.mnr_citycenter cc
+LEFT JOIN {mnrSchema}.mnr_citycenter2nameset cc2ns ON cc.feat_id = cc2ns.citycenter_id
+LEFT JOIN {mnrSchema}.mnr_nameset ns ON cc2ns.nameset_id = ns.nameset_id
+LEFT JOIN {mnrSchema}.mnr_nameset2name ns2n ON ns.nameset_id = ns2n.nameset_id
+LEFT JOIN {mnrSchema}.mnr_name name ON ns2n.name_id = name.name_id
+WHERE lower(name."name") ILIKE lower('%{search_esc}%')
+AND ST_Intersects(cc.{geomField}, ST_GeomFromText('{extentCoords}', 4326));
+"""
+
 	print("\n" + queryDropLine)
 	print("\n" + queryMNRLine)
 
