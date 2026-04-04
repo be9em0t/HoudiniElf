@@ -3,6 +3,7 @@
 tools_QGIS/dbQGIS/MNR_automation
 tools_QGIS/dbQGIS/dBeaver
 tools_QGIS/dbQGIS/b9QGISdata.ini
+tools_QGIS/dbQGIS/tt-specs
 
 # Exceptions: Keep these tracked
 !.github/

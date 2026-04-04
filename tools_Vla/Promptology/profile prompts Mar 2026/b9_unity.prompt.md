@@ -1,7 +1,7 @@
 ---
 agent: 'agent'
 model: 'Raptor mini (Preview)'
-description: 'Solve Unity game engine problem'
+description: 'Provide solution to Unity problem'
 ---
 Your goal is to answer the questions and edit code based on latest online information, not internal knowledge. 
 
