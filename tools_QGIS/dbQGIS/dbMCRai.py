@@ -306,6 +306,17 @@ def fResolveMcrVersionedTable(table_names, base_table, product_version):
 	return None
 
 
+def fResolveMcrVersionedTableExact(table_names, base_table, product_version):
+	"""Resolve only the exact versioned table for the selected product version."""
+	if not table_names:
+		return None
+	product_suffix = _normalize_product_version_for_table(product_version)
+	candidate_exact = f"{base_table}_{product_suffix}"
+	if candidate_exact in set(table_names):
+		return f"pu_orbis_platform_prod_catalog.map_central_repository.{candidate_exact}"
+	return None
+
+
 def fAllPolyIntersect(product_version, license_zone, extentCoords):
 	extentStr = "'" + extentCoords + "'"
 
@@ -547,7 +558,7 @@ def fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords
 	qtMsgBox(message)
 
 
-def fProcessInlandWater(extent_layer, product_version, license_zone, extentCoords, h3):
+def fProcessInlandWater(extent_layer, product_version, license_zone, extentCoords, h3, polygons_table, relations_geometries_table):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
 		bounds = hexListToChildString(hextiles)
@@ -604,12 +615,11 @@ SELECT
 	intermittent,
 	geometry 
 FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.polygons,
+	{polygons_table},
 	bbox
 WHERE 
 	natural = 'water' 
 	AND ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
-	AND product = '{product_version}'
 	AND license_zone like '%{license_zone}%'
 
 UNION 
@@ -619,15 +629,20 @@ SELECT
 	tags['intermittent'] AS intermittent,
 	geometry 
 FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries,
+	{relations_geometries_table},
 	bbox
 WHERE 
 	tags['natural'] = 'water'
 	AND geom_type IN ("ST_POLYGON","ST_MULTIPOLYGON")
 	AND ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
-	AND product = '{product_version}'
 	AND license_zone like '%{license_zone}%'
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		polygons_table=polygons_table,
+		relations_geometries_table=relations_geometries_table
+	)
 
 
 	# Put query on the clipboard
@@ -638,7 +653,7 @@ WHERE
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords, h3):
+def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords, h3, polygons_table, relations_geometries_table):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
 		bounds = hexListToChildString(hextiles)
@@ -658,7 +673,7 @@ def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords
 	--to_json(mcr_tags) AS mcr_tags,
 	geometry 
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.polygons
+	{polygons_table}
 	WHERE 
 	(tags['geometry_type'] = 'area'
 	OR
@@ -666,7 +681,6 @@ def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords
 	OR
 	tags['land_mass'] = 'yes')
 	AND {bounds}
-	AND product = '{product_version}'
 	AND license_zone like '%{license_zone}%' 
 	{h3_index}
 
@@ -680,7 +694,7 @@ def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords
 	--to_json(mcr_tags) AS mcr_tags,
 	geometry 
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+	{relations_geometries_table}
 	WHERE 
 	(tags['geometry_type'] = 'area'
 	OR
@@ -688,7 +702,6 @@ def fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords
 	OR
 	tags['land_mass'] = 'yes')
 	AND {bounds}
-	AND product = '{product_version}'
 	AND license_zone like '%{license_zone}%' 
 	{h3_index};"""
 
@@ -855,7 +868,7 @@ def fProcessNetworkSpeeds(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcNetworkMajor(product_version, license_zone, extentCoords, menu_name=None):
+def fProcNetworkMajor(product_version, license_zone, extentCoords, lines_table, menu_name=None):
 	extentStr = "'" + extentCoords + "'"
 	menu = menu_name if menu_name else 'Transportation Line Extraction'
 
@@ -894,9 +907,8 @@ lines_filtered AS (
 		geometry,
 		ST_GEOMFROMWKT(geometry) AS g,
 		ST_Envelope(ST_GEOMFROMWKT(geometry)) AS env
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+	FROM {lines_table}
 	WHERE (highway IS NOT NULL OR railway IS NOT NULL OR route = 'ferry')
-		AND product = '{product_version}'
 		AND license_zone LIKE '%{license_zone}%'
 )
 
@@ -953,7 +965,13 @@ FROM lines_filtered lf
 JOIN bbox b
 	ON ST_Intersects(b.genv, lf.env) -- cheap envelope filter
 	AND ST_Intersects(b.g, lf.g)     -- exact geometry filter
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		menu=menu,
+		lines_table=lines_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -964,7 +982,7 @@ JOIN bbox b
 	qtMsgBox(message)
 
 
-def fProcNetworkSimple(product_version, license_zone, extentCoords, menu_name=None):
+def fProcNetworkSimple(product_version, license_zone, extentCoords, lines_table, menu_name=None):
 	extentStr = "'" + extentCoords + "'"
 	menu = menu_name if menu_name else 'Transportation Line Extraction'
 
@@ -989,9 +1007,8 @@ lines_filtered AS (
 		geometry,
 		ST_GEOMFROMWKT(geometry) AS g,
 		ST_Envelope(ST_GEOMFROMWKT(geometry)) AS env
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
+	FROM {lines_table}
 	WHERE (highway IS NOT NULL OR tags['routing_class'] IS NOT NULL)
-		AND product = '{product_version}'
 		AND license_zone LIKE '%{license_zone}%'
 )
 
@@ -1009,7 +1026,13 @@ FROM lines_filtered lf
 JOIN bbox b
 	ON ST_Intersects(b.genv, lf.env) -- cheap envelope prefilter
 	AND ST_Intersects(b.g, lf.g)     -- exact geometry check
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		menu=menu,
+		lines_table=lines_table
+	)
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
 	clipboard.setText(sql)
@@ -1709,7 +1732,7 @@ def fProcWaterNatural(extent_layer, product_version, license_zone, extentCoords,
 	qtMsgBox(message)
 
 
-def fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=None):
+def fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, polygons_table, relations_table, menu_name=None):
 	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
 	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
 	"""
@@ -1723,17 +1746,17 @@ def fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone,
 WITH
   q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
   polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags, building, geometry
+    FROM {polygons_table}
+    WHERE license_zone = '{license_zone}'
   ),
   polys_pre AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
+    SELECT p.orbis_id, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
     FROM polys_src p
     WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
   ),
   polys_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
+    SELECT p.orbis_id, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
     FROM polys_pre p
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
@@ -1742,13 +1765,11 @@ WITH
   rel_pick AS (
     SELECT m.id AS poly_orbis_id,
            MIN(r.orbis_id) AS parent_relation_id
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.relations r
+    FROM {relations_table} r
     JOIN polys_spatial_filtered p
-      ON r.product = p.product
-      AND r.license_zone = p.license_zone
+      ON r.license_zone = p.license_zone
     LATERAL VIEW EXPLODE(r.members) AS m
-    WHERE r.product = '{product_version}'
-      AND r.license_zone = '{license_zone}'
+    WHERE r.license_zone = '{license_zone}'
       AND r.geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
       AND m.role IN ('outline','part')
       AND m.id = p.orbis_id
@@ -1824,7 +1845,13 @@ SELECT
   role
 --  source
 FROM polygons_out
-;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
+;""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extent,
+	polygons_table=polygons_table,
+	relations_table=relations_table
+) 
 
 	# Put script on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -1835,7 +1862,7 @@ FROM polygons_out
 	qtMsgBox(message)
 
 
-def fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=None):
+def fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, polygons_table, menu_name=None):
 	"""BuildingFootprints (new): Export-ready CTE that pre-parses geometries and applies envelope prefilter.
 	No ordering or ROW_NUMBER is added; results are returned unordered for streamed export.
 	"""
@@ -1849,17 +1876,17 @@ def fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, e
 WITH
   q AS (SELECT ST_GeomFromWKT({extent}) AS qg, ST_Envelope(ST_GeomFromWKT({extent})) AS qenv),
   polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, building, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags, building, geometry
+    FROM {polygons_table}
+    WHERE license_zone = '{license_zone}'
   ),
   polys_pre AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
+    SELECT p.orbis_id, p.license_zone, p.tags, p.building, p.geometry, ST_GeomFromWKT(p.geometry) AS g
     FROM polys_src p
     WHERE (p.building = 'yes' OR p.tags['building'] IS NOT NULL OR p.tags['building:part'] IS NOT NULL)
   ),
   polys_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
+    SELECT p.orbis_id, p.license_zone, p.tags, p.building, p.geometry, p.g, ST_Envelope(p.g) AS env
     FROM polys_pre p
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(p.g), q.qenv) AND ST_Intersects(q.qg, p.g)
@@ -1927,7 +1954,12 @@ SELECT
   role,
   source
 FROM polygons_out
-;""".format(product_version=product_version, license_zone=license_zone, extent=extent) 
+;""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extent,
+	polygons_table=polygons_table
+) 
 
 	# Put script on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -1938,7 +1970,7 @@ FROM polygons_out
 	qtMsgBox(message)
 
 
-def fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=None):
+def fProcLoiArtificialGround(product_version, license_zone, extentCoords, polygons_table, relations_geometries_table, menu_name=None):
 	"""LOI: Artificial Ground - envelope-prefiltered extraction for polygonal LOIs."""
 	extent = "'" + extentCoords + "'"
 
@@ -1955,10 +1987,9 @@ WITH
   ),
 
   loi_polys_src AS (
-    SELECT orbis_id, product, license_zone, tags, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
-    WHERE product = '{product_version}'
-      AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags, geometry
+    FROM {polygons_table}
+    WHERE license_zone = '{license_zone}'
       AND (
         tags['landuse'] IN ('artificial_ground','brownfield','builtup_area','construction','farmyard','garages','greenfield','landfill','quarry','railway','residential')
         OR tags['aeroway'] IN ('runway','apron','taxiway')
@@ -1968,10 +1999,9 @@ WITH
   ),
 
   loi_relgeo_src AS (
-    SELECT orbis_id, product, license_zone, tags AS tags, geometry, geom_type
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
-    WHERE product = '{product_version}'
-      AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags AS tags, geometry, geom_type
+    FROM {relations_geometries_table}
+    WHERE license_zone = '{license_zone}'
       AND geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
       AND (
         tags['landuse'] IN ('artificial_ground','brownfield','builtup_area','construction','farmyard','garages','greenfield','landfill','quarry','railway','residential')
@@ -1982,15 +2012,15 @@ WITH
   ),
 
   loi_pre AS (
-    SELECT orbis_id, product, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'polygons' AS source
+    SELECT orbis_id, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'polygons' AS source
     FROM loi_polys_src
     UNION ALL
-    SELECT orbis_id, product, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'relations_geometries' AS source
+    SELECT orbis_id, license_zone, tags, geometry, ST_GeomFromWKT(geometry) AS g, 'relations_geometries' AS source
     FROM loi_relgeo_src
   ),
 
   loi_spatial_filtered AS (
-    SELECT p.orbis_id, p.product, p.license_zone, p.tags, p.geometry, p.g, ST_Envelope(p.g) AS env, p.source
+    SELECT p.orbis_id, p.license_zone, p.tags, p.geometry, p.g, ST_Envelope(p.g) AS env, p.source
     FROM loi_pre p
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(p.g), q.qenv)
@@ -2013,7 +2043,13 @@ WITH
   )
 
 SELECT * FROM loi_out;
-""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extent,
+	polygons_table=polygons_table,
+	relations_geometries_table=relations_geometries_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2024,7 +2060,7 @@ SELECT * FROM loi_out;
 	qtMsgBox(message)
 
 
-def fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, menu_name=None):
+def fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, lines_table, menu_name=None):
 	"""Transportation Line extraction (envelope-prefiltered lines).
 
 	Builds a streaming-friendly SQL query for Transportation Line features (road, rail, ferry).
@@ -2047,13 +2083,13 @@ WITH
   ),
 
   lines_src AS (
-    SELECT orbis_id, product, license_zone, tags, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags, geometry
+    FROM {lines_table}
+    WHERE license_zone = '{license_zone}'
   ),
 
   lines_pre AS (
-    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
+    SELECT l.orbis_id, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
     FROM lines_src l
     -- quick property filter: include features that look like transportation lines
     WHERE l.tags['highway'] IS NOT NULL
@@ -2064,7 +2100,7 @@ WITH
   ),
 
   lines_spatial_filtered AS (
-    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
+    SELECT l.orbis_id, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
     FROM lines_pre l
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(l.g), q.qenv)
@@ -2137,7 +2173,12 @@ SELECT
   osm_identifier,
   ST_ASTEXT(g) AS geometry
 FROM lines_out;
-""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extent,
+	lines_table=lines_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2147,7 +2188,7 @@ FROM lines_out;
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, menu_name=None):
+def fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, lines_table, menu_name=None):
 	"""Transportation Line extraction (envelope-prefiltered lines).
 
 	Builds a streaming-friendly SQL query for Transportation Line features (road, rail, ferry).
@@ -2175,13 +2216,13 @@ WITH
   ),
 
   lines_src AS (
-    SELECT orbis_id, product, license_zone, tags, geometry
-    FROM pu_orbis_platform_prod_catalog.map_central_repository.lines
-    WHERE product = '{product_version}' AND license_zone = '{license_zone}'
+    SELECT orbis_id, license_zone, tags, geometry
+    FROM {lines_table}
+    WHERE license_zone = '{license_zone}'
   ),
 
   lines_pre AS (
-    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
+    SELECT l.orbis_id, l.license_zone, l.tags, l.geometry, ST_GeomFromWKT(l.geometry) AS g
     FROM lines_src l
     -- quick property filter: include features that look like transportation lines
     WHERE l.tags['highway'] IS NOT NULL
@@ -2192,7 +2233,7 @@ WITH
   ),
 
   lines_spatial_filtered AS (
-    SELECT l.orbis_id, l.product, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
+    SELECT l.orbis_id, l.license_zone, l.tags, l.geometry, l.g, ST_Envelope(l.g) AS env
     FROM lines_pre l
     CROSS JOIN q
     WHERE ST_Intersects(ST_Envelope(l.g), q.qenv)
@@ -2308,7 +2349,12 @@ SELECT
   osm_identifier,
   ST_ASTEXT(g) AS geometry
 FROM lines_out;
-""".format(product_version=product_version, license_zone=license_zone, extent=extent)
+""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extent,
+	lines_table=lines_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2454,7 +2500,7 @@ ST_Intersects(g, bbox)
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcLandUse(extent_layer, product_version, license_zone, extentCoords, menu_name=None):
+def fProcLandUse(extent_layer, product_version, license_zone, extentCoords, polygons_table, relations_geometries_table, menu_name=None):
 	"""Land use polygons (envelope-prefiltered, ST-CTE optimized).
 	"""
 	menu = menu_name if menu_name else 'Land Use'
@@ -2468,9 +2514,8 @@ WITH q AS (
 ),
 polys_src AS (
   SELECT orbis_id, tags, geometry
-  FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+  FROM {polygons_table}
   WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-    AND product = '{product_version}'
     AND license_zone LIKE '%{license_zone}%'
 ),
 polys_pre AS (
@@ -2488,9 +2533,8 @@ polys_pre AS (
 ),
 rels_src AS (
   SELECT orbis_id, tags, geometry
-  FROM pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+  FROM {relations_geometries_table}
   WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
-    AND product = '{product_version}'
     AND license_zone LIKE '%{license_zone}%'
 ),
 rels_pre AS (
@@ -2538,7 +2582,14 @@ FROM rels_pre r
 CROSS JOIN q
 WHERE ST_Intersects(q.qenv, r.env)
   AND ST_Intersects(q.qg, r.g)
-;""".format(product_version=product_version, license_zone=license_zone, extent=extentStr, menu=menu)
+;""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extentStr,
+	menu=menu,
+	polygons_table=polygons_table,
+	relations_geometries_table=relations_geometries_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -3018,14 +3069,20 @@ def fMainUI():
 		fGetBoundingPolygon(extent_layer)
 
 	elif process == 'Water (natural)':
-		water_polygons_table = fResolveMcrVersionedTable(mcr_table_names, 'polygons', product_version)
-		water_relations_geometries_table = fResolveMcrVersionedTable(mcr_table_names, 'relations_geometries', product_version)
+		water_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		water_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
 		if not water_polygons_table or not water_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
 			message = (
-				f"\nCould not resolve versioned tables for product '{product_version}'.\n"
-				f"Resolved polygons: {water_polygons_table}\n"
-				f"Resolved relations_geometries: {water_relations_geometries_table}\n"
-				"Please verify available tables in map_central_repository."
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
 			)
 			print(message)
 			qtMsgBox(message)
@@ -3045,21 +3102,227 @@ def fMainUI():
 			menu_name=process
 		)
 	elif process == 'Land Use (older)':
-		fProcLandUse(extent_layer, product_version, license_zone, extentCoords, menu_name=process)
+		landuse_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		landuse_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not landuse_polygons_table or not landuse_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Land Use (older) tables for '{product_version}': "
+			f"polygons={landuse_polygons_table}, "
+			f"relations_geometries={landuse_relations_geometries_table}"
+		)
+		fProcLandUse(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			landuse_polygons_table,
+			landuse_relations_geometries_table,
+			menu_name=process
+		)
 	elif process == 'LOI Artificial Ground':
-		fProcLoiArtificialGround(product_version, license_zone, extentCoords, menu_name=process)
+		loi_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		loi_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not loi_polygons_table or not loi_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"LOI Artificial Ground tables for '{product_version}': "
+			f"polygons={loi_polygons_table}, "
+			f"relations_geometries={loi_relations_geometries_table}"
+		)
+		fProcLoiArtificialGround(
+			product_version,
+			license_zone,
+			extentCoords,
+			loi_polygons_table,
+			loi_relations_geometries_table,
+			menu_name=process
+		)
 	elif process == 'Buildings with Relations Optimised':
-		fProcBuilding_with_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
+		buildings_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		buildings_relations_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations', product_version)
+		if not buildings_polygons_table or not buildings_relations_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_relations = sorted([t for t in mcr_table_names if t.startswith('relations_') and not t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_relations = f"relations_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations table: {expected_relations}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_* tables:\n{chr(10).join(available_relations) if available_relations else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Buildings with Relations Optimised tables for '{product_version}': "
+			f"polygons={buildings_polygons_table}, "
+			f"relations={buildings_relations_table}"
+		)
+		fProcBuilding_with_Relations_SpatialOptimised(
+			product_version,
+			license_zone,
+			extentCoords,
+			buildings_polygons_table,
+			buildings_relations_table,
+			menu_name=process
+		)
 	elif process == 'Buildings w/o Relations Optimised':
-		fProcBuilding_wo_Relations_SpatialOptimised(product_version, license_zone, extentCoords, menu_name=process)
+		buildings_wo_rel_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		if not buildings_wo_rel_polygons_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned polygons table found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				"Please select a product version that has a matching polygons table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Buildings w/o Relations Optimised table for '{product_version}': "
+			f"polygons={buildings_wo_rel_polygons_table}"
+		)
+		fProcBuilding_wo_Relations_SpatialOptimised(
+			product_version,
+			license_zone,
+			extentCoords,
+			buildings_wo_rel_polygons_table,
+			menu_name=process
+		)
 	elif process == 'Network wo Relations':
-		fProcNetwork_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
+		network_lines_table = fResolveMcrVersionedTableExact(mcr_table_names, 'lines', product_version)
+		if not network_lines_table:
+			available_lines = sorted([t for t in mcr_table_names if t.startswith('lines_')])
+			expected_lines = f"lines_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned lines table found for selected product '{product_version}'.\n"
+				f"Expected lines table: {expected_lines}\n\n"
+				f"Available lines_* tables:\n{chr(10).join(available_lines) if available_lines else '(none)'}\n\n"
+				"Please select a product version that has a matching lines table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Network wo Relations table for '{product_version}': "
+			f"lines={network_lines_table}"
+		)
+		fProcNetwork_wo_Relations(
+			product_version,
+			license_zone,
+			extentCoords,
+			network_lines_table,
+			menu_name=process
+		)
 	elif process == 'Network Detailed wo Relations':
-		fProcNetworkDetailed_wo_Relations(product_version, license_zone, extentCoords, menu_name=process)
+		network_detailed_lines_table = fResolveMcrVersionedTableExact(mcr_table_names, 'lines', product_version)
+		if not network_detailed_lines_table:
+			available_lines = sorted([t for t in mcr_table_names if t.startswith('lines_')])
+			expected_lines = f"lines_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned lines table found for selected product '{product_version}'.\n"
+				f"Expected lines table: {expected_lines}\n\n"
+				f"Available lines_* tables:\n{chr(10).join(available_lines) if available_lines else '(none)'}\n\n"
+				"Please select a product version that has a matching lines table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Network Detailed wo Relations table for '{product_version}': "
+			f"lines={network_detailed_lines_table}"
+		)
+		fProcNetworkDetailed_wo_Relations(
+			product_version,
+			license_zone,
+			extentCoords,
+			network_detailed_lines_table,
+			menu_name=process
+		)
 	elif process == 'Network Major with Lanes, Curv, Grad (older)':
-		fProcNetworkMajor(product_version, license_zone, extentCoords, menu_name=process)
+		network_major_lines_table = fResolveMcrVersionedTableExact(mcr_table_names, 'lines', product_version)
+		if not network_major_lines_table:
+			available_lines = sorted([t for t in mcr_table_names if t.startswith('lines_')])
+			expected_lines = f"lines_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned lines table found for selected product '{product_version}'.\n"
+				f"Expected lines table: {expected_lines}\n\n"
+				f"Available lines_* tables:\n{chr(10).join(available_lines) if available_lines else '(none)'}\n\n"
+				"Please select a product version that has a matching lines table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Network Major with Lanes, Curv, Grad (older) table for '{product_version}': "
+			f"lines={network_major_lines_table}"
+		)
+		fProcNetworkMajor(
+			product_version,
+			license_zone,
+			extentCoords,
+			network_major_lines_table,
+			menu_name=process
+		)
 	elif process == 'Network Simple (for large areas, older)':
-		fProcNetworkSimple(product_version, license_zone, extentCoords, menu_name=process)
+		network_simple_lines_table = fResolveMcrVersionedTableExact(mcr_table_names, 'lines', product_version)
+		if not network_simple_lines_table:
+			available_lines = sorted([t for t in mcr_table_names if t.startswith('lines_')])
+			expected_lines = f"lines_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned lines table found for selected product '{product_version}'.\n"
+				f"Expected lines table: {expected_lines}\n\n"
+				f"Available lines_* tables:\n{chr(10).join(available_lines) if available_lines else '(none)'}\n\n"
+				"Please select a product version that has a matching lines table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Network Simple (for large areas, older) table for '{product_version}': "
+			f"lines={network_simple_lines_table}"
+		)
+		fProcNetworkSimple(
+			product_version,
+			license_zone,
+			extentCoords,
+			network_simple_lines_table,
+			menu_name=process
+		)
 
 	elif process == 'All Polygons Contain':
 		fAllPolyContains(product_version, license_zone, extentCoords)
@@ -3070,9 +3333,71 @@ def fMainUI():
 	elif process == 'Admin Point Places':
 		fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Inland Water':
-		fProcessInlandWater(extent_layer, product_version, license_zone, extentCoords, h3)
+		inland_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		inland_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not inland_polygons_table or not inland_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Inland Water tables for '{product_version}': "
+			f"polygons={inland_polygons_table}, "
+			f"relations_geometries={inland_relations_geometries_table}"
+		)
+		fProcessInlandWater(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			inland_polygons_table,
+			inland_relations_geometries_table
+		)
 	elif process == 'Ocean Water':
-		fProcessOceanWater(extent_layer, product_version, license_zone, extentCoords, h3)
+		ocean_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		ocean_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not ocean_polygons_table or not ocean_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Ocean Water tables for '{product_version}': "
+			f"polygons={ocean_polygons_table}, "
+			f"relations_geometries={ocean_relations_geometries_table}"
+		)
+		fProcessOceanWater(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			ocean_polygons_table,
+			ocean_relations_geometries_table
+		)
 	elif process == 'Buildings with parts':
 		fProcessBuildingsWithParts(product_version, license_zone, extentCoords)
 	elif process == 'Buildings with parts H3':
