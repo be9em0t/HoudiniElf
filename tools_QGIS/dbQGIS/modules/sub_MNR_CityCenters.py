@@ -61,7 +61,7 @@ def fLoadCityCenters(mnrServer,mnrSchema,extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, geomField, aKeyColumn="feat_id")
 	newlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	return newlayer
@@ -106,8 +106,7 @@ AND ST_Intersects(cc.{geomField}, ST_GeomFromText('{extentCoords}', 4326));
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, geomField, aKeyColumn="feat_id")
 	newlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	return newlayer
-

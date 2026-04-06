@@ -219,8 +219,7 @@ add id SERIAL primary key;
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	# uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="id")
 	vlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
-

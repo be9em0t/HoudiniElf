@@ -66,7 +66,7 @@ def fLoadTableBuildings(mnrServer,mnrSchema,extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	# layerGeoId = newLayer.id()
@@ -91,4 +91,3 @@ def fSymbol(newLayer):
 
 	newLayer.triggerRepaint()
 	iface.layerTreeView().refreshLayerSymbology(layerGeoId)
-

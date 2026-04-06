@@ -21,6 +21,7 @@ import time
 import importlib as imp
 import configparser
 import b9PyQGIS
+from secure_config import get_ini_secret
 imp.reload(b9PyQGIS)
 
 # read config file
@@ -29,7 +30,7 @@ iniFile = os.path.join(os.path.dirname(b9PyQGIS.__file__), 'b9QGISdata.ini')
 config = configparser.ConfigParser()
 config.read(iniFile)
 rasterZoom = config['common']['raster-zoom']
-API_KEY = config['orbis2']['orbis-key']
+API_KEY = get_ini_secret(config, 'tomtom-api', 'tomtom-orbis-public-key')
 
 ## write config file
 # config['common']['raster-zoom'] = rasterZoomNew

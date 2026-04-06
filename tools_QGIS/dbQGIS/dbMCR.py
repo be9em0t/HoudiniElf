@@ -21,6 +21,7 @@ import b9PyQGIS
 imp.reload(b9PyQGIS)
 # importlib.reload(b9PyQGIS)
 from b9PyQGIS import *
+from secure_config import get_ini_secret
 from qgis.core import QgsDataSourceUri, QgsVectorLayer, QgsProject
 from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QLineEdit, QCheckBox
 # print("loaded qgis.core")
@@ -56,17 +57,11 @@ dirCommonGeopack = config['directories']['dirCommonGeopack']
 server_hostname=config['mcr']['server_hostname']
 
 http_path=config['mcr']['http_path']
-access_token=config['mcr']['access_token']
+access_token=get_ini_secret(config, 'mcr', 'access_token')
 connection = sql.connect(server_hostname = server_hostname, http_path = http_path, access_token = access_token)
 print("Connected to databricks")
 
 # clipLayerName=config['common']['extent']
-# ventura_qgisname = config['orbis2']['ventura_qgisname']
-# ventura_url = config['orbis2']['ventura_qgis_ip']
-# ventura_port = config['orbis2']['ventura_port']
-# ventura_db = config['orbis2']['ventura_db']
-# ventura_usr = config['orbis2']['ventura_usr']
-# ventura_pass = config['orbis2']['ventura_pass']
 
 import sub_H3_grid
 imp.reload(sub_H3_grid)

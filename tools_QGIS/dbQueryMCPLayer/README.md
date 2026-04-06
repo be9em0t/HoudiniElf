@@ -1,0 +1,112 @@
+# dbQueryMCPLayer
+
+Read-only MCP layer for database-aware AI workflows on macOS.
+
+This mini-project is intentionally self-contained so it can live inside a larger
+multi-project repository without pulling unrelated tooling into scope.
+
+## Goals
+
+- Keep database access read-only.
+- Keep secrets out of repo files by reading them from the macOS Keychain.
+- Give AI clients visible, auditable tool calls instead of hidden query access.
+- Start with a small MVP and leave room for stricter SQL verification tools.
+
+## Current MVP
+
+- `list_connections`
+- `list_schemas`
+- `describe_table`
+- `preview_sql`
+- `execute_readonly_sql`
+- `explain_sql`
+
+The first three are the hard MVP from the requirements file. The SQL tools are
+included now because they are central to the intended workflow and reuse the same
+read-only guardrails.
+
+## Not Yet Implemented
+
+- `get_query_history`
+- `get_query_error_details`
+- `read_logs`
+
+These are called out in the requirements and should be the next iteration.
+
+## Supported Backends
+
+- Databricks SQL
+- PostgreSQL
+
+## Connection Naming
+
+MNR PostgreSQL connections use the naming pattern `postgres_MNR_00X`.
+
+- `postgres_MNR_001` -> `caprod-cpp-pgmnr-001.flatns.net`
+- `postgres_MNR_002` -> `caprod-cpp-pgmnr-002.flatns.net`
+- `postgres_MNR_003` -> `caprod-cpp-pgmnr-003.flatns.net`
+- `postgres_MNR_004` -> `caprod-cpp-pgmnr-004.flatns.net`
+- `postgres_MNR_005` -> `caprod-cpp-pgmnr-005.flatns.net`
+- `postgres_MNR_006` -> `caprod-cpp-pgmnr-006.flatns.net`
+
+All `postgres_MNR_00X` connections share the same read-only credentials and
+resolve the password from the same macOS Keychain item. The server host changes
+per connection, but the database name, user, and secret source remain the same.
+
+## Folder Layout
+
+- `dbQueryTools_requirement.md`: original requirements note
+- `pyproject.toml`: package metadata and dependencies
+- `config.example.json`: example connection config
+- `mcp.json.example`: VS Code MCP wiring example
+- `src/db_query_mcp/`: server and adapters
+
+## Secret Handling
+
+Connection secrets are not stored in this folder.
+
+Each connection references a macOS Keychain item:
+
+- Databricks: token stored in Keychain
+- PostgreSQL: password stored in Keychain
+
+The MCP server reads only the named item at runtime via the `security` command.
+
+## Example Keychain Items
+
+```bash
+security add-generic-password -a "readonly" -s "mcp/databricks/main" -w "DATABRICKS_TOKEN_VALUE"
+security add-generic-password -a "readonly" -s "mcp/postgres/main" -w "POSTGRES_PASSWORD_VALUE"
+```
+
+## Example Config
+
+Copy `config.example.json` to `config.json` and fill in the non-secret fields.
+
+## Running
+
+Using `uv`:
+
+```bash
+uv run --project tools_QGIS/dbQueryMCPLayer python -m db_query_mcp.server --config tools_QGIS/dbQueryMCPLayer/config.json
+```
+
+Or after installing dependencies into a virtual environment:
+
+```bash
+python -m db_query_mcp.server --config tools_QGIS/dbQueryMCPLayer/config.json
+```
+
+## VS Code MCP
+
+See `mcp.json.example` for a minimal stdio-based MCP entry.
+
+## Guardrails
+
+- Single-statement SQL only
+- Read-only verbs only
+- Rejects obvious write and session-control statements
+- Default row limit for execution
+
+This is intentionally conservative. If a valid read-only workflow gets blocked,
+the guardrail should be adjusted explicitly rather than loosened silently.

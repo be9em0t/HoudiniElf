@@ -597,7 +597,7 @@ def fGetHillshade(extent_layer, selected_location):
 			config.write(configfile)
 
 		serverURL = 'https://api.tomtom.com/map/1/tile/hill/main' 
-		api_key = config['hip']['api_key_hip']
+		api_key = get_ini_secret(config, 'tomtom-api', 'tomtom-mapstyler-key')
 
 
 		zoom = int(text)
@@ -1525,4 +1525,3 @@ def fMainUI():
 
 	
 fMainUI()
-

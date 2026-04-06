@@ -29,6 +29,7 @@ from unittest import result
 import b9PyQGIS
 imp.reload(b9PyQGIS)
 from b9PyQGIS import *
+from secure_config import get_ini_secret
 
 import sub_MNR_Buildings
 imp.reload(sub_MNR_Buildings)
@@ -363,7 +364,7 @@ def fMainUIMNR():
 	mnrPort = config['mnr']['mnrport']
 	mnrdb = config['mnr']['mnrdb']
 	mnrUsr = config['mnr']['mnrusr']
-	mnrPwd = config['mnr']['mnrpwd']
+	mnrPwd = get_ini_secret(config, 'mnr', 'mnrpwd')
 
 	iniServer = config['mnr']['servermnr']
 	iniRegion = config['mnr']['region']

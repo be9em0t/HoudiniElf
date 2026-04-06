@@ -3,6 +3,8 @@
 # from osgeo import ogr
 # import os, sys
 # import ogr, osr
+import configparser
+import os
 from qgis.core import *
 from qgis.core import QgsDataSourceUri, QgsVectorLayer
 
@@ -16,9 +18,11 @@ from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import *
 # from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtWidgets import (QWidget, QPushButton, QLineEdit, QInputDialog, QMessageBox, QListView, QListWidget, QLabel, QAction, QFileDialog)
+from secure_config import get_ini_secret
 
 qtParent=iface.mainWindow()
 qtTitle = "pyQGIS"
+_MNR_CONNECTION_CACHE = None
 
 ### UI
 def inputDlg(question, default):
@@ -66,6 +70,36 @@ def qtDirectoryDialog(dir,caption="Select a folder"):
 
 
 ### PostGIS
+def fGetMnrConnectionConfig():
+	global _MNR_CONNECTION_CACHE
+	if _MNR_CONNECTION_CACHE is not None:
+		return _MNR_CONNECTION_CACHE
+
+	config = configparser.ConfigParser()
+	iniFile = os.path.join(os.path.dirname(__file__), "b9QGISdata.ini")
+	config.read(iniFile)
+
+	_MNR_CONNECTION_CACHE = {
+		"port": config["mnr"]["mnrport"],
+		"db": config["mnr"]["mnrdb"],
+		"user": config["mnr"]["mnrusr"],
+		"password": get_ini_secret(config, "mnr", "mnrpwd"),
+	}
+	return _MNR_CONNECTION_CACHE
+
+
+def fSetMnrConnection(uri, mnrServer):
+	connection = fGetMnrConnectionConfig()
+	uri.setConnection(
+		mnrServer,
+		connection["port"],
+		connection["db"],
+		connection["user"],
+		connection["password"],
+	)
+	return uri
+
+
 def fFieldsFromString(strPrefix, strSourceFields):
 	# strPrefix = "a."
 	# strSourceFields = "feat_id,feat_type,geocoding_method,in_car_importance,geom"
@@ -86,7 +120,6 @@ def fFieldsFromStringQ(strPrefix, strSourceFields):
 
 def fReadPostgresRecords(mnrServer, port, db, user, piss, strQuery, strField):
 	uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setConnection(mnrServer, port, db, user, piss)
 	db = QSqlDatabase.addDatabase("QPSQL")
 	db.setHostName(uri.host())
@@ -113,7 +146,6 @@ def fReadPostgresRecords(mnrServer, port, db, user, piss, strQuery, strField):
 
 def fReadPostgresMultiRecords(mnrServer, port, db, user, piss, strQuery, arrFields):
 	uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setConnection(mnrServer, port, db, user, piss)
 	db = QSqlDatabase.addDatabase("QPSQL")
 	db.setHostName(uri.host())
@@ -146,7 +178,6 @@ def fReadPostgresMultiRecords(mnrServer, port, db, user, piss, strQuery, arrFiel
 
 def fReadPostgresRecordRaws(mnrServer, port, db, user, piss, strQuery, arrFields):
 	uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setConnection(mnrServer, port, db, user, piss)
 	db = QSqlDatabase.addDatabase("QPSQL")
 	db.setHostName(uri.host())
@@ -180,7 +211,6 @@ def fReadPostgresRecordRaws(mnrServer, port, db, user, piss, strQuery, arrFields
 
 def fReadPostgresRecordStrings(mnrServer, port, db, user, piss, strQuery, arrFields):
 	uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setConnection(mnrServer, port, db, user, piss)
 	db = QSqlDatabase.addDatabase("QPSQL")
 	db.setHostName(uri.host())
@@ -209,7 +239,6 @@ def fReadPostgresRecordStrings(mnrServer, port, db, user, piss, strQuery, arrFie
 
 def fReadPostgresRecords(mnrServer, port, db, user, piss, strQuery, arrFields):
 	uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	uri.setConnection(mnrServer, port, db, user, piss)
 	db = QSqlDatabase.addDatabase("QPSQL")
 	db.setHostName(uri.host())
@@ -635,4 +664,3 @@ def fGetVectorLayerType(layer):
 		# print("Invalid layer or not a vector layer.")
 		type = "not_vector"
 	return type
-

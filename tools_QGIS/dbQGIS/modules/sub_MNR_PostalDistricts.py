@@ -76,7 +76,7 @@ def fLoadCensusAreas(svrURL, strStateSchema, clipLayer, extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	newLayer = fClipExtent(newLayer, clipLayer)
@@ -123,7 +123,7 @@ group by geo.feat_id, geo.feat_type, geo.country, geo.postal_code, geo.feat_area
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	newLayer = fClipExtent(newLayer, clipLayer)
@@ -166,7 +166,7 @@ FROM filtered_geo geo
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	newLayer = fClipExtent(newLayer, clipLayer)
@@ -218,7 +218,7 @@ def fLoadSpeedProfile5minSlots(svrURL, strStateSchema, clipLayer, extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 
@@ -297,7 +297,7 @@ GROUP BY geo.feat_id, geo.geom, netw2speed.validity_direction, spdprofile.free_f
 
 			print("\nLoading postgres layer ... ")
 			uri = QgsDataSourceUri()
-			uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+			b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 			uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 			newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 			return newLayer
@@ -364,7 +364,7 @@ def fLoadSpeedProfile5minSlotsAggregateExtra(svrURL, strStateSchema, clipLayer, 
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	newLayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 

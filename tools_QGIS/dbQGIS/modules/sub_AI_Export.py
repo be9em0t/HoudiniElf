@@ -318,7 +318,7 @@ def fTTWaypointOptimizationMain():
 	print(iniFile)
 	config = configparser.ConfigParser()
 	config.read(iniFile)
-	ttkey = config['common']['ttkey']
+	ttkey = get_ini_secret(config, 'tomtom-api', 'tomtom-mapstyler-key')
 
 	### UI - Get list of waypoints addresses, starting with first
 	waypoints = config['common']['waypoints']

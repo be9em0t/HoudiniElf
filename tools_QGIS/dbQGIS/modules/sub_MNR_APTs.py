@@ -64,7 +64,7 @@ def fLoadAnchorPoints(mnrServer,mnrSchema,extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, geomField, aKeyColumn="feat_id")
 	newlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 	return newlayer
@@ -100,7 +100,7 @@ def fLoadEntryPoints(mnrServer,mnrSchema,extentCoords):
 
 	print("\nLoading postgres layer ... ")
 	uri = QgsDataSourceUri()
-	uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
+	b9PyQGIS.fSetMnrConnection(uri, mnrServer)
 	uri.setDataSource("public", matViewResultTable, geomField, aKeyColumn="feat_id")
 	newlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
 

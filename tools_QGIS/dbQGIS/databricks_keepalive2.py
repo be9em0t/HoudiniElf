@@ -45,6 +45,7 @@ from pathlib import Path
 from datetime import timedelta
 import configparser
 from databricks import sql
+from secure_config import get_ini_secret
 
 
 def read_config(ini_file):
@@ -97,7 +98,10 @@ def get_config_values(config):
 	vals = {}
 	vals['server_hostname'] = os.getenv('DATABRICKS_SERVER_HOSTNAME') or os.getenv('DATABRICKS_HOSTNAME') or config.get('mcr', 'server_hostname', fallback=None)
 	vals['http_path'] = os.getenv('DATABRICKS_HTTP_PATH') or config.get('mcr', 'http_path', fallback=None)
-	vals['access_token'] = os.getenv('DATABRICKS_TOKEN') or os.getenv('DATABRICKS_ACCESS_TOKEN') or config.get('mcr', 'access_token', fallback=None)
+	if os.getenv('DATABRICKS_TOKEN') or os.getenv('DATABRICKS_ACCESS_TOKEN'):
+		vals['access_token'] = os.getenv('DATABRICKS_TOKEN') or os.getenv('DATABRICKS_ACCESS_TOKEN')
+	else:
+		vals['access_token'] = get_ini_secret(config, 'mcr', 'access_token')
 	vals['dirCommonGeopack'] = os.getenv('DIR_COMMON_GEOPACK') or config.get('directories', 'dirCommonGeopack', fallback=None)
 	# Validate required fields
 	missing = [k for k in ('server_hostname', 'http_path', 'access_token') if not vals[k]]

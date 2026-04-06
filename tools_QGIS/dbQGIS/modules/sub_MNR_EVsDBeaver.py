@@ -179,8 +179,6 @@ order by mnr_poi.feat_id, child1.attribute_type
 
 	# b9PyQGIS.fPostGISexec(mnrServer, queryMNRLine)
 	# uri = QgsDataSourceUri()
-	# uri.setConnection(mnrServer, "5432", "mnr", "mnr_ro", "mnr_ro")
 	# # uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="feat_type")
 	# uri.setDataSource("public", matViewResultTable, "geom", aKeyColumn="id")
 	# vlayer = iface.addVectorLayer(uri.uri(False), matViewResultTable, "postgres")
-

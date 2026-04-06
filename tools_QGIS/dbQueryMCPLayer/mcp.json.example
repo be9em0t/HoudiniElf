@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "tomtom-db-query-mcp": {
+      "command": "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/.venv/bin/python",
+      "args": [
+        "-m",
+        "db_query_mcp.server",
+        "--config",
+        "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_QGIS/dbQueryMCPLayer/config.json"
+      ],
+      "env": {
+        "PYTHONPATH": "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_QGIS/dbQueryMCPLayer/src"
+      }
+    }
+  }
+}
