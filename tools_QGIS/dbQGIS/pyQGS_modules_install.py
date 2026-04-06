@@ -23,6 +23,7 @@ BASE_MODULES = [
     "dbfread",
     "rasterio",
     "databricks-sql-connector",
+    # "overturemaps",
 ]
 
 # pinned examples for h3 version families

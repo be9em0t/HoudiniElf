@@ -86,6 +86,12 @@ try:
 except ModuleNotFoundError:
 	print("Warning: 'sub_H3_grid' module not found in path; some features will be disabled. Look for 'modules/sub_H3_grid.py'")
 
+try:
+	import sub_overture_buildings
+	imp.reload(sub_overture_buildings)
+except ModuleNotFoundError:
+	print("Warning: 'sub_overture_buildings' module not found in path; Overture download feature will be disabled.")
+
 def fGetExtentPolygonCoords(extent_layer):
 	root = QgsProject.instance().layerTreeRoot()
 
@@ -405,7 +411,57 @@ def fAllPolyContains(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3):
+
+def fProcessOvertureBuildings(extentCoords):
+	if 'sub_overture_buildings' not in globals():
+		message = (
+			"Overture module is unavailable.\n"
+			"Missing: modules/sub_overture_buildings.py"
+		)
+		print(message)
+		qtMsgBox(message)
+		return
+
+	# Optional override for external runtime that has overturemaps installed.
+	# Example:
+	# export OVERTURE_PYTHON=/path/to/python3.11
+	# or make `overturemaps` / `uvx` available on PATH.
+	external_python = os.environ.get("OVERTURE_PYTHON", "").strip() or None
+
+	result = sub_overture_buildings.download_overture_buildings_from_wkt(
+		wkt_polygon=extentCoords,
+		output_path=None,
+		output_format="geoparquet",
+		overture_type="building",
+		base_dir=dirCommonGeopack,
+		python_exe=external_python,
+		timeout_sec=3600,
+	)
+
+	if result.get("ok"):
+		message = (
+			"Overture buildings downloaded.\n\n"
+			f"Output: {result.get('output_path')}\n"
+			f"BBOX: {result.get('bbox')}\n\n"
+			"Load the output GeoParquet into QGIS."
+		)
+		print(message)
+		qtMsgBox(message)
+		return
+
+	error = result.get("error", "Unknown error.")
+	message = (
+		"Overture buildings download failed.\n\n"
+		f"{error}\n\n"
+		"Requirements:\n"
+		"- External runtime with overturemaps CLI (Python >= 3.10)\n"
+		"- Install with: pip install overturemaps\n"
+		"- Optional env override: OVERTURE_PYTHON=/path/to/python3.11"
+	)
+	print(message)
+	qtMsgBox(message)
+
+def fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3, relations_table, admin_name_filter=None):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
 		bounds = hexListToChildString(hextiles)
@@ -416,35 +472,12 @@ def fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords
 		h3_index = ''
 
 	extentStr = "'" + extentCoords + "'"
-
-	# sql = f"""
-	# -- list admin-related columns from relations table, ok
-	# -- hope that relation table alreeady includes the correct geometry
-	# SELECT
-	# 	orbis_id,
-	# 	layer_id,
-	# 	tags['name'] as name,
-	# 	tags['default_language'] as language,
-	# 	tags['boundary'] as boundary,
-	# 	tags['type'] as type,
-	# 	tags['place'] as place,
-	# 	tags['admin_level'] as admin_level,
-	# 	exploded_member.id AS admin_centre_id,
-	# 	map_filter(tags, (key, value) -> NOT (key LIKE 'layer_id:%' OR key LIKE 'gers%' OR key LIKE 'license%' OR key LIKE 'maxspeed%' OR key LIKE 'oprod%' OR key LIKE 'source%' OR key LIKE 'supported%' OR key LIKE 'zoomlevel_min' OR key LIKE 'routing_class' OR key LIKE 'navigability' OR key LIKE 'postal_code%' OR key LIKE '%pronunciation%' )) AS tags_clean,
-	# 	--members,
-	# 	--tags,
-	# 	geometry
-	# FROM pu_orbis_platform_prod_catalog.map_central_repository.relations
-	# LATERAL VIEW EXPLODE(FILTER(members, x -> x.role = 'admin_centre')) AS exploded_member
-	# WHERE tags['type'] = 'boundary'
-	# AND
-	# tags['boundary'] = 'administrative'
-	# AND
-	# geom_type in ("ST_POLYGON","ST_MULTIPOLYGON")
-	# AND {bounds}
-	# AND product = '{product_version}'
-	# AND license_zone like '%{license_zone}%' 
-	# {h3_index};"""
+	name_filter_sql = ""
+	if admin_name_filter is not None:
+		admin_name_filter = admin_name_filter.strip()
+		if admin_name_filter != "":
+			admin_name_filter_sql = admin_name_filter.replace("'", "''")
+			name_filter_sql = f"\n\tAND tags['name'] ILIKE '%{admin_name_filter_sql}%'"
 
 	sql = """
 	-- list admin-related columns from relations table, ok
@@ -466,21 +499,26 @@ def fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords
 		--members,
 		--tags,
 		geometry
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.relations,
+	FROM {relations_table},
 	bbox
 	LATERAL VIEW EXPLODE(FILTER(members, x -> x.role = 'admin_centre')) AS exploded_member
 	WHERE tags['type'] = 'boundary'
 	AND
 	tags['boundary'] = 'administrative'
+	{name_filter_sql}
 	AND
 	geom_type in ("ST_POLYGON","ST_MULTIPOLYGON")
 	AND 
 	ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
-	AND 
-	product = '{product_version}'
 	AND
 	license_zone like '%{license_zone}%' 
-	;""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	;""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		name_filter_sql=name_filter_sql,
+		relations_table=relations_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -491,7 +529,7 @@ def fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords
 	qtMsgBox(message)
 
 
-def fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords, h3):
+def fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords, h3, points_table):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
 		bounds = hexListToChildString(hextiles)
@@ -536,18 +574,21 @@ def fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords
 	tags['capital'] as capital,
 	-- map_filter(tags, (key, value) -> NOT (key LIKE 'layer_id:%' OR key LIKE 'gers%' OR key LIKE 'license%' OR key LIKE 'maxspeed%' OR key LIKE 'oprod%' OR key LIKE 'source%' OR key LIKE 'supported%' OR key LIKE 'zoomlevel_min' OR key LIKE 'routing_class' OR key LIKE 'navigability' OR key LIKE 'postal_code%' OR key LIKE '%pronunciation%' OR key LIKE '%tokenized%')) AS tags_clean,
 	geometry 
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.points,
+	FROM {points_table},
 	bbox
 	WHERE 
 	tags['place'] is not null
 	AND 
 	ST_Intersects(bbox.g, ST_GEOMFROMWKT(geometry))
 	AND
-	product = '{product_version}'
-	AND
 	license_zone like '%{license_zone}%'
 	;
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -1147,7 +1188,7 @@ def fProcessNetworkJunctions(extent_layer, product_version, license_zone, extent
 	qtMsgBox(message)
 
 
-def fProcessSteetLamp(extent_layer, product_version, license_zone, extentCoords, h3):
+def fProcessSteetLamp(extent_layer, product_version, license_zone, extentCoords, h3, points_table):
 	if h3 == True:
 		hextiles = fHexesFromExtent(extent_layer)
 		bounds = hexListToChildString(hextiles)
@@ -1165,7 +1206,7 @@ def fProcessSteetLamp(extent_layer, product_version, license_zone, extentCoords,
 	tags, mcr_tags,
 	geometry
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.points
+	{points_table}
 	WHERE
 	-- layer_id = 21263 OR
 	tags['highway'] = 'street_lamp'
@@ -1173,7 +1214,6 @@ def fProcessSteetLamp(extent_layer, product_version, license_zone, extentCoords,
 	-- highway IS NOT NULL AND highway != '' 
 	-- AND tags['routing_class'] < 4
 	AND {bounds}
-	AND product = '{product_version}'
 	AND license_zone like '%{license_zone}%' 
 	{h3_index}
 	;"""
@@ -2365,7 +2405,7 @@ FROM lines_out;
 	qtMsgBox(message)
 
 
-def fTurnRestrictions(product_version, license_zone, extentCoords):
+def fTurnRestrictions(product_version, license_zone, extentCoords, relations_geometries_table):
 	extentStr = "'" + extentCoords + "'"
 
 	sql = """
@@ -2378,20 +2418,23 @@ def fTurnRestrictions(product_version, license_zone, extentCoords):
 			tags,
 			geometry
 		FROM 
-		pu_orbis_platform_prod_catalog.map_central_repository.relations_geometries
+		{relations_geometries_table}
 		WHERE 
 		tags['type']='restriction'
 		AND
 		geom_type in ('ST_MULTILINESTRING', 'ST_LINESTRING')
 		AND 
 		ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-		AND 
-		product = '{product_version}'
 		AND
 		license_zone like '%{license_zone}%'
 		) t
 WHERE type LIKE 'restriction%'
-""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extentStr,
+	relations_geometries_table=relations_geometries_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2403,7 +2446,7 @@ WHERE type LIKE 'restriction%'
 
 
 
-def fTrafficSigns(product_version, license_zone, extentCoords):
+def fTrafficSigns(product_version, license_zone, extentCoords, points_table):
 	extentStr = "'" + extentCoords + "'"
 
 	sql = """
@@ -2421,16 +2464,19 @@ def fTrafficSigns(product_version, license_zone, extentCoords):
 	tags['maxspeed'] as maxspeed,
 	geometry 
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.points
+	{points_table}
 	WHERE 
 	tags['traffic_sign'] is not null
 	AND 
 	ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-	AND 
-	product = '{product_version}'
 	AND
 	license_zone like '%{license_zone}%'
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2441,7 +2487,7 @@ def fTrafficSigns(product_version, license_zone, extentCoords):
 	qtMsgBox(message)
 
 
-def fAdminPlaces(product_version, license_zone, extentCoords):
+def fAdminPlaces(product_version, license_zone, extentCoords, polygons_table):
 	extentStr = "'" + extentCoords + "'"
 
 	# sql = """
@@ -2468,7 +2514,7 @@ WITH polygons_geom AS (
 	SELECT *, 
 		ST_GeomFromWKT(geometry) AS g,
 		ST_GeomFromWKT({extent}) AS bbox
-	FROM pu_orbis_platform_prod_catalog.map_central_repository.polygons
+	FROM {polygons_table}
 )
 
 SELECT
@@ -2484,13 +2530,16 @@ polygons_geom
 
 WHERE 
 place is not null
-AND 
-product = '{product_version}'
 AND
 license_zone like '%{license_zone}%'
 AND
 ST_Intersects(g, bbox)
-""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extentStr,
+	polygons_table=polygons_table
+)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2600,7 +2649,7 @@ WHERE ST_Intersects(q.qenv, r.env)
 	qtMsgBox(message)
 
 
-def fProcessEV(product_version, license_zone, extentCoords):
+def fProcessEV(product_version, license_zone, extentCoords, points_table):
 	extentStr = "'" + extentCoords + "'"
 
 	sql = """
@@ -2619,16 +2668,19 @@ def fProcessEV(product_version, license_zone, extentCoords):
 	tags,
 	geometry 
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.points
+	{points_table}
 	WHERE 
 	tags['amenity']='charging_location'
 	AND
 	ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-	AND 
-	product = '{product_version}'
 	AND
 	license_zone like '%{license_zone}%'
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2638,7 +2690,548 @@ def fProcessEV(product_version, license_zone, extentCoords):
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
-def fProcessFireStations(product_version, license_zone, extentCoords):
+# EV hint:
+# capacity = value from charging_location tag (tags['capacity']), usually site/location-level capacity metadata.
+# equipment_count = computed count of distinct charging_equipment relations linked to a station in the aggregated query.
+def fProcessEVDetailed(product_version, license_zone, extentCoords, points_table, relations_table):
+	extentStr = "'" + extentCoords + "'"
+
+	sql = """
+	-- EV Charging (detailed)
+	-- Optimized: pre-parse geometry outside predicate, explode relations once, and keep only area-relevant EV entities.
+	WITH
+	q AS (
+		SELECT
+			ST_GEOMFROMWKT({extent}) AS qg
+	),
+	charging_location_candidates AS (
+		SELECT
+			p.orbis_id AS charging_location_orbis_id,
+			p.license_zone AS charging_location_license_zone,
+			p.tags AS charging_location_tags,
+			p.tags['name'] AS charging_location_name,
+			p.tags['capacity'] AS capacity,
+			p.tags['charging_when_closed'] AS charging_when_closed,
+			p.tags['opening_hours'] AS opening_hours,
+			p.tags['owner'] AS owner,
+			p.tags['sub_operator'] AS sub_operator,
+			p.tags['parking'] AS parking,
+			p.tags['access'] AS access,
+			p.tags['premises'] AS premises,
+			p.tags['private'] AS private,
+			p.tags['payment:service_provider'] AS payment_service_provider,
+			p.tags['rich_content_info'] AS rich_content_info,
+			p.tags['addr:street'] AS addr_street,
+			p.geometry AS charging_location_geometry,
+			ST_GEOMFROMWKT(p.geometry) AS charging_location_g
+		FROM {points_table} p
+		WHERE p.tags['amenity'] = 'charging_location'
+			AND p.license_zone LIKE '%{license_zone}%'
+	),
+	charging_locations AS (
+		SELECT
+			c.charging_location_orbis_id,
+			c.charging_location_license_zone,
+			c.charging_location_tags,
+			c.charging_location_name,
+			c.capacity,
+			c.charging_when_closed,
+			c.opening_hours,
+			c.owner,
+			c.sub_operator,
+			c.parking,
+			c.access,
+			c.premises,
+			c.private,
+			c.payment_service_provider,
+			c.rich_content_info,
+			c.addr_street,
+			c.charging_location_geometry
+		FROM charging_location_candidates c
+		CROSS JOIN q
+		WHERE ST_Intersects(q.qg, c.charging_location_g)
+	),
+	charging_location_ids AS (
+		SELECT DISTINCT charging_location_orbis_id
+		FROM charging_locations
+	),
+	relations_pre AS (
+		SELECT
+			r.orbis_id AS relation_id,
+			r.license_zone AS relation_license_zone,
+			r.tags AS relation_tags,
+			r.members AS relation_members,
+			r.tags['type'] AS relation_type
+		FROM {relations_table} r
+		WHERE r.tags['type'] IN ('charging_station', 'charging_equipment')
+			AND r.license_zone LIKE '%{license_zone}%'
+	),
+	rel_members AS (
+		SELECT
+			r.relation_id,
+			r.relation_type,
+			m.role AS member_role,
+			m.id AS member_id
+		FROM relations_pre r
+		LATERAL VIEW EXPLODE(r.relation_members) AS m
+	),
+	equipment_to_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS equipment_relation_id,
+			rm.member_id AS charging_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_equipment'
+			AND rm.member_role = 'charging_location'
+			AND rm.member_id IN (SELECT charging_location_orbis_id FROM charging_location_ids)
+	),
+	relevant_equipment_ids AS (
+		SELECT DISTINCT equipment_relation_id
+		FROM equipment_to_location
+	),
+	station_to_equipment AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS equipment_relation_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_equipment'
+			AND rm.member_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	station_to_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS charging_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_location'
+			AND rm.member_id IN (SELECT charging_location_orbis_id FROM charging_location_ids)
+	),
+	relevant_station_ids AS (
+		SELECT station_relation_id AS station_relation_id
+		FROM station_to_location
+		UNION
+		SELECT station_relation_id AS station_relation_id
+		FROM station_to_equipment
+	),
+	station_relations AS (
+		SELECT
+			rp.relation_id AS station_relation_id,
+			rp.relation_license_zone AS station_relation_license_zone,
+			rp.relation_tags AS station_relation_tags,
+			rp.relation_tags['station_id'] AS station_id
+		FROM relations_pre rp
+		WHERE rp.relation_type = 'charging_station'
+			AND rp.relation_id IN (SELECT station_relation_id FROM relevant_station_ids)
+	),
+	station_to_station_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS station_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_station_location'
+			AND rm.relation_id IN (SELECT station_relation_id FROM relevant_station_ids)
+	),
+	equipment_relations AS (
+		SELECT
+			rp.relation_id AS equipment_relation_id,
+			rp.relation_license_zone AS equipment_relation_license_zone,
+			rp.relation_tags AS equipment_relation_tags,
+			rp.relation_tags['evse_id'] AS evse_id,
+			rp.relation_tags['evse_uid'] AS evse_uid,
+			rp.relation_tags['level'] AS level,
+			rp.relation_tags['authentication:rfid'] AS authentication_rfid,
+			rp.relation_tags['authentication:token_group'] AS authentication_token_group,
+			rp.relation_tags['charging_preferences'] AS charging_preferences,
+			rp.relation_tags['payment:cards'] AS payment_cards,
+			rp.relation_tags['payment:credit_cards'] AS payment_credit_cards,
+			rp.relation_tags['payment:debit_cards'] AS payment_debit_cards,
+			rp.relation_tags['plug_and_charge'] AS plug_and_charge,
+			rp.relation_tags['remotely_controllable'] AS remotely_controllable,
+			rp.relation_tags['smart_charging_profile'] AS smart_charging_profile,
+			rp.relation_tags['parking_space'] AS parking_space
+		FROM relations_pre rp
+		WHERE rp.relation_type = 'charging_equipment'
+			AND rp.relation_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	equipment_to_charge_point AS (
+		SELECT DISTINCT
+			rm.relation_id AS equipment_relation_id,
+			rm.member_id AS charge_point_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_equipment'
+			AND rm.member_role = 'charge_point_location'
+			AND rm.relation_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	relevant_charge_point_ids AS (
+		SELECT DISTINCT charge_point_orbis_id
+		FROM equipment_to_charge_point
+	),
+	relevant_station_location_ids AS (
+		SELECT DISTINCT station_location_orbis_id
+		FROM station_to_station_location
+	),
+	charge_point_locations AS (
+		SELECT
+			p.orbis_id AS charge_point_orbis_id,
+			p.tags AS charge_point_tags,
+			p.geometry AS charge_point_geometry
+		FROM {points_table} p
+		WHERE p.orbis_id IN (SELECT charge_point_orbis_id FROM relevant_charge_point_ids)
+			AND p.license_zone LIKE '%{license_zone}%'
+	),
+	charging_station_locations AS (
+		SELECT
+			p.orbis_id AS station_location_orbis_id,
+			p.tags AS station_location_tags,
+			p.geometry AS station_location_geometry
+		FROM {points_table} p
+		WHERE p.orbis_id IN (SELECT station_location_orbis_id FROM relevant_station_location_ids)
+			AND p.license_zone LIKE '%{license_zone}%'
+	)
+	SELECT
+		cl.charging_location_orbis_id,
+		cl.charging_location_license_zone AS license_zone,
+		station_from_location.station_relation_id AS station_relation_id_from_location_member,
+		ste.station_relation_id AS station_relation_id_from_equipment_member,
+		COALESCE(station_from_location.station_relation_id, ste.station_relation_id) AS station_relation_id,
+		er.equipment_relation_id,
+		sr.station_id,
+		er.evse_id,
+		er.evse_uid,
+		er.level,
+		er.authentication_rfid,
+		er.authentication_token_group,
+		er.charging_preferences,
+		er.payment_cards,
+		er.payment_credit_cards,
+		er.payment_debit_cards,
+		er.plug_and_charge,
+		er.remotely_controllable,
+		er.smart_charging_profile,
+		er.parking_space,
+		map_filter(er.equipment_relation_tags, (k,v) -> k LIKE 'socket:%') AS socket_tags,
+		cl.charging_location_name,
+		cl.capacity,
+		cl.charging_when_closed,
+		cl.opening_hours,
+		cl.owner,
+		cl.sub_operator,
+		cl.parking,
+		cl.access,
+		cl.premises,
+		cl.private,
+		cl.payment_service_provider,
+		cl.rich_content_info,
+		cl.addr_street,
+		cl.charging_location_tags,
+		sr.station_relation_tags,
+		er.equipment_relation_tags,
+		cpl.charge_point_orbis_id,
+		cpl.charge_point_tags,
+		csl.station_location_orbis_id,
+		csl.station_location_tags,
+		cl.charging_location_geometry AS geometry,
+		cpl.charge_point_geometry,
+		csl.station_location_geometry
+	FROM charging_locations cl
+	LEFT JOIN equipment_to_location etl
+		ON etl.charging_location_orbis_id = cl.charging_location_orbis_id
+	LEFT JOIN equipment_relations er
+		ON er.equipment_relation_id = etl.equipment_relation_id
+	LEFT JOIN station_to_equipment ste
+		ON ste.equipment_relation_id = er.equipment_relation_id
+	LEFT JOIN station_to_location station_from_location
+		ON station_from_location.charging_location_orbis_id = cl.charging_location_orbis_id
+	LEFT JOIN station_relations sr
+		ON sr.station_relation_id = COALESCE(station_from_location.station_relation_id, ste.station_relation_id)
+	LEFT JOIN equipment_to_charge_point etcp
+		ON etcp.equipment_relation_id = er.equipment_relation_id
+	LEFT JOIN charge_point_locations cpl
+		ON cpl.charge_point_orbis_id = etcp.charge_point_orbis_id
+	LEFT JOIN station_to_station_location stsl
+		ON stsl.station_relation_id = sr.station_relation_id
+	LEFT JOIN charging_station_locations csl
+		ON csl.station_location_orbis_id = stsl.station_location_orbis_id
+	ORDER BY
+		cl.charging_location_orbis_id,
+		sr.station_relation_id,
+		er.equipment_relation_id
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table,
+		relations_table=relations_table
+	)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe EV_Charging (detailed) query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+
+def fProcessEVDetailedByStation(product_version, license_zone, extentCoords, points_table, relations_table):
+	extentStr = "'" + extentCoords + "'"
+
+	sql = """
+	-- EV Charging (stations aggregated)
+	-- One row per charging station relation, with aggregated EVSE and location context.
+	WITH
+	q AS (
+		SELECT
+			ST_GEOMFROMWKT({extent}) AS qg
+	),
+	charging_location_candidates AS (
+		SELECT
+			p.orbis_id AS charging_location_orbis_id,
+			p.license_zone AS charging_location_license_zone,
+			p.tags AS charging_location_tags,
+			p.tags['name'] AS charging_location_name,
+			p.geometry AS charging_location_geometry,
+			ST_GEOMFROMWKT(p.geometry) AS charging_location_g
+		FROM {points_table} p
+		WHERE p.tags['amenity'] = 'charging_location'
+			AND p.license_zone LIKE '%{license_zone}%'
+	),
+	charging_locations AS (
+		SELECT
+			c.charging_location_orbis_id,
+			c.charging_location_license_zone,
+			c.charging_location_name,
+			c.charging_location_tags,
+			c.charging_location_geometry
+		FROM charging_location_candidates c
+		CROSS JOIN q
+		WHERE ST_Intersects(q.qg, c.charging_location_g)
+	),
+	charging_location_ids AS (
+		SELECT DISTINCT charging_location_orbis_id
+		FROM charging_locations
+	),
+	relations_pre AS (
+		SELECT
+			r.orbis_id AS relation_id,
+			r.license_zone AS relation_license_zone,
+			r.tags AS relation_tags,
+			r.members AS relation_members,
+			r.tags['type'] AS relation_type
+		FROM {relations_table} r
+		WHERE r.tags['type'] IN ('charging_station', 'charging_equipment')
+			AND r.license_zone LIKE '%{license_zone}%'
+	),
+	rel_members AS (
+		SELECT
+			r.relation_id,
+			r.relation_type,
+			m.role AS member_role,
+			m.id AS member_id
+		FROM relations_pre r
+		LATERAL VIEW EXPLODE(r.relation_members) AS m
+	),
+	equipment_to_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS equipment_relation_id,
+			rm.member_id AS charging_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_equipment'
+			AND rm.member_role = 'charging_location'
+			AND rm.member_id IN (SELECT charging_location_orbis_id FROM charging_location_ids)
+	),
+	relevant_equipment_ids AS (
+		SELECT DISTINCT equipment_relation_id
+		FROM equipment_to_location
+	),
+	station_to_equipment AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS equipment_relation_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_equipment'
+			AND rm.member_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	station_to_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS charging_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_location'
+			AND rm.member_id IN (SELECT charging_location_orbis_id FROM charging_location_ids)
+	),
+	relevant_station_ids AS (
+		SELECT station_relation_id AS station_relation_id
+		FROM station_to_location
+		UNION
+		SELECT station_relation_id AS station_relation_id
+		FROM station_to_equipment
+	),
+	station_relations AS (
+		SELECT
+			rp.relation_id AS station_relation_id,
+			rp.relation_license_zone AS station_relation_license_zone,
+			rp.relation_tags AS station_relation_tags,
+			rp.relation_tags['station_id'] AS station_id
+		FROM relations_pre rp
+		WHERE rp.relation_type = 'charging_station'
+			AND rp.relation_id IN (SELECT station_relation_id FROM relevant_station_ids)
+	),
+	station_to_station_location AS (
+		SELECT DISTINCT
+			rm.relation_id AS station_relation_id,
+			rm.member_id AS station_location_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_station'
+			AND rm.member_role = 'charging_station_location'
+			AND rm.relation_id IN (SELECT station_relation_id FROM relevant_station_ids)
+	),
+	equipment_relations AS (
+		SELECT
+			rp.relation_id AS equipment_relation_id,
+			rp.relation_tags AS equipment_relation_tags,
+			rp.relation_tags['evse_id'] AS evse_id,
+			rp.relation_tags['evse_uid'] AS evse_uid,
+			rp.relation_tags['level'] AS level,
+			rp.relation_tags['authentication:rfid'] AS authentication_rfid,
+			rp.relation_tags['authentication:token_group'] AS authentication_token_group,
+			rp.relation_tags['charging_preferences'] AS charging_preferences,
+			rp.relation_tags['payment:cards'] AS payment_cards,
+			rp.relation_tags['payment:credit_cards'] AS payment_credit_cards,
+			rp.relation_tags['payment:debit_cards'] AS payment_debit_cards,
+			rp.relation_tags['plug_and_charge'] AS plug_and_charge,
+			rp.relation_tags['remotely_controllable'] AS remotely_controllable,
+			rp.relation_tags['smart_charging_profile'] AS smart_charging_profile,
+			rp.relation_tags['parking_space'] AS parking_space
+		FROM relations_pre rp
+		WHERE rp.relation_type = 'charging_equipment'
+			AND rp.relation_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	equipment_to_charge_point AS (
+		SELECT DISTINCT
+			rm.relation_id AS equipment_relation_id,
+			rm.member_id AS charge_point_orbis_id
+		FROM rel_members rm
+		WHERE rm.relation_type = 'charging_equipment'
+			AND rm.member_role = 'charge_point_location'
+			AND rm.relation_id IN (SELECT equipment_relation_id FROM relevant_equipment_ids)
+	),
+	relevant_station_location_ids AS (
+		SELECT DISTINCT station_location_orbis_id
+		FROM station_to_station_location
+	),
+	charging_station_locations AS (
+		SELECT
+			p.orbis_id AS station_location_orbis_id,
+			p.geometry AS station_location_geometry
+		FROM {points_table} p
+		WHERE p.orbis_id IN (SELECT station_location_orbis_id FROM relevant_station_location_ids)
+			AND p.license_zone LIKE '%{license_zone}%'
+	),
+	station_location_agg AS (
+		SELECT
+			stl.station_relation_id,
+			COUNT(DISTINCT stl.charging_location_orbis_id) AS charging_location_count,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(CAST(stl.charging_location_orbis_id AS STRING)))) AS charging_location_ids,
+			CONCAT_WS(' | ', SORT_ARRAY(COLLECT_SET(cl.charging_location_name))) AS charging_location_names,
+			MAX(cl.charging_location_geometry) AS sample_charging_location_geometry
+		FROM station_to_location stl
+		LEFT JOIN charging_locations cl
+			ON cl.charging_location_orbis_id = stl.charging_location_orbis_id
+		GROUP BY stl.station_relation_id
+	),
+	station_equipment_agg AS (
+		SELECT
+			ste.station_relation_id,
+			COUNT(DISTINCT ste.equipment_relation_id) AS equipment_count,
+			COUNT(DISTINCT etcp.charge_point_orbis_id) AS charge_point_count,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(CAST(ste.equipment_relation_id AS STRING)))) AS equipment_relation_ids,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.evse_id))) AS evse_ids,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.evse_uid))) AS evse_uids,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(CAST(er.level AS STRING)))) AS evse_levels,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.authentication_rfid))) AS authentication_rfid_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.authentication_token_group))) AS authentication_token_group_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.charging_preferences))) AS charging_preferences_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.payment_cards))) AS payment_cards_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.payment_credit_cards))) AS payment_credit_cards_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.payment_debit_cards))) AS payment_debit_cards_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.plug_and_charge))) AS plug_and_charge_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.remotely_controllable))) AS remotely_controllable_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.smart_charging_profile))) AS smart_charging_profile_values,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(er.parking_space))) AS parking_space_values
+		FROM station_to_equipment ste
+		LEFT JOIN equipment_relations er
+			ON er.equipment_relation_id = ste.equipment_relation_id
+		LEFT JOIN equipment_to_charge_point etcp
+			ON etcp.equipment_relation_id = ste.equipment_relation_id
+		GROUP BY ste.station_relation_id
+	),
+	station_point_agg AS (
+		SELECT
+			stsl.station_relation_id,
+			COUNT(DISTINCT stsl.station_location_orbis_id) AS station_location_point_count,
+			CONCAT_WS(',', SORT_ARRAY(COLLECT_SET(CAST(stsl.station_location_orbis_id AS STRING)))) AS station_location_orbis_ids,
+			MAX(csl.station_location_geometry) AS station_location_geometry
+		FROM station_to_station_location stsl
+		LEFT JOIN charging_station_locations csl
+			ON csl.station_location_orbis_id = stsl.station_location_orbis_id
+		GROUP BY stsl.station_relation_id
+	)
+	SELECT
+		sr.station_relation_id,
+		sr.station_relation_license_zone AS license_zone,
+		sr.station_id,
+		sla.charging_location_count,
+		sla.charging_location_ids,
+		sla.charging_location_names,
+		sea.equipment_count,
+		sea.charge_point_count,
+		sea.equipment_relation_ids,
+		sea.evse_ids,
+		sea.evse_uids,
+		sea.evse_levels,
+		sea.authentication_rfid_values,
+		sea.authentication_token_group_values,
+		sea.charging_preferences_values,
+		sea.payment_cards_values,
+		sea.payment_credit_cards_values,
+		sea.payment_debit_cards_values,
+		sea.plug_and_charge_values,
+		sea.remotely_controllable_values,
+		sea.smart_charging_profile_values,
+		sea.parking_space_values,
+		spa.station_location_point_count,
+		spa.station_location_orbis_ids,
+		sr.station_relation_tags,
+		COALESCE(spa.station_location_geometry, sla.sample_charging_location_geometry) AS geometry
+	FROM station_relations sr
+	LEFT JOIN station_location_agg sla
+		ON sla.station_relation_id = sr.station_relation_id
+	LEFT JOIN station_equipment_agg sea
+		ON sea.station_relation_id = sr.station_relation_id
+	LEFT JOIN station_point_agg spa
+		ON spa.station_relation_id = sr.station_relation_id
+	ORDER BY sr.station_relation_id
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table,
+		relations_table=relations_table
+	)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe EV_Charging (stations aggregated) query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
+def fProcessFireStations(product_version, license_zone, extentCoords, points_table):
 	extentStr = "'" + extentCoords + "'"
 
 	sql = """
@@ -2649,16 +3242,19 @@ def fProcessFireStations(product_version, license_zone, extentCoords):
 	z_order,
 	geometry 
 	FROM 
-	pu_orbis_platform_prod_catalog.map_central_repository.points
+	{points_table}
 	WHERE 
 	amenity='fire_station'
 	AND
 	ST_Intersects(ST_GEOMFROMWKT({extent}), ST_GEOMFROMWKT(geometry)) 
-	AND 
-	product = '{product_version}'
 	AND
 	license_zone like '%{license_zone}%'
-	""".format(product_version=product_version, license_zone=license_zone, extent=extentStr)
+	""".format(
+		product_version=product_version,
+		license_zone=license_zone,
+		extent=extentStr,
+		points_table=points_table
+	)
 
 	# Put query on the clipboard
 	clipboard = QgsApplication.clipboard()
@@ -2673,56 +3269,6 @@ def hexListToChildString(h3_hex_ids):
 	result += " OR \n".join([f"\th3_ischildof(h3_index,'{hex_id}')" for hex_id in h3_hex_ids])
 	result += "\n)"
 	return result
-
-# COMMENTED OUT - Now using native Databricks H3 functions (h3_polyfillash3string, h3_kring, h3_toparent)
-# def fGenerateMultiResH3Tiles(wkt_polygon, target_resolutions=None, base_res=None, k_ring=1):
-# 	"""Generate H3 tiles at multiple resolutions from WKT polygon.
-# 	Returns list of (h3_id, resolution) tuples.
-# 	"""
-# 	import sys
-# 	import os
-# 	
-# 	# Import sub_h3_python from same directory
-# 	try:
-# 		import sub_h3_python
-# 		# Reload to get latest version
-# 		import importlib
-# 		importlib.reload(sub_h3_python)
-# 		
-# 		if target_resolutions is None:
-# 			# Default resolutions covering most use cases
-# 			target_resolutions = [0, 3, 4, 5, 6, 7, 8]
-# 		
-# 		print(f"Generating H3 tiles for resolutions: {target_resolutions}")
-# 		tiles = sub_h3_python.generate_expanded_tiles_from_wkt(
-# 			wkt_polygon, 
-# 			target_resolutions=target_resolutions,
-# 			base_res=base_res,
-# 			k_ring=k_ring
-# 		)
-# 		print(f"Generated {len(tiles)} H3 tiles across {len(set(r for _, r in tiles))} resolutions")
-# 		return tiles
-# 		
-# 	except Exception as e:
-# 		print(f"Error generating H3 tiles: {e}")
-# 		print("Falling back to basic H3 generation...")
-# 		# Fallback to existing single-resolution method
-# 		return None
-
-# COMMENTED OUT - Now using native Databricks H3 functions (h3_polyfillash3string, h3_kring, h3_toparent)
-# def fH3TilesToSQLValues(h3_tiles):
-# 	"""Convert list of (h3, resolution) tuples to SQL VALUES format.
-# 	Returns string ready for SQL IN clause or CTE.
-# 	"""
-# 	if not h3_tiles:
-# 		return ""
-# 	
-# 	values_lines = []
-# 	for i, (h3_id, res) in enumerate(h3_tiles):
-# 		suffix = ',' if i < (len(h3_tiles) - 1) else ''
-# 		values_lines.append(f"        ('{h3_id}', {res}){suffix}")
-# 	
-# 	return "\n".join(values_lines)
 
 def fProcessBuildingsWithPartsH3(extent_layer, product_version, license_zone, extentCoords):
 	"""Buildings query using native Databricks H3 functions (Option 1).
@@ -2988,7 +3534,13 @@ def fMainUI():
 	'All Polygons Contain',
 	'All Polygons Intersect',
 	'--',
+	'Admin Areas',
+	'Admin Areas by name',
+	'Admin Point Places',
+	'Admin Places (polygon)',
 	'Water (natural)',
+	'Inland Water',
+	'Ocean Water',
 	'Buildings with Relations Optimised',
 	'Buildings w/o Relations Optimised',
 	'Land Use (older)',
@@ -2998,15 +3550,19 @@ def fMainUI():
 	'Network Major with Lanes, Curv, Grad (older)',
 	'Network Simple (for large areas, older)',
 	'--',
-	'Admin Areas',
-	'Admin Point Places',
-	'Inland Water',
-	'Ocean Water',
+	'Turn Restrictions',
+	'Fire Stations',
+		'Street Lamps (h3)',
+		'Traffic Signs',
+		'EV_Charging',
+		'EV_Charging (detailed)',
+		'EV_Charging (stations aggregated)',
+		'Overture Buildings (external)',
+		'--',
 	'Buildings with parts',
 	'Buildings with parts H3',
 	'Buildings with relations',
 	'Buildings (Old)',
-	'EV_Charging',
 	'Network with Speeds',
 	'Network Elevation (h3)',
 	'Network Junctions (h3)',
@@ -3017,15 +3573,8 @@ def fMainUI():
 	'Relations-Geometry (polygon) (h3)',
 	'Lane Connectivity relations (h3)',
 	'--',
-	'Fire Stations',
-	'Street Lamps (h3)',
-	'Admin Places (polygon)',
-	'Turn Restrictions',
-	'Traffic Signs',
-
-	'State',
-	'Trees',
-
+	'Trees - use dbHIP',
+	'--',
 	'BuildingsSimple (h3)',
 	'Draw H3 tiles',
 	'List H3 tiles',
@@ -3329,9 +3878,101 @@ def fMainUI():
 	elif process == 'All Polygons Intersect':
 		fAllPolyIntersect(product_version, license_zone, extentCoords)
 	elif process == 'Admin Areas':
-		fProcessAdminAreas(extent_layer, product_version, license_zone, extentCoords, h3)
+		admin_relations_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations', product_version)
+		if not admin_relations_table:
+			available_relations = sorted([t for t in mcr_table_names if t.startswith('relations_') and not t.startswith('relations_geometries_')])
+			expected_relations = f"relations_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned relations table found for selected product '{product_version}'.\n"
+				f"Expected relations table: {expected_relations}\n\n"
+				f"Available relations_* tables:\n{chr(10).join(available_relations) if available_relations else '(none)'}\n\n"
+				"Please select a product version that has a matching relations table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Admin Areas table for '{product_version}': "
+			f"relations={admin_relations_table}"
+		)
+		fProcessAdminAreas(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			admin_relations_table
+		)
+	elif process == 'Admin Areas by name':
+		admin_relations_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations', product_version)
+		if not admin_relations_table:
+			available_relations = sorted([t for t in mcr_table_names if t.startswith('relations_') and not t.startswith('relations_geometries_')])
+			expected_relations = f"relations_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned relations table found for selected product '{product_version}'.\n"
+				f"Expected relations table: {expected_relations}\n\n"
+				f"Available relations_* tables:\n{chr(10).join(available_relations) if available_relations else '(none)'}\n\n"
+				"Please select a product version that has a matching relations table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+
+		search_text, ok = QInputDialog.getText(
+			iface.mainWindow(),
+			"Admin Areas by name",
+			"Name contains (ILIKE):"
+		)
+		if not ok:
+			print("Admin Areas by name cancelled by user.")
+			return
+
+		search_text = search_text.strip()
+		if search_text == "":
+			message = "Admin Areas by name requires a non-empty search string."
+			print(message)
+			qtMsgBox(message)
+			return
+
+		print(
+			f"Admin Areas by name table for '{product_version}': "
+			f"relations={admin_relations_table}, name_filter='{search_text}'"
+		)
+		fProcessAdminAreas(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			admin_relations_table,
+			admin_name_filter=search_text
+		)
 	elif process == 'Admin Point Places':
-		fProcessPlacePoint(extent_layer, product_version, license_zone, extentCoords, h3)
+		admin_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		if not admin_points_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned points table found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				"Please select a product version that has a matching points table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Admin Point Places table for '{product_version}': "
+			f"points={admin_points_table}"
+		)
+		fProcessPlacePoint(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			admin_points_table
+		)
 	elif process == 'Inland Water':
 		inland_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
 		inland_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
@@ -3413,7 +4054,31 @@ def fMainUI():
 	elif process == 'Network Junctions (h3)':
 		fProcessNetworkJunctions(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Street Lamps (h3)':
-		fProcessSteetLamp(extent_layer, product_version, license_zone, extentCoords, h3)
+		street_lamps_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		if not street_lamps_points_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned points table found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				"Please select a product version that has a matching points table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Street Lamps (h3) table for '{product_version}': "
+			f"points={street_lamps_points_table}"
+		)
+		fProcessSteetLamp(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			h3,
+			street_lamps_points_table
+		)
 	elif process == 'Relations-Geometry (point) (h3)':
 		fProcessRelationsGeomPoint(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'Relations-Geometry (line) (h3)':
@@ -3425,17 +4090,191 @@ def fMainUI():
 	elif process == 'Lane Connectivity relations (h3)':
 		fProcessLaneConnectivity(extent_layer, product_version, license_zone, extentCoords, h3)
 	elif process == 'EV_Charging':
-		fProcessEV(product_version, license_zone, extentCoords)
+		ev_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		if not ev_points_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned points table found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				"Please select a product version that has a matching points table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"EV_Charging table for '{product_version}': "
+			f"points={ev_points_table}"
+		)
+		fProcessEV(
+			product_version,
+			license_zone,
+			extentCoords,
+			ev_points_table
+		)
+	elif process == 'EV_Charging (detailed)':
+		ev_detailed_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		ev_detailed_relations_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations', product_version)
+		if not ev_detailed_points_table or not ev_detailed_relations_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			available_relations = sorted([t for t in mcr_table_names if t.startswith('relations_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			expected_relations = f"relations_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned EV tables found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n"
+				f"Expected relations table: {expected_relations}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				f"Available relations_* tables:\n{chr(10).join(available_relations) if available_relations else '(none)'}\n\n"
+				"Please select a product version that has matching points and relations tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"EV_Charging (detailed) tables for '{product_version}': "
+			f"points={ev_detailed_points_table}, "
+			f"relations={ev_detailed_relations_table}"
+		)
+		fProcessEVDetailed(
+			product_version,
+			license_zone,
+			extentCoords,
+			ev_detailed_points_table,
+			ev_detailed_relations_table
+		)
+	elif process == 'EV_Charging (stations aggregated)':
+		ev_station_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		ev_station_relations_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations', product_version)
+		if not ev_station_points_table or not ev_station_relations_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			available_relations = sorted([t for t in mcr_table_names if t.startswith('relations_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			expected_relations = f"relations_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned EV tables found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n"
+				f"Expected relations table: {expected_relations}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				f"Available relations_* tables:\n{chr(10).join(available_relations) if available_relations else '(none)'}\n\n"
+				"Please select a product version that has matching points and relations tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"EV_Charging (stations aggregated) tables for '{product_version}': "
+			f"points={ev_station_points_table}, "
+			f"relations={ev_station_relations_table}"
+		)
+		fProcessEVDetailedByStation(
+			product_version,
+			license_zone,
+			extentCoords,
+			ev_station_points_table,
+			ev_station_relations_table
+		)
+	elif process == 'Overture Buildings (external)':
+		fProcessOvertureBuildings(extentCoords)
 	elif process == 'Fire Stations':
-		fProcessFireStations(product_version, license_zone, extentCoords)
+		fire_stations_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		if not fire_stations_points_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned points table found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				"Please select a product version that has a matching points table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Fire Stations table for '{product_version}': "
+			f"points={fire_stations_points_table}"
+		)
+		fProcessFireStations(
+			product_version,
+			license_zone,
+			extentCoords,
+			fire_stations_points_table
+		)
 	elif process == 'Admin Places (polygon)':
-		fAdminPlaces(product_version, license_zone, extentCoords)
+		admin_places_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		if not admin_places_polygons_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned polygons table found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				"Please select a product version that has a matching polygons table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Admin Places (polygon) table for '{product_version}': "
+			f"polygons={admin_places_polygons_table}"
+		)
+		fAdminPlaces(
+			product_version,
+			license_zone,
+			extentCoords,
+			admin_places_polygons_table
+		)
 	elif process == 'Turn Restrictions':
-		fTurnRestrictions(product_version, license_zone, extentCoords)
+		turn_restrictions_rel_geoms_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not turn_restrictions_rel_geoms_table:
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned relations_geometries table found for selected product '{product_version}'.\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has a matching relations_geometries table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Turn Restrictions table for '{product_version}': "
+			f"relations_geometries={turn_restrictions_rel_geoms_table}"
+		)
+		fTurnRestrictions(
+			product_version,
+			license_zone,
+			extentCoords,
+			turn_restrictions_rel_geoms_table
+		)
 	elif process == 'Traffic Signs':
-		fTrafficSigns(product_version, license_zone, extentCoords)
+		traffic_signs_points_table = fResolveMcrVersionedTableExact(mcr_table_names, 'points', product_version)
+		if not traffic_signs_points_table:
+			available_points = sorted([t for t in mcr_table_names if t.startswith('points_')])
+			expected_points = f"points_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned points table found for selected product '{product_version}'.\n"
+				f"Expected points table: {expected_points}\n\n"
+				f"Available points_* tables:\n{chr(10).join(available_points) if available_points else '(none)'}\n\n"
+				"Please select a product version that has a matching points table."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Traffic Signs table for '{product_version}': "
+			f"points={traffic_signs_points_table}"
+		)
+		fTrafficSigns(
+			product_version,
+			license_zone,
+			extentCoords,
+			traffic_signs_points_table
+		)
 
-	elif process == 'Trees':
+	elif process == 'Trees - use dbHIP':
 		print("This should be run in OSM Turbo, from dbHip")
 
 	elif process == 'BuildingsSimple (h3)':
