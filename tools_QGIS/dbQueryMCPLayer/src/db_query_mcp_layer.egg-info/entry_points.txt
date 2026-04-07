@@ -1,0 +1,2 @@
+[console_scripts]
+db-query-mcp = db_query_mcp.server:main

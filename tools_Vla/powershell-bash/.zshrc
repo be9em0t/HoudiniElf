@@ -148,8 +148,21 @@ alias pyact='function _pyact() { pyenv activate "$@"; }; _pyact'
 alias pydeact='pyenv deactivate'
 alias pyver='pyenv version'
 
-alias oc='opencode'
-alias mcr_alive='pyact qgis-ltr; cd "/Users/dunevv/OneDrive/Dev/Python/TT_Qgis/MNR_automation"; python3 databricks_keepalive.py'
+# Run Databricks keepalive in the current terminal (no GUI scripting)
+mcr_alive() {
+  cd /Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_QGIS/dbQGIS || return
+  # Load .env into this shell (optional but requested)
+  if [ -f .env ]; then
+    set -o allexport
+    # shellcheck disable=SC1091
+    source .env
+    set +o allexport
+  fi
+  # Activate the project's virtualenv and run the keepalive
+  # This will run in the same terminal so you can stop it with Ctrl+C
+  source /Users/dunevv/WorkLocal/_AI_/HoudiniElf/.venv/bin/activate
+  dotenv run -- python databricks_keepalive2.py -c /dev/null -i 500
+}
 alias caffeine='caffeinate -d'
 alias iterm='open -a iTerm $*'
 alias wake='wakeonlan 60:CF:84:BC:9F:1B'
@@ -160,27 +173,6 @@ export GIT_EDITOR="code --wait"
 # export OLLAMA_MODELS="/Volumes/exFAT/AI/Ollama/models"
 export OLLAMA_MODELS="/Users/dunevv/WorkLocal/_GIT_/AI/Ollama/models"
 export PYTORCH_ENABLE_MPS_FALLBACK=1
-
-# Lazy-load nvm: avoid sourcing nvm.sh on every interactive shell. Load on first node/npm/npx/nvm call.
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-# Lazy-load nvm: avoid sourcing nvm.sh on every interactive shell. Load on first node/npm/npx/nvm call.
-# Lazy-load nvm: avoid sourcing nvm.sh on every interactive shell. Load on first node/npm/npx/nvm call.
-_load_nvm() {
-  if [ -n "${NVM_LOADED:-}" ]; then
-    return
-  fi
-  if [ -s "$NVM_DIR/nvm.sh" ]; then
-    # shellcheck disable=SC1090
-    . "$NVM_DIR/nvm.sh"
-    NVM_LOADED=1
-  fi
-}
-
-node() { _load_nvm; command node "$@"; }
-npm()  { _load_nvm; command npm  "$@"; }
-npx()  { _load_nvm; command npx  "$@"; }
-nvm()  { _load_nvm; command nvm  "$@"; }
-
 
 # # color prompt
 # function set_prompt {
@@ -225,8 +217,13 @@ set_prompt
 # set_prompt
 
 
+# bun completions
+[ -s "/Users/dunevv/.bun/_bun" ] && source "/Users/dunevv/.bun/_bun"
 
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
-
-
-
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ${ZDOTDIR:-$HOME}/.zshrcsource /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
