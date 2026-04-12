@@ -3,7 +3,6 @@ const vscode = acquireVsCodeApi();
 const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
-const modelValueEl = document.getElementById("model-value");
 const selectModelBtn = document.getElementById("select-model");
 
 let currentAssistantEl = null;
@@ -75,10 +74,10 @@ window.addEventListener("message", (event) => {
       currentAssistantEl = null;
       break;
     case "modelInfo":
-      if (modelValueEl) {
-        const label = message.model || "unknown";
-        const name = message.name ? ` (${message.name})` : "";
-        modelValueEl.textContent = `${label}${name}`;
+      if (selectModelBtn) {
+        const label = message.name || "Select model";
+        selectModelBtn.textContent = label;
+        selectModelBtn.title = message.name || message.model || "Select model";
       }
       break;
     case "error":

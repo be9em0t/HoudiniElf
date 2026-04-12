@@ -103,7 +103,10 @@ class PiSidebarProvider {
         try {
             view.webview.options = {
                 enableScripts: true,
-                localResourceRoots: [this.context.extensionUri],
+                localResourceRoots: [
+                    this.context.extensionUri,
+                    vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@vscode", "codicons", "dist"),
+                ],
             };
             if (!getWorkspaceRoot()) {
                 this.logger.warn("No workspace root configured; showing setup screen");
@@ -284,28 +287,29 @@ class PiSidebarProvider {
         const nonce = getNonce();
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media", "sidebar.js"));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media", "sidebar.css"));
+        const codiconStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css"));
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="${styleUri}" />
+  <link rel="stylesheet" href="${codiconStyleUri}" />
   <title>Pi</title>
 </head>
 <body>
-  <div id="status">
-    <div id="model">Model: <span id="model-value">loading...</span></div>
-    <button id="select-model">Select model</button>
-  </div>
   <div id="messages"></div>
   <div id="composer">
-    <textarea id="input" rows="3" placeholder="Ask Pi..."></textarea>
-    <button id="send" type="button" aria-label="Send">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M3 12l18-9-2 8-10 1 10 1 2 8-18-9z" />
-      </svg>
-    </button>
+    <div class="input-area">
+      <textarea id="input" rows="3" placeholder="Ask Pi..."></textarea>
+      <div class="composer-row">
+        <button id="select-model" class="model-chip" type="button">Select model</button>
+        <button id="send" type="button" aria-label="Send">
+          <span class="codicon codicon-arrow-up"></span>
+        </button>
+      </div>
+    </div>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
