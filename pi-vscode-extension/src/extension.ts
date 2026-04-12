@@ -18,8 +18,6 @@ function preloadLog(message: string) {
 
 preloadLog("extension module loaded");
 
-const DEFAULT_MEMORY_PATH =
-  "/Users/dunevv/Applications/VS Code Portable/code-portable-data/user-data/User/globalStorage/github.copilot-chat/memory-tool/memories";
 
 export async function activate(context: vscode.ExtensionContext) {
   LOG_FILE_PATH = resolveLogFilePath(getWorkspaceRoot());
@@ -158,27 +156,29 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
       this.logModel(session.model);
       this.postModelInfo(session.model);
 
-      const unsubscribe = session.subscribe((event) => {
-      if (event.type === "message_start" && event.message.role === "assistant") {
-        view.webview.postMessage({ type: "assistantStart" });
-        return;
-      }
-
-      if (event.type === "message_update") {
-        const delta = event.assistantMessageEvent;
-        if (delta.type === "text_delta") {
-          view.webview.postMessage({ type: "assistantDelta", text: delta.delta });
+      let unsubscribe: (() => void) | undefined;
+      unsubscribe = session.subscribe((event) => {
+        if (event.type === "message_start" && event.message.role === "assistant") {
+          view.webview.postMessage({ type: "assistantStart" });
+          return;
         }
-      }
 
-      if (event.type === "message_end" && event.message.role === "assistant") {
-        view.webview.postMessage({ type: "assistantEnd" });
-      }
-    });
+        if (event.type === "message_update") {
+          const delta = event.assistantMessageEvent;
+          if (delta.type === "text_delta") {
+            view.webview.postMessage({ type: "assistantDelta", text: delta.delta });
+          }
+        }
+
+        if (event.type === "message_end" && event.message.role === "assistant") {
+          view.webview.postMessage({ type: "assistantEnd" });
+        }
+      });
 
       view.onDidDispose(() => {
-        unsubscribe();
+        unsubscribe?.();
         this.view = undefined;
+        this.logger.info("Pi sidebar disposed");
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -186,10 +186,6 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
       view.webview.html = this.getErrorHtml(message);
       this.attachMessageHandler(view);
     }
-    view.onDidDispose(() => {
-      this.view = undefined;
-      this.logger.info("Pi sidebar disposed");
-    });
 
   }
 
@@ -300,7 +296,7 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
     this.logger.info(`Initializing session (workspace: ${workspaceRoot})`);
 
     const sdk = await this.loadSdk();
-    const tools = createTools(workspaceRoot, () => getMemoryBasePath(), sdk);
+    const tools = createTools(workspaceRoot, sdk);
 
     if (!this.authStorage) {
       this.authStorage = sdk.AuthStorage.create();
@@ -416,11 +412,20 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
   <p>Pi failed to load. Check the output logs.</p>
-  <p>Log file: <code>${LOG_FILE_PATH}</code></p>
-  <p><code>${message}</code></p>
+  <p>Log file: <code>${escapeHtml(LOG_FILE_PATH)}</code></p>
+  <p><code>${escapeHtml(message)}</code></p>
 </body>
 </html>`;
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function getWorkspaceRoot(): string | undefined {
@@ -429,11 +434,6 @@ function getWorkspaceRoot(): string | undefined {
   const config = vscode.workspace.getConfiguration("pi");
   const configured = config.get<string>("workspaceRoot")?.trim();
   return configured ? configured : undefined;
-}
-
-function getMemoryBasePath(): string {
-  const config = vscode.workspace.getConfiguration("pi");
-  return config.get<string>("memoryStorePath") ?? DEFAULT_MEMORY_PATH;
 }
 
 function resolveLogFilePath(workspaceRoot?: string): string {
@@ -458,24 +458,27 @@ function resolveWorkspacePath(workspaceRoot: string, inputPath: string): string 
   return resolved;
 }
 
-function resolveMemoryPath(basePath: string, inputPath: string): string {
-  let relative = inputPath;
-  if (relative.startsWith("/memories/")) {
-    relative = relative.slice("/memories/".length);
-  } else if (relative.startsWith("memories/")) {
-    relative = relative.slice("memories/".length);
-  }
-  const resolved = path.resolve(basePath, relative);
-  const resolvedRelative = path.relative(basePath, resolved);
-  if (resolvedRelative.startsWith("..") || path.isAbsolute(resolvedRelative)) {
-    throw new Error("Memory path is outside the memory store.");
-  }
-  return resolved;
+function normalizeWebText(input: string): string {
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<!--([\s\S]*?)-->/g, " ")
+    .replace(/<\/(p|div|section|article|header|footer|main|nav|aside|h[1-6]|li|tr|table|blockquote)>/gi, "\n")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_match, href, text) => {
+      const label = String(text).replace(/<[^>]+>/g, " ").trim();
+      return label ? `${label} [${href}]` : String(href);
+    })
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[\t\r ]+/g, " ")
+    .replace(/\n\s+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function createTools(
   workspaceRoot: string,
-  getMemoryPath: () => string,
   sdk: {
     defineTool: typeof import("@mariozechner/pi-coding-agent").defineTool;
     Type: typeof import("@sinclair/typebox").Type;
@@ -654,6 +657,55 @@ function createTools(
     },
   });
 
+  const readWebPageTool = defineTool({
+    name: "read_webpage",
+    label: "Read Webpage",
+    description: "Fetch a web page and return readable text",
+    promptSnippet: "Read documentation pages and extract their readable text",
+    promptGuidelines: [
+      "Use this tool for public documentation pages, reference docs, and web articles.",
+      "Prefer this tool when the user asks about open web pages or online documentation.",
+    ],
+    parameters: Type.Object({
+      url: Type.String({ description: "http(s) URL to read" }),
+      maxChars: Type.Optional(Type.Number({ description: "Maximum characters to return" })),
+    }),
+    execute: async (_toolCallId, params) => {
+      const parsed = new URL(params.url);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("Only http and https URLs are supported.");
+      }
+
+      const response = await fetch(parsed.toString(), {
+        headers: {
+          "user-agent": "Pi VS Code Extension/0.0.1",
+          accept: "text/html,application/xhtml+xml",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${parsed.toString()}: ${response.status} ${response.statusText}`);
+      }
+
+      const html = await response.text();
+      const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      const title = titleMatch ? normalizeWebText(titleMatch[1]) : parsed.hostname;
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      const source = bodyMatch ? bodyMatch[1] : html;
+      const text = normalizeWebText(source);
+      const maxChars = params.maxChars ?? 20000;
+      const trimmed = text.length > maxChars ? `${text.slice(0, maxChars)}\n\n[truncated]` : text;
+
+      return {
+        content: [{ type: "text", text: `Title: ${title}\nURL: ${parsed.toString()}\n\n${trimmed}` }],
+        details: {
+          url: parsed.toString(),
+          title,
+          truncated: text.length > maxChars,
+        },
+      };
+    },
+  });
+
   return [
     readFileTool,
     listDirTool,
@@ -662,6 +714,7 @@ function createTools(
     createFileTool,
     replaceStringTool,
     multiReplaceTool,
+    readWebPageTool,
   ];
 }
 

@@ -13,7 +13,6 @@ function preloadLog(message) {
     }
 }
 preloadLog("extension module loaded");
-const DEFAULT_MEMORY_PATH = "/Users/dunevv/Applications/VS Code Portable/code-portable-data/user-data/User/globalStorage/github.copilot-chat/memory-tool/memories";
 export async function activate(context) {
     LOG_FILE_PATH = resolveLogFilePath(getWorkspaceRoot());
     const logger = new Logger(LOG_FILE_PATH);
@@ -117,7 +116,8 @@ class PiSidebarProvider {
             const session = await this.getSession();
             this.logModel(session.model);
             this.postModelInfo(session.model);
-            const unsubscribe = session.subscribe((event) => {
+            let unsubscribe;
+            unsubscribe = session.subscribe((event) => {
                 if (event.type === "message_start" && event.message.role === "assistant") {
                     view.webview.postMessage({ type: "assistantStart" });
                     return;
@@ -133,8 +133,9 @@ class PiSidebarProvider {
                 }
             });
             view.onDidDispose(() => {
-                unsubscribe();
+                unsubscribe?.();
                 this.view = undefined;
+                this.logger.info("Pi sidebar disposed");
             });
         }
         catch (error) {
@@ -143,10 +144,6 @@ class PiSidebarProvider {
             view.webview.html = this.getErrorHtml(message);
             this.attachMessageHandler(view);
         }
-        view.onDidDispose(() => {
-            this.view = undefined;
-            this.logger.info("Pi sidebar disposed");
-        });
     }
     attachMessageHandler(view) {
         view.webview.onDidReceiveMessage(async (message) => {
@@ -245,7 +242,7 @@ class PiSidebarProvider {
         }
         this.logger.info(`Initializing session (workspace: ${workspaceRoot})`);
         const sdk = await this.loadSdk();
-        const tools = createTools(workspaceRoot, () => getMemoryBasePath(), sdk);
+        const tools = createTools(workspaceRoot, sdk);
         if (!this.authStorage) {
             this.authStorage = sdk.AuthStorage.create();
             this.modelRegistry = sdk.ModelRegistry.create(this.authStorage);
@@ -350,11 +347,19 @@ class PiSidebarProvider {
 </head>
 <body>
   <p>Pi failed to load. Check the output logs.</p>
-  <p>Log file: <code>${LOG_FILE_PATH}</code></p>
-  <p><code>${message}</code></p>
+  <p>Log file: <code>${escapeHtml(LOG_FILE_PATH)}</code></p>
+  <p><code>${escapeHtml(message)}</code></p>
 </body>
 </html>`;
     }
+}
+function escapeHtml(value) {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 function getWorkspaceRoot() {
     const folder = vscode.workspace.workspaceFolders?.[0];
@@ -363,10 +368,6 @@ function getWorkspaceRoot() {
     const config = vscode.workspace.getConfiguration("pi");
     const configured = config.get("workspaceRoot")?.trim();
     return configured ? configured : undefined;
-}
-function getMemoryBasePath() {
-    const config = vscode.workspace.getConfiguration("pi");
-    return config.get("memoryStorePath") ?? DEFAULT_MEMORY_PATH;
 }
 function resolveLogFilePath(workspaceRoot) {
     if (!workspaceRoot) {
@@ -389,22 +390,25 @@ function resolveWorkspacePath(workspaceRoot, inputPath) {
     }
     return resolved;
 }
-function resolveMemoryPath(basePath, inputPath) {
-    let relative = inputPath;
-    if (relative.startsWith("/memories/")) {
-        relative = relative.slice("/memories/".length);
-    }
-    else if (relative.startsWith("memories/")) {
-        relative = relative.slice("memories/".length);
-    }
-    const resolved = path.resolve(basePath, relative);
-    const resolvedRelative = path.relative(basePath, resolved);
-    if (resolvedRelative.startsWith("..") || path.isAbsolute(resolvedRelative)) {
-        throw new Error("Memory path is outside the memory store.");
-    }
-    return resolved;
+function normalizeWebText(input) {
+    return input
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+        .replace(/<!--([\s\S]*?)-->/g, " ")
+        .replace(/<\/(p|div|section|article|header|footer|main|nav|aside|h[1-6]|li|tr|table|blockquote)>/gi, "\n")
+        .replace(/<br\s*\/?\s*>/gi, "\n")
+        .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_match, href, text) => {
+        const label = String(text).replace(/<[^>]+>/g, " ").trim();
+        return label ? `${label} [${href}]` : String(href);
+    })
+        .replace(/<[^>]+>/g, " ")
+        .replace(/[\t\r ]+/g, " ")
+        .replace(/\n\s+/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
 }
-function createTools(workspaceRoot, getMemoryPath, sdk) {
+function createTools(workspaceRoot, sdk) {
     const { defineTool, Type, StringEnum } = sdk;
     const readFileTool = defineTool({
         name: "read_file",
@@ -568,6 +572,51 @@ function createTools(workspaceRoot, getMemoryPath, sdk) {
             };
         },
     });
+    const readWebPageTool = defineTool({
+        name: "read_webpage",
+        label: "Read Webpage",
+        description: "Fetch a web page and return readable text",
+        promptSnippet: "Read documentation pages and extract their readable text",
+        promptGuidelines: [
+            "Use this tool for public documentation pages, reference docs, and web articles.",
+            "Prefer this tool when the user asks about open web pages or online documentation.",
+        ],
+        parameters: Type.Object({
+            url: Type.String({ description: "http(s) URL to read" }),
+            maxChars: Type.Optional(Type.Number({ description: "Maximum characters to return" })),
+        }),
+        execute: async (_toolCallId, params) => {
+            const parsed = new URL(params.url);
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+                throw new Error("Only http and https URLs are supported.");
+            }
+            const response = await fetch(parsed.toString(), {
+                headers: {
+                    "user-agent": "Pi VS Code Extension/0.0.1",
+                    accept: "text/html,application/xhtml+xml",
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ${parsed.toString()}: ${response.status} ${response.statusText}`);
+            }
+            const html = await response.text();
+            const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+            const title = titleMatch ? normalizeWebText(titleMatch[1]) : parsed.hostname;
+            const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+            const source = bodyMatch ? bodyMatch[1] : html;
+            const text = normalizeWebText(source);
+            const maxChars = params.maxChars ?? 20000;
+            const trimmed = text.length > maxChars ? `${text.slice(0, maxChars)}\n\n[truncated]` : text;
+            return {
+                content: [{ type: "text", text: `Title: ${title}\nURL: ${parsed.toString()}\n\n${trimmed}` }],
+                details: {
+                    url: parsed.toString(),
+                    title,
+                    truncated: text.length > maxChars,
+                },
+            };
+        },
+    });
     return [
         readFileTool,
         listDirTool,
@@ -576,6 +625,7 @@ function createTools(workspaceRoot, getMemoryPath, sdk) {
         createFileTool,
         replaceStringTool,
         multiReplaceTool,
+        readWebPageTool,
     ];
 }
 function getNonce() {

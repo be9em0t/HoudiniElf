@@ -30,11 +30,16 @@ function appendAssistantDelta(text) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-sendBtn.addEventListener("click", () => {
+function sendComposerMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
   vscode.postMessage({ type: "userMessage", text });
   inputEl.value = "";
+  inputEl.focus();
+}
+
+sendBtn.addEventListener("click", () => {
+  sendComposerMessage();
 });
 
 selectModelBtn?.addEventListener("click", () => {
@@ -42,8 +47,12 @@ selectModelBtn?.addEventListener("click", () => {
 });
 
 inputEl.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-    sendBtn.click();
+  if (event.key === "Enter") {
+    if (event.shiftKey) {
+      return; // allow newline
+    }
+    event.preventDefault();
+    sendComposerMessage();
   }
 });
 
