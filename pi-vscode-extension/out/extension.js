@@ -301,7 +301,11 @@ class PiSidebarProvider {
   <div id="messages"></div>
   <div id="composer">
     <textarea id="input" rows="3" placeholder="Ask Pi..."></textarea>
-    <button id="send">Send</button>
+    <button id="send" type="button" aria-label="Send">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 12l18-9-2 8-10 1 10 1 2 8-18-9z" />
+      </svg>
+    </button>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
