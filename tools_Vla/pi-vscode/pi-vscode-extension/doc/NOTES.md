@@ -76,7 +76,7 @@ PNL_MainUI
  │    ├── PNL_Message.assistant
  │    ├── PNL_Message.user
  │    └── PNL_Message.error
- └── PNL_UserInput (gray, rounded corners, full width of panel)
+ └── PNL_UserInput (gray, rounded c orners, full width of panel)
       ├── PNL_UserInputArea
       │    └── TXT_UserInput (Aligned top, full width, multiline)
       │    └── PNL_ButtonArea (Aligned bottom, full width, single line)
