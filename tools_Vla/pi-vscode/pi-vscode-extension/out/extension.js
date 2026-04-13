@@ -136,7 +136,10 @@ class PiSidebarProvider {
                 if (event.type === "message_update") {
                     const delta = event.assistantMessageEvent;
                     if (delta.type === "text_delta") {
-                        view.webview.postMessage({ type: "assistantDelta", text: delta.delta });
+                        view.webview.postMessage({ type: "assistantDelta", text: delta.delta, deltaType: "text" });
+                    }
+                    if (delta.type === "thinking_delta") {
+                        view.webview.postMessage({ type: "assistantDelta", text: delta.delta, deltaType: "thinking" });
                     }
                 }
                 if (event.type === "message_end" && event.message.role === "assistant") {

@@ -71,6 +71,16 @@ body {
   color: #CACACA;
 }
 
+.PNL_Message.assistant.thinking {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.PNL_Message.assistant.thinking .TXT_MessageContent {
+  color: #94B3FD;
+  font-style: italic;
+}
+
 .PNL_Message.error {
   background: #212833;
   border: 1px solid #FF5D00;

@@ -180,7 +180,10 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
         if (event.type === "message_update") {
           const delta = event.assistantMessageEvent;
           if (delta.type === "text_delta") {
-            view.webview.postMessage({ type: "assistantDelta", text: delta.delta });
+            view.webview.postMessage({ type: "assistantDelta", text: delta.delta, deltaType: "text" });
+          }
+          if (delta.type === "thinking_delta") {
+            view.webview.postMessage({ type: "assistantDelta", text: delta.delta, deltaType: "thinking" });
           }
         }
 

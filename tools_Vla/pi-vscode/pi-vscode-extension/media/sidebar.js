@@ -9,6 +9,8 @@ const modelStatusEl = document.getElementById("TXT_ModelStatus");
 
 let selectedModelLabel = "unknown";
 let respondingModelLabel = "unknown";
+let currentAssistantEl = null;
+let currentAssistantThinkingEl = null;
 
 const userInputPanel = document.getElementById("PNL_UserInput");
 console.log("[Pi Sidebar] init", {
@@ -23,11 +25,9 @@ if (userInputPanel) {
   console.log("[Pi Sidebar] PNL_UserInput computed style", window.getComputedStyle(userInputPanel));
 }
 
-let currentAssistantEl = null;
-
-function appendMessage(role, text) {
+function appendMessage(role, text, extraClass) {
   const wrapper = document.createElement("div");
-  wrapper.className = `PNL_Message ${role}`;
+  wrapper.className = `PNL_Message ${role}${extraClass ? ` ${extraClass}` : ""}`;
 
   const content = document.createElement("div");
   content.className = "TXT_MessageContent";
@@ -40,7 +40,18 @@ function appendMessage(role, text) {
   return content;
 }
 
-function appendAssistantDelta(text) {
+function appendAssistantDelta(text, type) {
+  console.log("[Pi Sidebar] assistantDelta", { type, text });
+  if (type === "thinking") {
+    if (!currentAssistantThinkingEl) {
+      currentAssistantThinkingEl = appendMessage("assistant", "⏳ thinking...", "thinking");
+      currentAssistantEl = null;
+    }
+    currentAssistantThinkingEl.textContent += text;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return;
+  }
+
   if (!currentAssistantEl) {
     currentAssistantEl = appendMessage("assistant", "");
   }
@@ -91,10 +102,11 @@ window.addEventListener("message", (event) => {
       currentAssistantEl = appendMessage("assistant", "");
       break;
     case "assistantDelta":
-      appendAssistantDelta(message.text);
+      appendAssistantDelta(message.text, message.deltaType || "text");
       break;
     case "assistantEnd":
       currentAssistantEl = null;
+      currentAssistantThinkingEl = null;
       break;
     case "modelInfo":
       selectedModelLabel = message.selectedModel || "unknown";
