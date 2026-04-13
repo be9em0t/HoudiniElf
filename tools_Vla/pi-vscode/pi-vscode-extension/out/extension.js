@@ -198,6 +198,7 @@ class PiSidebarProvider {
             if (!registry) {
                 throw new Error("Model registry not initialized.");
             }
+            injectFavoriteFallbackModels(registry);
             const available = await registry.getAvailable();
             if (available.length === 0) {
                 vscode.window.showErrorMessage("No authenticated models available. Run `pi` and `/login`, or set OPENAI_API_KEY in your environment.");
@@ -280,6 +281,7 @@ class PiSidebarProvider {
     async getStartupModel(registry) {
         if (!registry)
             return undefined;
+        injectFavoriteFallbackModels(registry);
         const favorites = getFavoriteModelRefs();
         if (favorites.length === 0)
             return undefined;
@@ -448,6 +450,35 @@ function getFavoriteModelOrder() {
 }
 function modelKey(model) {
     return `${model.provider}/${model.id}`;
+}
+function buildFallbackModel(provider, modelId, models) {
+    const providerModels = models.filter((m) => m.provider === provider);
+    if (providerModels.length === 0)
+        return undefined;
+    const baseModel = providerModels[0];
+    return {
+        ...baseModel,
+        id: modelId,
+        name: modelId,
+    };
+}
+function injectFavoriteFallbackModels(registry) {
+    const allModels = registry.getAll();
+    const registryAny = registry;
+    const models = registryAny.models;
+    if (!models)
+        return;
+    const existingKeys = new Set(allModels.map((model) => modelKey(model)));
+    for (const favorite of getFavoriteModelRefs()) {
+        const key = `${favorite.provider}/${favorite.id}`;
+        if (existingKeys.has(key))
+            continue;
+        const fallback = buildFallbackModel(favorite.provider, favorite.id, allModels);
+        if (!fallback)
+            continue;
+        existingKeys.add(key);
+        models.push(fallback);
+    }
 }
 function compareFavoriteModelOrder(left, right, favoriteOrder) {
     const leftIndex = favoriteOrder.get(modelKey(left));

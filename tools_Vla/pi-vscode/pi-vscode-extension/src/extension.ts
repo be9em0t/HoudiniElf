@@ -247,6 +247,7 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
         throw new Error("Model registry not initialized.");
       }
 
+      injectFavoriteFallbackModels(registry);
       const available = await registry.getAvailable();
       if (available.length === 0) {
         vscode.window.showErrorMessage(
@@ -340,6 +341,8 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
 
   private async getStartupModel(registry: ModelRegistry | undefined): Promise<Model<Api> | undefined> {
     if (!registry) return undefined;
+
+    injectFavoriteFallbackModels(registry);
 
     const favorites = getFavoriteModelRefs();
     if (favorites.length === 0) return undefined;
@@ -529,6 +532,37 @@ function getFavoriteModelOrder(): Map<string, number> {
 
 function modelKey(model: { provider: string; id: string }): string {
   return `${model.provider}/${model.id}`;
+}
+
+function buildFallbackModel(provider: string, modelId: string, models: Model<Api>[]): Model<Api> | undefined {
+  const providerModels = models.filter((m) => m.provider === provider);
+  if (providerModels.length === 0) return undefined;
+
+  const baseModel = providerModels[0];
+  return {
+    ...baseModel,
+    id: modelId,
+    name: modelId,
+  };
+}
+
+function injectFavoriteFallbackModels(registry: ModelRegistry): void {
+  const allModels = registry.getAll();
+  const registryAny = registry as unknown as { models?: Model<Api>[] };
+  const models = registryAny.models;
+  if (!models) return;
+
+  const existingKeys = new Set(allModels.map((model) => modelKey(model)));
+  for (const favorite of getFavoriteModelRefs()) {
+    const key = `${favorite.provider}/${favorite.id}`;
+    if (existingKeys.has(key)) continue;
+
+    const fallback = buildFallbackModel(favorite.provider, favorite.id, allModels);
+    if (!fallback) continue;
+
+    existingKeys.add(key);
+    models.push(fallback);
+  }
 }
 
 function compareFavoriteModelOrder(
