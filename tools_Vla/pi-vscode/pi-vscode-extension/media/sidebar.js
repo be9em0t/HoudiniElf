@@ -32,6 +32,7 @@ function appendMessage(role, text) {
   wrapper.appendChild(content);
   messagesEl.appendChild(wrapper);
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  console.log("[Pi Sidebar] appendMessage", { role, className: wrapper.className, text });
   return content;
 }
 

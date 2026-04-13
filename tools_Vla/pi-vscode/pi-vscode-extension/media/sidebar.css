@@ -28,43 +28,56 @@ body {
   overflow-y: auto;
   padding: 7px 7px 6px;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .PNL_Message {
-  margin-bottom: 6px;
+  width: 100%;
   display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 8px;
 }
 
 .PNL_Message .TXT_MessageContent {
-  padding: 6px 7px;
-  border-radius: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
   white-space: pre-wrap;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid rgba(128, 128, 128, 0.08);
-  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.04);
+  word-break: break-word;
   font-family: Roboto, var(--vscode-font-family);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .PNL_Message.user {
-  justify-content: flex-end;
+  background: #212833;
+  border: 1px solid #FDC530;
 }
 
 .PNL_Message.user .TXT_MessageContent {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border-color: rgba(128, 128, 128, 0.12);
+  color: #CACACA;
+}
+
+.PNL_Message.assistant {
+  background: transparent;
+  border: none;
 }
 
 .PNL_Message.assistant .TXT_MessageContent {
-  background: var(--vscode-editorWidget-background);
+  color: #CACACA;
+}
+
+.PNL_Message.error {
+  background: #212833;
+  border: 1px solid #FF5D00;
 }
 
 .PNL_Message.error .TXT_MessageContent {
-  background: var(--vscode-inputValidation-errorBackground);
   color: var(--vscode-inputValidation-errorForeground);
-  border-color: rgba(255, 69, 58, 0.3);
 }
 
 #PNL_UserInput {
@@ -78,8 +91,8 @@ body {
 }
 
 .PNL_UserInputArea {
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border);
+  background: #192232;
+  border: 1px solid #377DCE;
   border-radius: 8px;
   padding: 12px 10px 10px;
   display: flex;
