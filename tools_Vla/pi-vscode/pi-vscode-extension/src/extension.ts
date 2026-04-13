@@ -11,6 +11,7 @@ import type { Api, Model } from "@mariozechner/pi-ai";
 const execFile = promisify(execFileCallback);
 
 let LOG_FILE_PATH = path.join(os.tmpdir(), "pi-vscode-extension.log");
+let DEVELOPMENT_WORKSPACE_ROOT: string | undefined;
 
 function preloadLog(message: string) {
   try {
@@ -24,6 +25,10 @@ preloadLog("extension module loaded");
 
 
 export async function activate(context: vscode.ExtensionContext) {
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    DEVELOPMENT_WORKSPACE_ROOT = context.extensionUri.fsPath;
+  }
+
   LOG_FILE_PATH = resolveLogFilePath(getWorkspaceRoot());
   const logger = new Logger(LOG_FILE_PATH);
   context.subscriptions.push(logger);
@@ -250,12 +255,15 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      const picks = available.map((model) => ({
-        label: `${model.provider}/${model.id}`,
-        description: model.name,
-        detail: `Context ${model.contextWindow} tokens`,
-        model,
-      }));
+      const favoriteOrder = getFavoriteModelOrder();
+      const picks = [...available]
+        .sort((left, right) => compareFavoriteModelOrder(left, right, favoriteOrder))
+        .map((model) => ({
+          label: favoriteOrder.has(modelKey(model)) ? `★ ${model.provider}/${model.id}` : `${model.provider}/${model.id}`,
+          description: model.name,
+          detail: `Context ${model.contextWindow} tokens`,
+          model,
+        }));
 
       const pick = await vscode.window.showQuickPick(picks, {
         placeHolder: "Select a Pi model",
@@ -310,6 +318,11 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
       this.modelRegistry = sdk.ModelRegistry.create(this.authStorage);
     }
 
+    const startupModel = await this.getStartupModel(this.modelRegistry);
+    if (startupModel) {
+      this.logger.info(`Startup model: ${startupModel.provider}/${startupModel.id}`);
+    }
+
     const { session } = await sdk.createAgentSession({
       cwd: workspaceRoot,
       sessionManager: sdk.SessionManager.inMemory(),
@@ -317,11 +330,31 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
       customTools: tools,
       authStorage: this.authStorage,
       modelRegistry: this.modelRegistry,
+      model: startupModel,
     });
 
     this.logger.info("Pi session ready");
     this.session = session;
     return session;
+  }
+
+  private async getStartupModel(registry: ModelRegistry | undefined): Promise<Model<Api> | undefined> {
+    if (!registry) return undefined;
+
+    const favorites = getFavoriteModelRefs();
+    if (favorites.length === 0) return undefined;
+
+    const available = await registry.getAvailable();
+    for (const favorite of favorites) {
+      const match = available.find(
+        (model) => model.provider === favorite.provider && model.id === favorite.id
+      );
+      if (match) {
+        return match;
+      }
+    }
+
+    return undefined;
   }
 
   private async loadSdk() {
@@ -457,9 +490,59 @@ function escapeHtml(value: string): string {
 function getWorkspaceRoot(): string | undefined {
   const folder = vscode.workspace.workspaceFolders?.[0];
   if (folder) return folder.uri.fsPath;
+  if (DEVELOPMENT_WORKSPACE_ROOT) return DEVELOPMENT_WORKSPACE_ROOT;
   const config = vscode.workspace.getConfiguration("pi");
   const configured = config.get<string>("workspaceRoot")?.trim();
   return configured ? configured : undefined;
+}
+
+function getFavoriteModelRefs(): Array<{ provider: string; id: string }> {
+  const configured = vscode.workspace.getConfiguration("pi").get<string[]>("favoriteModels") ?? [];
+  const seen = new Set<string>();
+  const result: Array<{ provider: string; id: string }> = [];
+
+  for (const value of configured) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+
+    const slashIndex = trimmed.indexOf("/");
+    if (slashIndex <= 0 || slashIndex >= trimmed.length - 1) continue;
+
+    const provider = trimmed.slice(0, slashIndex).trim();
+    const id = trimmed.slice(slashIndex + 1).trim();
+    if (!provider || !id) continue;
+
+    const key = `${provider}/${id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ provider, id });
+  }
+
+  return result;
+}
+
+function getFavoriteModelOrder(): Map<string, number> {
+  const refs = getFavoriteModelRefs();
+  return new Map(refs.map((ref, index) => [`${ref.provider}/${ref.id}`, index]));
+}
+
+function modelKey(model: { provider: string; id: string }): string {
+  return `${model.provider}/${model.id}`;
+}
+
+function compareFavoriteModelOrder(
+  left: { provider: string; id: string },
+  right: { provider: string; id: string },
+  favoriteOrder: Map<string, number>
+): number {
+  const leftIndex = favoriteOrder.get(modelKey(left));
+  const rightIndex = favoriteOrder.get(modelKey(right));
+
+  if (leftIndex === undefined && rightIndex === undefined) return 0;
+  if (leftIndex === undefined) return 1;
+  if (rightIndex === undefined) return -1;
+  return leftIndex - rightIndex;
 }
 
 function resolveLogFilePath(workspaceRoot?: string): string {
