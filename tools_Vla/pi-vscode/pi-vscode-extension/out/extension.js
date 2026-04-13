@@ -724,6 +724,68 @@ function createTools(workspaceRoot, sdk, extensionRoot) {
             };
         },
     });
+    const openFileTool = defineTool({
+        name: "open_file",
+        label: "Open File",
+        description: "Open a workspace file in the editor",
+        parameters: Type.Object({
+            path: Type.String({ description: "File path relative to the workspace root" }),
+        }),
+        execute: async (_toolCallId, params) => {
+            const target = resolveWorkspacePath(workspaceRoot, params.path);
+            const document = await vscode.workspace.openTextDocument(target);
+            await vscode.window.showTextDocument(document, { preview: false });
+            return {
+                content: [{ type: "text", text: `Opened ${params.path}` }],
+                details: { path: params.path },
+            };
+        },
+    });
+    const editFileTool = defineTool({
+        name: "edit_file",
+        label: "Edit File",
+        description: "Edit a workspace file in the editor, opening it if needed.",
+        parameters: Type.Object({
+            path: Type.String({ description: "File path relative to the workspace root" }),
+            content: Type.Optional(Type.String({ description: "Replace the entire file content" })),
+            edits: Type.Optional(Type.Array(Type.Object({
+                startLine: Type.Number({ description: "Start line (0-based)" }),
+                startCharacter: Type.Number({ description: "Start character (0-based)" }),
+                endLine: Type.Number({ description: "End line (0-based)" }),
+                endCharacter: Type.Number({ description: "End character (0-based)" }),
+                newText: Type.String({ description: "Replacement text" }),
+            }))),
+        }),
+        execute: async (_toolCallId, params) => {
+            const target = resolveWorkspacePath(workspaceRoot, params.path);
+            const document = await vscode.workspace.openTextDocument(target);
+            await vscode.window.showTextDocument(document, { preview: false });
+            const workspaceEdit = new vscode.WorkspaceEdit();
+            if (params.content !== undefined) {
+                const start = new vscode.Position(0, 0);
+                const end = new vscode.Position(document.lineCount, 0);
+                workspaceEdit.replace(document.uri, new vscode.Range(start, end), params.content);
+            }
+            else if (params.edits && params.edits.length > 0) {
+                for (const edit of params.edits) {
+                    const range = new vscode.Range(new vscode.Position(edit.startLine, edit.startCharacter), new vscode.Position(edit.endLine, edit.endCharacter));
+                    workspaceEdit.replace(document.uri, range, edit.newText);
+                }
+            }
+            else {
+                throw new Error("Either content or edits must be provided.");
+            }
+            const ok = await vscode.workspace.applyEdit(workspaceEdit);
+            if (!ok) {
+                throw new Error(`Failed to edit ${params.path}`);
+            }
+            await document.save();
+            return {
+                content: [{ type: "text", text: `Edited ${params.path}` }],
+                details: { path: params.path, contentReplaced: params.content !== undefined, edits: params.edits?.length ?? 0 },
+            };
+        },
+    });
     const replaceStringTool = defineTool({
         name: "replace_string_in_file",
         label: "Replace String",
@@ -903,6 +965,8 @@ function createTools(workspaceRoot, sdk, extensionRoot) {
         grepSearchTool,
         createDirectoryTool,
         createFileTool,
+        openFileTool,
+        editFileTool,
         replaceStringTool,
         multiReplaceTool,
         playwrightMcpStartTool,
