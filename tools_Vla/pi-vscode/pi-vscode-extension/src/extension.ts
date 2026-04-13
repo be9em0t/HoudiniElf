@@ -534,11 +534,41 @@ function modelKey(model: { provider: string; id: string }): string {
   return `${model.provider}/${model.id}`;
 }
 
+const DEFAULT_FALLBACK_MODEL_PER_PROVIDER: Record<string, string> = {
+  "amazon-bedrock": "us.anthropic.claude-opus-4-6-v1",
+  anthropic: "claude-opus-4-6",
+  openai: "gpt-5.4",
+  "azure-openai-responses": "gpt-5.2",
+  "openai-codex": "gpt-5.4",
+  google: "gemini-2.5-pro",
+  "google-gemini-cli": "gemini-2.5-pro",
+  "google-antigravity": "gemini-3.1-pro-high",
+  "google-vertex": "gemini-3-pro-preview",
+  "github-copilot": "gpt-4o",
+  openrouter: "openai/gpt-5.1-codex",
+  "vercel-ai-gateway": "anthropic/claude-opus-4-6",
+  xai: "grok-4-fast-non-reasoning",
+  groq: "openai/gpt-oss-120b",
+  cerebras: "zai-glm-4.7",
+  zai: "glm-5",
+  mistral: "devstral-medium-latest",
+  minimax: "MiniMax-M2.7",
+  "minimax-cn": "MiniMax-M2.7",
+  huggingface: "moonshotai/Kimi-K2.5",
+  opencode: "claude-opus-4-6",
+  "opencode-go": "kimi-k2.5",
+  "kimi-coding": "kimi-k2-thinking",
+};
+
 function buildFallbackModel(provider: string, modelId: string, models: Model<Api>[]): Model<Api> | undefined {
   const providerModels = models.filter((m) => m.provider === provider);
   if (providerModels.length === 0) return undefined;
 
-  const baseModel = providerModels[0];
+  const defaultModelId = DEFAULT_FALLBACK_MODEL_PER_PROVIDER[provider];
+  const baseModel = defaultModelId
+    ? providerModels.find((m) => m.id === defaultModelId) ?? providerModels[0]
+    : providerModels[0];
+
   return {
     ...baseModel,
     id: modelId,
