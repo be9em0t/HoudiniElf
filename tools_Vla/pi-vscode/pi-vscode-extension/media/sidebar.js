@@ -94,7 +94,12 @@ window.addEventListener("message", (event) => {
     case "modelInfo":
       if (selectModelBtn) {
         const label = message.name || "Select model";
-        selectModelBtn.textContent = label;
+        const labelEl = selectModelBtn.querySelector(".TXT_ModelLabel");
+        if (labelEl) {
+          labelEl.textContent = label;
+        } else {
+          selectModelBtn.textContent = label;
+        }
         selectModelBtn.title = message.name || message.model || "Select model";
       }
       break;

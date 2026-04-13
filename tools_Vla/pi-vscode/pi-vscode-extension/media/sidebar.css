@@ -24,26 +24,26 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  bottom: calc(12px + 180px);
+  bottom: 169px;
   overflow-y: auto;
-  padding: 14px 14px 12px;
+  padding: 7px 7px 6px;
   min-height: 0;
 }
 
 .PNL_Message {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   display: flex;
 }
 
 .PNL_Message .TXT_MessageContent {
-  padding: 12px 14px;
-  border-radius: 16px;
+  padding: 6px 7px;
+  border-radius: 8px;
   white-space: pre-wrap;
   background: var(--vscode-editorWidget-background);
   border: 1px solid rgba(128, 128, 128, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.04);
   font-family: Roboto, var(--vscode-font-family);
-  font-size: 24px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -72,7 +72,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 12px;
+  padding: 6px;
   background: transparent;
   z-index: 1;
 }
@@ -80,23 +80,27 @@ body {
 .PNL_UserInputArea {
   background: var(--vscode-input-background);
   border: 1px solid var(--vscode-input-border);
-  border-radius: 16px;
-  padding: 16px 12px 12px;
+  border-radius: 8px;
+  padding: 12px 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
+  height: 163px;
 }
 
 .PNL_ButtonArea {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 4px;
+  min-height: 32px;
+  margin-top: -6px;
 }
 
 .BTN_IconButton {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -107,29 +111,56 @@ body {
   cursor: pointer;
 }
 
+#BTN_Add {
+  position: absolute;
+  left: 0;
+}
+
+#BTN_Send {
+  position: absolute;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+
 .BTN_IconButton img,
 .ICN_Chevron {
-  width: 18px;
-  height: 18px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .BTN_ModelChip {
+  width: auto;
+  max-width: calc(100% - 96px);
+  min-width: 64px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
+  gap: 8px;
   background: transparent;
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border);
   border-radius: 999px;
-  padding: 10px 12px;
+  padding: 4px 6px;
   cursor: pointer;
   font-family: Roboto, var(--vscode-font-family);
-  font-size: 24px;
+  font-size: 12px;
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.BTN_ModelChip .TXT_ModelLabel {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .BTN_ModelChip:hover {
@@ -145,15 +176,15 @@ body {
 #TXT_UserInput {
   width: 100%;
   resize: none;
-  min-height: 72px;
-  max-height: 160px;
+  min-height: 116px;
+  max-height: 116px;
   background: transparent;
   color: var(--vscode-input-foreground);
   border: none;
   border-radius: 0;
-  padding: 6px;
+  padding: 3px;
   font-family: Roboto, var(--vscode-font-family);
-  font-size: 24px;
+  font-size: 12px;
   line-height: 1.4;
   outline: none;
 }
@@ -166,23 +197,4 @@ body {
   border-color: var(--vscode-focusBorder);
 }
 
-#BTN_Send {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--vscode-button-foreground);
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-#BTN_Send:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder);
-  outline-offset: 2px;
-}
 
