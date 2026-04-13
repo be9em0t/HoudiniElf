@@ -21,7 +21,7 @@ export async function activate(context) {
     if (context.extensionMode === vscode.ExtensionMode.Development) {
         DEVELOPMENT_WORKSPACE_ROOT = context.extensionUri.fsPath;
     }
-    LOG_FILE_PATH = resolveLogFilePath(getWorkspaceRoot());
+    LOG_FILE_PATH = resolveLogFilePath(context.globalStoragePath);
     const logger = new Logger(LOG_FILE_PATH);
     context.subscriptions.push(logger);
     logger.info("Pi extension activating");
@@ -123,6 +123,7 @@ class PiSidebarProvider {
             }
             view.webview.html = this.getHtml(view.webview);
             this.attachMessageHandler(view);
+            this.ensureStatusBarItem();
             const session = await this.getSession();
             this.logModel(session.model);
             this.postModelInfo(session.model);
@@ -139,12 +140,18 @@ class PiSidebarProvider {
                     }
                 }
                 if (event.type === "message_end" && event.message.role === "assistant") {
+                    const assistantMessage = event.message;
+                    this.logger.info(`Responding model: ${assistantMessage.provider}/${assistantMessage.model}`);
+                    this.postRespondingModelInfo(assistantMessage);
                     view.webview.postMessage({ type: "assistantEnd" });
                 }
             });
             view.onDidDispose(() => {
                 unsubscribe?.();
                 this.view = undefined;
+                if (this.statusBarItem) {
+                    this.statusBarItem.hide();
+                }
                 this.logger.info("Pi sidebar disposed");
             });
         }
@@ -230,12 +237,39 @@ class PiSidebarProvider {
             vscode.window.showErrorMessage(`Pi model selection failed: ${messageText}`);
         }
     }
+    postRespondingModelInfo(message) {
+        const respondingModel = `${message.provider}/${message.model}`;
+        const selectedModel = this.session?.model ? `${this.session.model.provider}/${this.session.model.id}` : "unknown";
+        this.updateStatusBar(selectedModel, respondingModel);
+        if (!this.view)
+            return;
+        this.view.webview.postMessage({
+            type: "respondingModelInfo",
+            respondingModel,
+            selectedModel,
+        });
+    }
+    updateStatusBar(selectedModel, respondingModel) {
+        if (!this.statusBarItem)
+            return;
+        this.statusBarItem.text = `Pi: selected ${selectedModel} · responding ${respondingModel}`;
+        this.statusBarItem.show();
+    }
+    ensureStatusBarItem() {
+        if (this.statusBarItem)
+            return;
+        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+        this.statusBarItem.tooltip = "Pi selected and actual responding model";
+        this.statusBarItem.show();
+    }
     postModelInfo(model) {
+        const selectedModel = model ? `${model.provider}/${model.id}` : "unknown";
+        this.updateStatusBar(selectedModel, this.session?.model ? `${this.session.model.provider}/${this.session.model.id}` : selectedModel);
         if (!this.view)
             return;
         this.view.webview.postMessage({
             type: "modelInfo",
-            model: model ? `${model.provider}/${model.id}` : "unknown",
+            selectedModel: selectedModel,
             name: model?.name ?? "",
         });
     }
@@ -349,6 +383,7 @@ class PiSidebarProvider {
           <img src="${sendIconUri}" alt="Send" />
         </button>
       </div>
+      <div id="TXT_ModelStatus" class="TXT_ModelStatus">Selected: unknown · Responding: unknown</div>
     </div>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
@@ -519,11 +554,8 @@ function compareFavoriteModelOrder(left, right, favoriteOrder) {
         return -1;
     return leftIndex - rightIndex;
 }
-function resolveLogFilePath(workspaceRoot) {
-    if (!workspaceRoot) {
-        return path.join(os.tmpdir(), "pi-vscode-extension.log");
-    }
-    const logDir = path.join(workspaceRoot, ".pi", "logs");
+function resolveLogFilePath(globalStoragePath) {
+    const logDir = path.join(globalStoragePath, "logs");
     try {
         fsSync.mkdirSync(logDir, { recursive: true });
     }

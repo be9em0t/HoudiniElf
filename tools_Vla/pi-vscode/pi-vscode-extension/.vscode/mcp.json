@@ -1,0 +1,8 @@
+{
+	"servers": {
+		"playwright": {
+			"type": "http",
+			"url": "http://localhost:8931/mcp"
+		}
+	}
+}

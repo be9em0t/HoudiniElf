@@ -6,7 +6,7 @@ import os from "node:os";
 import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
 import type { AgentSession, AuthStorage, ModelRegistry } from "@mariozechner/pi-coding-agent";
-import type { Api, Model } from "@mariozechner/pi-ai";
+import type { Api, AssistantMessage, Model } from "@mariozechner/pi-ai";
 
 const execFile = promisify(execFileCallback);
 
@@ -29,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
     DEVELOPMENT_WORKSPACE_ROOT = context.extensionUri.fsPath;
   }
 
-  LOG_FILE_PATH = resolveLogFilePath(getWorkspaceRoot());
+  LOG_FILE_PATH = resolveLogFilePath(context.globalStoragePath);
   const logger = new Logger(LOG_FILE_PATH);
   context.subscriptions.push(logger);
 
@@ -136,6 +136,7 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private authStorage: AuthStorage | undefined;
   private modelRegistry: ModelRegistry | undefined;
+  private statusBarItem: vscode.StatusBarItem | undefined;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -163,6 +164,7 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
 
       view.webview.html = this.getHtml(view.webview);
       this.attachMessageHandler(view);
+      this.ensureStatusBarItem();
 
       const session = await this.getSession();
       this.logModel(session.model);
@@ -183,6 +185,9 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
         }
 
         if (event.type === "message_end" && event.message.role === "assistant") {
+          const assistantMessage = event.message as AssistantMessage;
+          this.logger.info(`Responding model: ${assistantMessage.provider}/${assistantMessage.model}`);
+          this.postRespondingModelInfo(assistantMessage);
           view.webview.postMessage({ type: "assistantEnd" });
         }
       });
@@ -190,6 +195,9 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
       view.onDidDispose(() => {
         unsubscribe?.();
         this.view = undefined;
+        if (this.statusBarItem) {
+          this.statusBarItem.hide();
+        }
         this.logger.info("Pi sidebar disposed");
       });
     } catch (error) {
@@ -284,11 +292,38 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private postRespondingModelInfo(message: AssistantMessage) {
+    const respondingModel = `${message.provider}/${message.model}`;
+    const selectedModel = this.session?.model ? `${this.session.model.provider}/${this.session.model.id}` : "unknown";
+    this.updateStatusBar(selectedModel, respondingModel);
+    if (!this.view) return;
+    this.view.webview.postMessage({
+      type: "respondingModelInfo",
+      respondingModel,
+      selectedModel,
+    });
+  }
+
+  private updateStatusBar(selectedModel: string, respondingModel: string) {
+    if (!this.statusBarItem) return;
+    this.statusBarItem.text = `Pi: selected ${selectedModel} · responding ${respondingModel}`;
+    this.statusBarItem.show();
+  }
+
+  private ensureStatusBarItem() {
+    if (this.statusBarItem) return;
+    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    this.statusBarItem.tooltip = "Pi selected and actual responding model";
+    this.statusBarItem.show();
+  }
+
   private postModelInfo(model: Model<Api> | undefined) {
+    const selectedModel = model ? `${model.provider}/${model.id}` : "unknown";
+    this.updateStatusBar(selectedModel, this.session?.model ? `${this.session.model.provider}/${this.session.model.id}` : selectedModel);
     if (!this.view) return;
     this.view.webview.postMessage({
       type: "modelInfo",
-      model: model ? `${model.provider}/${model.id}` : "unknown",
+      selectedModel: selectedModel,
       name: model?.name ?? "",
     });
   }
@@ -426,6 +461,7 @@ class PiSidebarProvider implements vscode.WebviewViewProvider {
           <img src="${sendIconUri}" alt="Send" />
         </button>
       </div>
+      <div id="TXT_ModelStatus" class="TXT_ModelStatus">Selected: unknown · Responding: unknown</div>
     </div>
   </div>
   <script nonce="${nonce}" src="${scriptUri}"></script>
@@ -609,11 +645,8 @@ function compareFavoriteModelOrder(
   return leftIndex - rightIndex;
 }
 
-function resolveLogFilePath(workspaceRoot?: string): string {
-  if (!workspaceRoot) {
-    return path.join(os.tmpdir(), "pi-vscode-extension.log");
-  }
-  const logDir = path.join(workspaceRoot, ".pi", "logs");
+function resolveLogFilePath(globalStoragePath: string): string {
+  const logDir = path.join(globalStoragePath, "logs");
   try {
     fsSync.mkdirSync(logDir, { recursive: true });
   } catch {

@@ -5,6 +5,10 @@ const inputEl = document.getElementById("TXT_UserInput");
 const addBtn = document.getElementById("BTN_Add");
 const sendBtn = document.getElementById("BTN_Send");
 const selectModelBtn = document.getElementById("BTN_SelectModel");
+const modelStatusEl = document.getElementById("TXT_ModelStatus");
+
+let selectedModelLabel = "unknown";
+let respondingModelLabel = "unknown";
 
 const userInputPanel = document.getElementById("PNL_UserInput");
 console.log("[Pi Sidebar] init", {
@@ -93,6 +97,7 @@ window.addEventListener("message", (event) => {
       currentAssistantEl = null;
       break;
     case "modelInfo":
+      selectedModelLabel = message.selectedModel || "unknown";
       if (selectModelBtn) {
         const label = message.name || "Select model";
         const labelEl = selectModelBtn.querySelector(".TXT_ModelLabel");
@@ -101,8 +106,14 @@ window.addEventListener("message", (event) => {
         } else {
           selectModelBtn.textContent = label;
         }
-        selectModelBtn.title = message.name || message.model || "Select model";
+        selectModelBtn.title = message.name || message.selectedModel || "Select model";
       }
+      updateModelStatus();
+      break;
+    case "respondingModelInfo":
+      respondingModelLabel = message.respondingModel || "unknown";
+      selectedModelLabel = message.selectedModel || selectedModelLabel;
+      updateModelStatus();
       break;
     case "error":
       appendMessage("error", message.text);
@@ -112,3 +123,8 @@ window.addEventListener("message", (event) => {
       break;
   }
 });
+
+function updateModelStatus() {
+  if (!modelStatusEl) return;
+  modelStatusEl.textContent = `Selected: ${selectedModelLabel} · Responding: ${respondingModelLabel}`;
+}
