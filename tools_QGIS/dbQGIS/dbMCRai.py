@@ -2643,6 +2643,121 @@ WHERE ST_Intersects(q.qenv, r.env)
 	print(message + "\n======= clipboard! =======")
 	qtMsgBox(message)
 
+def fProcLandUseOrderedWip(extent_layer, product_version, license_zone, extentCoords, polygons_table, relations_geometries_table, menu_name=None):
+	"""Land use polygons with ordered output and extra display columns.
+	"""
+	menu = menu_name if menu_name else 'Land Use (ordered wip)'
+	extentStr = "'" + extentCoords + "'"
+
+	sql = """
+-- {menu}
+WITH q AS (
+	SELECT ST_GeomFromWKT({extent}) AS qg,
+				 ST_Envelope(ST_GeomFromWKT({extent})) AS qenv
+),
+polys_src AS (
+	SELECT orbis_id, tags, geometry
+	FROM {polygons_table}
+	WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+		AND license_zone LIKE '%{license_zone}%'
+),
+polys_pre AS (
+	SELECT p.orbis_id, p.tags, p.geometry,
+				 ST_GeomFromWKT(p.geometry) AS g,
+				 ST_Envelope(ST_GeomFromWKT(p.geometry)) AS env
+	FROM polys_src p
+	WHERE (p.tags['aeroway'] IS NOT NULL
+		 OR p.tags['landuse'] IS NOT NULL
+		 OR p.tags['leisure'] IS NOT NULL
+		 OR p.tags['military'] IS NOT NULL
+		 OR p.tags['natural'] IS NOT NULL
+		 OR p.tags['tourism'] IS NOT NULL
+		 OR p.tags['amenity'] IS NOT NULL)
+),
+rels_src AS (
+	SELECT orbis_id, tags, geometry
+	FROM {relations_geometries_table}
+	WHERE geom_type IN ('ST_POLYGON','ST_MULTIPOLYGON')
+		AND license_zone LIKE '%{license_zone}%'
+),
+rels_pre AS (
+	SELECT r.orbis_id, r.tags, r.geometry,
+				 ST_GeomFromWKT(r.geometry) AS g,
+				 ST_Envelope(ST_GeomFromWKT(r.geometry)) AS env
+	FROM rels_src r
+	WHERE (r.tags['aeroway'] IS NOT NULL
+		 OR r.tags['landuse'] IS NOT NULL
+		 OR r.tags['leisure'] IS NOT NULL
+		 OR r.tags['military'] IS NOT NULL
+		 OR r.tags['natural'] IS NOT NULL
+		 OR r.tags['tourism'] IS NOT NULL
+		 OR r.tags['amenity'] IS NOT NULL)
+)
+
+SELECT orbis_id,
+			 tags['aeroway'] AS aeroway,
+			 tags['landuse'] AS landuse,
+			 tags['leisure'] AS leisure,
+			 tags['military'] AS military,
+			 tags['natural'] AS natural,
+			 tags['tourism'] AS tourism,
+			 tags['amenity'] AS amenity,
+			 tags['importance'] AS importance,
+			 tags['zoomlevel_min'] AS zoomlevel_min,
+			 tags['zoomlevel_max'] AS zoomlevel_max,
+			 CAST(tags AS STRING) AS tags,
+			 geometry
+FROM polys_pre p
+CROSS JOIN q
+WHERE ST_Intersects(q.qenv, p.env)
+	AND ST_Intersects(q.qg, p.g)
+
+UNION
+
+SELECT orbis_id,
+			 tags['aeroway'] AS aeroway,
+			 tags['landuse'] AS landuse,
+			 tags['leisure'] AS leisure,
+			 tags['military'] AS military,
+			 tags['natural'] AS natural,
+			 tags['tourism'] AS tourism,
+			 tags['amenity'] AS amenity,
+			 tags['importance'] AS importance,
+			 tags['zoomlevel_min'] AS zoomlevel_min,
+			 tags['zoomlevel_max'] AS zoomlevel_max,
+			 CAST(tags AS STRING) AS tags,
+			 geometry
+FROM rels_pre r
+CROSS JOIN q
+WHERE ST_Intersects(q.qenv, r.env)
+	AND ST_Intersects(q.qg, r.g)
+ORDER BY
+	CASE
+		WHEN importance = 'international' THEN 1
+		WHEN importance = 'national' THEN 2
+		WHEN importance = 'regional' THEN 3
+		ELSE 4
+	END,
+	COALESCE(CAST(zoomlevel_min AS INT), 999),
+	COALESCE(CAST(zoomlevel_max AS INT), 999),
+	orbis_id
+;""".format(
+	product_version=product_version,
+	license_zone=license_zone,
+	extent=extentStr,
+	menu=menu,
+	polygons_table=polygons_table,
+	relations_geometries_table=relations_geometries_table
+)
+
+	# Put query on the clipboard
+	clipboard = QgsApplication.clipboard()
+	clipboard.setText(sql)
+
+	message = """\nThe query is on the clipboard.\nPaste and run it from DBeaver (or similar).\nThen import the CSV as a vector layer to QGIS."""
+	print(message + "\n======= clipboard! =======")
+	qtMsgBox(message)
+
 
 def fProcessEV(product_version, license_zone, extentCoords, points_table):
 	extentStr = "'" + extentCoords + "'"
@@ -3539,6 +3654,7 @@ def fMainUI():
 	'Buildings with Relations Optimised',
 	'Buildings w/o Relations Optimised',
 	'Land Use (older)',
+	'Land Use (ordered wip)',
 	'LOI Artificial Ground',
 	'Network wo Relations',
 	'Network Detailed wo Relations',
@@ -3670,6 +3786,39 @@ def fMainUI():
 			f"relations_geometries={landuse_relations_geometries_table}"
 		)
 		fProcLandUse(
+			extent_layer,
+			product_version,
+			license_zone,
+			extentCoords,
+			landuse_polygons_table,
+			landuse_relations_geometries_table,
+			menu_name=process
+		)
+	elif process == 'Land Use (ordered wip)':
+		landuse_polygons_table = fResolveMcrVersionedTableExact(mcr_table_names, 'polygons', product_version)
+		landuse_relations_geometries_table = fResolveMcrVersionedTableExact(mcr_table_names, 'relations_geometries', product_version)
+		if not landuse_polygons_table or not landuse_relations_geometries_table:
+			available_polygons = sorted([t for t in mcr_table_names if t.startswith('polygons_')])
+			available_rel_geoms = sorted([t for t in mcr_table_names if t.startswith('relations_geometries_')])
+			expected_polygons = f"polygons_{_normalize_product_version_for_table(product_version)}"
+			expected_rel_geoms = f"relations_geometries_{_normalize_product_version_for_table(product_version)}"
+			message = (
+				f"\nNo exact versioned tables found for selected product '{product_version}'.\n"
+				f"Expected polygons table: {expected_polygons}\n"
+				f"Expected relations_geometries table: {expected_rel_geoms}\n\n"
+				f"Available polygons_* tables:\n{chr(10).join(available_polygons) if available_polygons else '(none)'}\n\n"
+				f"Available relations_geometries_* tables:\n{chr(10).join(available_rel_geoms) if available_rel_geoms else '(none)'}\n\n"
+				"Please select a product version that has matching tables."
+			)
+			print(message)
+			qtMsgBox(message)
+			return
+		print(
+			f"Land Use (ordered wip) tables for '{product_version}': "
+			f"polygons={landuse_polygons_table}, "
+			f"relations_geometries={landuse_relations_geometries_table}"
+		)
+		fProcLandUseOrderedWip(
 			extent_layer,
 			product_version,
 			license_zone,

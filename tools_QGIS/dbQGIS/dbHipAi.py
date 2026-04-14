@@ -266,7 +266,23 @@ def fGetFieldUniqueVals():
 
 	print (result_string)
 
+def fCropToExtent(extent_layer):
+	layer = iface.activeLayer()
+	if layer is None:
+		print("Crop to extent cancelled: no active layer selected")
+		return None
 
+	if extent_layer is None:
+		print("Crop to extent cancelled: no extent layer selected")
+		return None
+
+	print("Clip by Extent...")
+	result = b9PyQGIS.fExtractByExtent(layer, extent_layer)
+	newLayer = QgsProject.instance().addMapLayer(result['OUTPUT'])
+	newLayer.setName(layer.name() + '_Clip')
+	QgsProject.instance().removeMapLayer(layer.id())
+	iface.setActiveLayer(newLayer)
+	return newLayer
 
 def fKeepUniqueByField():
 	#select a field, compare rows and leave only the first one in case of duplicate values
@@ -1358,6 +1374,7 @@ def fMainUI():
 		'Reproject to UTM Zone',
 		'Convert to WGT84',
 		'---- layer edit -----',
+		'Crop to extent',
 		'Find overlap clusters',
 		'Z_order by overlap clusters. LandUse.',
 		'Keep Unique Rows by Single Field (HD Cleanup)',
@@ -1490,6 +1507,8 @@ def fMainUI():
 	elif selected_process == 'List Unique Values of a Field':
 		fGetFieldUniqueVals()
 
+	elif selected_process == 'Crop to extent':
+		fCropToExtent(extent_layer)
 	elif selected_process == 'Find overlap clusters':
 		import sub_OverlapClusters
 		imp.reload(sub_OverlapClusters)
