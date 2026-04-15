@@ -1,0 +1,260 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #f6f6f6;
+  background-color: #121a24;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #15212d 0%, #0b1217 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 3vw, 2.5rem);
+}
+
+.app-header p {
+  margin: 0;
+  color: #b8c2cd;
+}
+
+.folder-panel,
+.player-panel,
+.track-list-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.folder-panel label {
+  display: block;
+  margin-bottom: 10px;
+  color: #aac2d6;
+}
+
+.folder-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.folder-actions input {
+  flex: 1;
+  min-width: 280px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f6f6f6;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.folder-actions button {
+  border: none;
+  color: #0b1217;
+  background: #5f92ff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.folder-actions button#test-sound {
+  background: #74d0a3;
+}
+
+.folder-actions button#test-sound:hover {
+  filter: brightness(1.05);
+}
+
+.folder-actions button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.status {
+  margin-top: 14px;
+  color: #d0d8e4;
+}
+
+.status-error {
+  color: #ff8d8d;
+}
+
+.debug-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.debug-panel h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: #d6e4ff;
+}
+
+.debug-panel pre {
+  margin: 0;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #c8d8ff;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.player-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.player-subtitle {
+  color: #9cb4d4;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.player-controls button {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f6f6;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.player-controls button:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.player-controls button.active {
+  background: #5f92ff;
+  color: #0b1217;
+}
+
+.track-list-panel h2 {
+  margin-top: 0;
+  color: #eef4ff;
+}
+
+.track-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.track-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.track-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.track-item.selected {
+  border-color: #5f92ff;
+  background: rgba(95, 146, 255, 0.18);
+}
+
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.track-name {
+  font-weight: 600;
+}
+
+.track-ext {
+  color: #9cb4d4;
+  font-size: 0.9rem;
+}
+
+.track-info {
+  margin-top: 6px;
+  color: #a8bbd8;
+  font-size: 0.92rem;
+}
+
+.track-list .empty {
+  text-align: center;
+  color: #9cb4d4;
+  padding: 24px 12px;
+}
+
+audio {
+  width: 100%;
+  outline: none;
+  border-radius: 12px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 700px) {
+  .app-shell {
+    padding: 24px 16px;
+  }
+
+  .player-controls {
+    justify-content: space-between;
+  }
+}
