@@ -21,12 +21,14 @@ MVP1 Local Scope
 - [x] Build Rust backend skeleton and command API
 - [x] Add local audio file listing and simple player shell
 - [x] Play individual audio files
+- [x] Fix local HTTP audio server transient stalled handling and user-facing playback status
 - [ ] Window UI: track name, expand (placeholder), close
 - [ ] Player UI controls: loop (placeholder), previous, play/pause, next, track selection.
 
 MVP2 Connected Scope
 ---------
 - OneDrive authentication and folder selection.
+- Improve robust streaming with ranged downloads and resilient local audio serving.
 - List audio files from a specified OneDrive folder.
 - Stream individual audio files using ranged downloads.
 - Local cache of downloaded data with a simple cache policy.

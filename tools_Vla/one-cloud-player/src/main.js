@@ -270,9 +270,8 @@ window.addEventListener("DOMContentLoaded", () => {
     setStatus(message, false);
   });
   audioPlayer.addEventListener("stalled", () => {
-    console.warn("Audio playback stalled.");
-    appendDebug("audio playback stalled");
-    setStatus("Audio playback stalled.", false);
+    console.log("Audio playback stalled (transient buffer event).");
+    appendDebug("audio playback stalled (transient)");
   });
   renderTracks();
 });
