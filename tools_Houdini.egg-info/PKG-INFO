@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: tools_Houdini
-Version: 0.1.0
-Summary: Houdini Agentic Mode tooling for Copilot/GPT integration
-Author-email: Auto-generated <noreply@example.com>
-Project-URL: Home, https://github.com/...
-Requires-Python: >=3.8
-Description-Content-Type: text/markdown
-Dynamic: requires-python

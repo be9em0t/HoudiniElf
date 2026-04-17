@@ -1,6 +1,0 @@
-pyproject.toml
-setup.py
-tools_Houdini.egg-info/PKG-INFO
-tools_Houdini.egg-info/SOURCES.txt
-tools_Houdini.egg-info/dependency_links.txt
-tools_Houdini.egg-info/top_level.txt
