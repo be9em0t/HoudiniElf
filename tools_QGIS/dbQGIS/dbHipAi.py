@@ -1030,17 +1030,9 @@ def fExportPolygons2Hip(selected_location):
 	layerGeo = newLayer
 
 def fExportPolygonsWithHoles2Hip(selected_location):
-	# Keep the temporary HoleRings layer only long enough for the export chain.
-	temp_hole_rings_layer = fHoleRings()
-	try:
-		fExportPolygons2Hip(selected_location)
-	finally:
-		if temp_hole_rings_layer is not None:
-			try:
-				QgsProject.instance().removeMapLayer(temp_hole_rings_layer.id())
-				print("Removed temporary HoleRings polygon layer")
-			except Exception:
-				pass
+	# newLayer = 
+	fHoleRings()
+	fExportPolygons2Hip(selected_location)
 
 
 def fExportLines2Hip(selected_location):
@@ -1351,7 +1343,6 @@ def fMainUI():
 	process_list=[
 		'---- orbis ----',
 		'Compute Z Order based on area',
-		'Compute Z Order based on Zoomlevel',
 		'Orbis - Compare Unique Fields (landuse)',
 		'---- osm & genesis ----',
 		'OSM Trees p1 (point,line,poly)',
@@ -1513,10 +1504,6 @@ def fMainUI():
 	elif selected_process == 'Compute Z Order based on area':
 		import sub_Z_Order
 		sub_Z_Order.compute_z_order_for_active_layer(invert_z=False)
-	elif selected_process == 'Compute Z Order based on Zoomlevel':
-		import sub_landuse_Zorder
-		imp.reload(sub_landuse_Zorder)
-		sub_landuse_Zorder.fOverlapClustersZorderByZoomlevel()
 	elif selected_process == 'List Unique Values of a Field':
 		fGetFieldUniqueVals()
 

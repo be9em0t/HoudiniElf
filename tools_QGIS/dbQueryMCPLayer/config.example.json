@@ -1,0 +1,34 @@
+{
+  "default_row_limit": 200,
+  "connections": [
+    {
+      "name": "databricks_main",
+      "kind": "databricks",
+      "description": "Readonly Databricks SQL warehouse",
+      "keychain": {
+        "service": "mcp/databricks/main",
+        "account": "readonly"
+      },
+      "options": {
+        "server_hostname": "dbc-xxxxxxxx-xxxx.cloud.databricks.com",
+        "http_path": "/sql/1.0/warehouses/xxxxxxxxxxxxxxxx"
+      }
+    },
+    {
+      "name": "postgres_main",
+      "kind": "postgres",
+      "description": "Readonly PostgreSQL database",
+      "keychain": {
+        "service": "mcp/postgres/main",
+        "account": "readonly"
+      },
+      "options": {
+        "host": "localhost",
+        "port": 5432,
+        "dbname": "analytics",
+        "user": "readonly",
+        "sslmode": "prefer"
+      }
+    }
+  ]
+}
