@@ -26,6 +26,7 @@ pub struct AppSettings {
     pub last_played_track: Option<String>,
     pub window_position: Option<[i32; 2]>,
     pub window_size: Option<[u32; 2]>,
+    pub ui_mode: Option<String>,
 }
 
 #[derive(Clone)]

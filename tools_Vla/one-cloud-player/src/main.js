@@ -1,5 +1,6 @@
 const { invoke } = window.__TAURI__.core;
 
+// --- Expanded mode elements ---
 const folderInputEl = document.querySelector("#folder-input");
 const loadFolderButton = document.querySelector("#load-folder");
 const statusEl = document.querySelector("#status");
@@ -11,17 +12,31 @@ const btnLoop = document.querySelector("#btn-loop");
 const btnPrev = document.querySelector("#btn-prev");
 const btnPlay = document.querySelector("#btn-play");
 const btnNext = document.querySelector("#btn-next");
-const btnExpand = document.querySelector("#btn-expand");
+const btnCompact = document.querySelector("#btn-compact");
 const btnClose = document.querySelector("#btn-close");
 const btnTestSound = document.querySelector("#test-sound");
 const debugEl = document.querySelector("#debug-log");
 
+// --- Compact mode elements ---
+const compactMode = document.querySelector("#compact-mode");
+const expandedMode = document.querySelector("#expanded-mode");
+const compactTrackTitle = document.querySelector("#compact-track-title");
+const btnCompactExpand = document.querySelector("#btn-compact-expand");
+const btnCompactClose = document.querySelector("#btn-compact-close");
+const btnCompactLoop = document.querySelector("#btn-compact-loop");
+const btnCompactPrev = document.querySelector("#btn-compact-prev");
+const btnCompactPlay = document.querySelector("#btn-compact-play");
+const btnCompactNext = document.querySelector("#btn-compact-next");
+const btnCompactPlaylist = document.querySelector("#btn-compact-playlist");
+
 let tracks = [];
 let selectedIndex = -1;
 let loopMode = false;
+let currentUiMode = "expanded"; // "compact" | "expanded"
 let appSettings = {
   lastOpenFolder: "",
   lastPlayedTrack: "",
+  uiMode: "expanded",
 };
 
 function toFileUrl(filePath) {
@@ -58,7 +73,11 @@ async function loadAppSettings() {
     appSettings = {
       lastOpenFolder: settings.lastOpenFolder || "",
       lastPlayedTrack: settings.lastPlayedTrack || "",
+      uiMode: settings.uiMode || "expanded",
     };
+    if (appSettings.uiMode) {
+      setUiMode(appSettings.uiMode);
+    }
     if (appSettings.lastOpenFolder) {
       folderInputEl.value = appSettings.lastOpenFolder;
       try {
@@ -113,6 +132,30 @@ function testTone() {
   }, 1000);
 }
 
+// --- UI mode switching ---
+function setUiMode(mode) {
+  currentUiMode = mode;
+  if (mode === "compact") {
+    expandedMode.style.display = "none";
+    compactMode.style.display = "flex";
+    syncCompactState();
+  } else {
+    compactMode.style.display = "none";
+    expandedMode.style.display = "block";
+  }
+  saveAppSettings({ uiMode: mode });
+}
+
+function syncCompactState() {
+  const track = selectedIndex >= 0 ? tracks[selectedIndex] : null;
+  compactTrackTitle.textContent = track ? track.name : "No track";
+  // sync play/pause icon: codicon play = eb2c, pause = eb2d
+  const isPlaying = audioPlayer.src && !audioPlayer.paused;
+  btnCompactPlay.innerHTML = isPlaying ? "&#xeb2d;" : "&#xeb2c;";
+  btnCompactPlay.classList.toggle("playing", isPlaying);
+  btnCompactLoop.classList.toggle("active", loopMode);
+}
+
 function renderTracks() {
   tracksEl.innerHTML = "";
   if (tracks.length === 0) {
@@ -146,6 +189,7 @@ async function selectTrack(index) {
   const track = tracks[index];
   trackTitleEl.textContent = track.name;
   trackMetaEl.textContent = `${track.extension.toUpperCase()} · ${(track.size / 1024 / 1024).toFixed(2)} MB`;
+  syncCompactState();
   setStatus("Loading audio...");
 
   const fileUrl = toFileUrl(track.path);
@@ -170,6 +214,7 @@ async function selectTrack(index) {
     audioPlayer.load();
     await audioPlayer.play();
     btnPlay.textContent = "⏸";
+    syncCompactState();
     setStatus("Playing.", true);
     saveAppSettings({ lastPlayedTrack: track.path });
   } catch (error) {
@@ -188,6 +233,7 @@ async function selectTrack(index) {
       audioPlayer.load();
       await audioPlayer.play();
       btnPlay.textContent = "⏸";
+      syncCompactState();
       setStatus("Playing from blob fallback.", true);
     } catch (fallbackError) {
       const fallbackMessage = typeof fallbackError === "string" ? fallbackError : fallbackError?.message || "Fallback playback failed.";
@@ -217,6 +263,7 @@ function toggleLoop() {
   loopMode = !loopMode;
   audioPlayer.loop = loopMode;
   btnLoop.classList.toggle("active", loopMode);
+  btnCompactLoop.classList.toggle("active", loopMode);
 }
 
 function togglePlay() {
@@ -231,6 +278,7 @@ function togglePlay() {
     audioPlayer.pause();
     btnPlay.textContent = "▶";
   }
+  syncCompactState();
 }
 
 function clearSelection() {
@@ -241,6 +289,7 @@ function clearSelection() {
   trackTitleEl.textContent = "No track selected";
   trackMetaEl.textContent = "";
   btnPlay.textContent = "▶";
+  syncCompactState();
   setStatus("Selection cleared.");
 }
 
@@ -275,14 +324,25 @@ async function loadFolder() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  // --- Expanded mode bindings ---
   loadFolderButton.addEventListener("click", loadFolder);
   btnTestSound.addEventListener("click", testTone);
   btnLoop.addEventListener("click", toggleLoop);
   btnPrev.addEventListener("click", selectPrev);
   btnPlay.addEventListener("click", togglePlay);
   btnNext.addEventListener("click", selectNext);
-  btnExpand.addEventListener("click", () => setStatus("Expand is a placeholder.", true));
+  btnCompact.addEventListener("click", () => setUiMode("compact"));
   btnClose.addEventListener("click", clearSelection);
+
+  // --- Compact mode bindings ---
+  btnCompactExpand.addEventListener("click", () => setUiMode("expanded"));
+  btnCompactClose.addEventListener("click", clearSelection);
+  btnCompactLoop.addEventListener("click", toggleLoop);
+  btnCompactPrev.addEventListener("click", selectPrev);
+  btnCompactPlay.addEventListener("click", togglePlay);
+  btnCompactNext.addEventListener("click", selectNext);
+  btnCompactPlaylist.addEventListener("click", () => setUiMode("expanded"));
+
   audioPlayer.addEventListener("ended", () => {
     if (!loopMode) selectNext();
   });

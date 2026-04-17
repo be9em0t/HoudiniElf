@@ -258,3 +258,124 @@ audio {
     justify-content: space-between;
   }
 }
+
+/* ============================================
+   Compact / mini player mode
+   Based on Figma frame "one-cloud-player-mini"
+   250×107, bg #30526d, radius 16
+   ============================================ */
+
+@font-face {
+  font-family: 'codicon';
+  src: url('https://microsoft.github.io/vscode-codicons/dist/codicon.ttf') format('truetype');
+}
+
+.compact-player {
+  width: 250px;
+  height: 107px;
+  background: #30526d;
+  border-radius: 16px;
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- top row: track name + expand/close --- */
+.compact-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.compact-track-name {
+  font-family: 'Gilroy', Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: #cacaca;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.compact-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* --- shared icon button base --- */
+.compact-icon-btn {
+  font-family: 'codicon';
+  background: none;
+  border: none;
+  color: #cacaca;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.compact-icon-btn:hover {
+  color: #ffffff;
+}
+
+.compact-icon-btn.compact-icon-sm {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+}
+
+.compact-icon-btn.active {
+  color: #ff5d00;
+}
+
+/* --- bottom row: controls --- */
+.compact-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+/* --- play/pause circle button --- */
+.compact-play-btn {
+  font-family: 'codicon';
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid #377dce;
+  background: none;
+  color: #cacaca;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compact-play-btn:hover {
+  border-color: #5a9be6;
+  color: #ffffff;
+}
+
+.compact-play-btn.playing {
+  border-color: #ff5d00;
+  color: #ff5d00;
+}
