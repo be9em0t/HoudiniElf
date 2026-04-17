@@ -22,8 +22,17 @@ MVP1 Local Scope
 - [x] Add local audio file listing and simple player shell
 - [x] Play individual audio files
 - [x] Fix local HTTP audio server transient stalled handling and user-facing playback status
+- [ ] Settings storage (last open folder, last played track)
 - [ ] Window UI: track name, expand (placeholder), close
 - [ ] Player UI controls: loop (placeholder), previous, play/pause, next, track selection.
+
+Settings storage strategy
+---------
+- Store all local app state under one single root directory where possible, instead of scattering files across multiple OS locations.
+- Use a portable mode preference: if the app can write next to its executable/root folder, keep `settings.json`, `cache/`, `auth/`, and any local files together there.
+- If portable root is unavailable, fall back to a single platform-specific app directory, still keeping data contained in one app-specific folder.
+- Store app settings in `settings.json` as a small JSON object containing last open folder, last played track, window position/size, and selected library.
+- Keep all metadata and cache under this same root directory so the app remains predictable and easy to move.
 
 MVP2 Connected Scope
 ---------
@@ -51,6 +60,7 @@ Architecture
 Components:
 - Tauri frontend: HTML/CSS/JavaScript UI served by the Tauri shell.
 - Rust backend: handles OneDrive API, download logic, cache management, and exposes a command API to the frontend.
+- Cache/storage root: a single app-specific directory containing `settings.json`, `cache/`, `auth/`, and any downloaded/temp data.
 - Cache storage: local filesystem cache with metadata stored in a lightweight format.
 
 Data flow:
@@ -120,3 +130,10 @@ Next Steps
 4. Add progressive download and cache logic.
 5. Create a minimal frontend for track selection and playback.
 6. Test on macOS and Windows.
+
+Topics for later
+----------
+1. If you want to make the stream more robust later, the next improvement is:
+- support HTTP range requests / proper Content-Length
+- ensure the Rust server keeps the connection stable
+- or use a direct  / blob path instead of local HTTP streaming

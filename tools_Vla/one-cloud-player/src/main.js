@@ -19,6 +19,10 @@ const debugEl = document.querySelector("#debug-log");
 let tracks = [];
 let selectedIndex = -1;
 let loopMode = false;
+let appSettings = {
+  lastOpenFolder: "",
+  lastPlayedTrack: "",
+};
 
 function toFileUrl(filePath) {
   if (!filePath) return "";
@@ -36,6 +40,42 @@ async function getAudioServerUrl(filePath) {
 function setStatus(message, success = true) {
   statusEl.textContent = message;
   statusEl.classList.toggle("status-error", !success);
+}
+
+async function saveAppSettings(changes) {
+  appSettings = { ...appSettings, ...changes };
+  try {
+    await invoke("save_settings", { settings: appSettings });
+  } catch (error) {
+    const message = typeof error === "string" ? error : error?.message || String(error);
+    appendDebug(`save_settings failed: ${message}`);
+  }
+}
+
+async function loadAppSettings() {
+  try {
+    const settings = await invoke("load_settings");
+    appSettings = {
+      lastOpenFolder: settings.lastOpenFolder || "",
+      lastPlayedTrack: settings.lastPlayedTrack || "",
+    };
+    if (appSettings.lastOpenFolder) {
+      folderInputEl.value = appSettings.lastOpenFolder;
+      try {
+        await loadFolder();
+        if (appSettings.lastPlayedTrack) {
+          const lastIndex = tracks.findIndex((track) => track.path === appSettings.lastPlayedTrack);
+          if (lastIndex !== -1) {
+            selectTrack(lastIndex);
+          }
+        }
+      } catch (error) {
+        appendDebug(`Restore settings failed: ${error?.message || String(error)}`);
+      }
+    }
+  } catch (error) {
+    appendDebug(`load_settings failed: ${error?.message || String(error)}`);
+  }
 }
 
 function appendDebug(message) {
@@ -131,6 +171,7 @@ async function selectTrack(index) {
     await audioPlayer.play();
     btnPlay.textContent = "⏸";
     setStatus("Playing.", true);
+    saveAppSettings({ lastPlayedTrack: track.path });
   } catch (error) {
     const message = typeof error === "string" ? error : error?.message || "Unable to play audio.";
     console.error("play() failed", error);
@@ -216,6 +257,7 @@ async function loadFolder() {
     tracks = loadedTracks;
     selectedIndex = -1;
     renderTracks();
+    await saveAppSettings({ lastOpenFolder: dir });
     if (tracks.length > 0) {
       setStatus(`Loaded ${tracks.length} track(s). Click a track to play.`);
       appendDebug(`loaded ${tracks.length} track(s) from ${dir}`);
@@ -274,4 +316,5 @@ window.addEventListener("DOMContentLoaded", () => {
     appendDebug("audio playback stalled (transient)");
   });
   renderTracks();
+  loadAppSettings().catch(() => {});
 });

@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
-use serde::Serialize;
-use std::{fs, path::Path};
+use serde::{Deserialize, Serialize};
+use std::{fs, path::{Path, PathBuf}};
+use tauri::State;
 
 #[derive(Serialize)]
 pub struct AudioTrack {
@@ -16,6 +17,46 @@ pub struct AudioProbe {
     pub is_file: bool,
     pub size: u64,
     pub sample_hex: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AppSettings {
+    pub last_open_folder: Option<String>,
+    pub last_played_track: Option<String>,
+    pub window_position: Option<[i32; 2]>,
+    pub window_size: Option<[u32; 2]>,
+}
+
+#[derive(Clone)]
+pub struct AppStorage {
+    pub root: PathBuf,
+}
+
+fn app_settings_path(state: &State<'_, AppStorage>) -> PathBuf {
+    state.root.join("settings.json")
+}
+
+#[tauri::command]
+pub fn load_settings(state: State<'_, AppStorage>) -> Result<AppSettings, String> {
+    let path = app_settings_path(&state);
+    if !path.exists() {
+        return Ok(AppSettings::default());
+    }
+    let json = fs::read_to_string(&path).map_err(|e| format!("Failed to read settings: {}", e))?;
+    serde_json::from_str(&json).map_err(|e| format!("Failed to parse settings: {}", e))
+}
+
+#[tauri::command]
+pub fn save_settings(settings: AppSettings, state: State<'_, AppStorage>) -> Result<(), String> {
+    fs::create_dir_all(&state.root).map_err(|e| format!("Failed to create storage root: {}", e))?;
+    let json = serde_json::to_string_pretty(&settings).map_err(|e| format!("Failed to serialize settings: {}", e))?;
+    fs::write(app_settings_path(&state), json).map_err(|e| format!("Failed to write settings: {}", e))
+}
+
+#[tauri::command]
+pub fn get_storage_root(state: State<'_, AppStorage>) -> String {
+    state.root.display().to_string()
 }
 
 #[tauri::command]

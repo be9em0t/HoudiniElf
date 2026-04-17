@@ -1,7 +1,8 @@
 mod commands;
 
-use commands::{greet, list_local_audio_files, local_audio_server_port, probe_local_audio_file, read_local_audio_file, validate_audio_directory, LocalAudioServerPort};
-use std::{fs::File, io::{Cursor, Read, Seek, SeekFrom}, thread};
+use commands::{greet, get_storage_root, load_settings, list_local_audio_files, local_audio_server_port, probe_local_audio_file, read_local_audio_file, save_settings, validate_audio_directory, AppStorage, LocalAudioServerPort};
+use std::{fs, fs::File, io::{Cursor, Read, Seek, SeekFrom}, path::PathBuf, thread};
+use tauri::{Manager, path::BaseDirectory};
 use tiny_http::{Header, Response, Server, StatusCode};
 use url::Url;
 
@@ -56,6 +57,35 @@ fn parse_range_header(range_header: &str, file_size: u64) -> Option<(u64, u64)> 
         }
         _ => None,
     }
+}
+
+fn app_storage_root(app: &tauri::AppHandle) -> PathBuf {
+    let portable = std::env::current_exe()
+        .ok()
+        .and_then(|exe_path| exe_path.parent().map(|dir| dir.join("one-cloud-player-data")));
+
+    if let Some(root) = portable {
+        if fs::create_dir_all(&root).is_ok() {
+            let test_file = root.join(".portable_write_test");
+            if fs::write(&test_file, b"").is_ok() {
+                let _ = fs::remove_file(&test_file);
+                let _ = fs::create_dir_all(root.join("cache"));
+                let _ = fs::create_dir_all(root.join("auth"));
+                let _ = fs::create_dir_all(root.join("downloads"));
+                return root;
+            }
+        }
+    }
+
+    let fallback = app
+        .path()
+        .resolve("OneCloudPlayer", BaseDirectory::AppLocalData)
+        .unwrap_or_else(|_| std::env::temp_dir().join("OneCloudPlayer"));
+    let _ = fs::create_dir_all(&fallback);
+    let _ = fs::create_dir_all(fallback.join("cache"));
+    let _ = fs::create_dir_all(fallback.join("auth"));
+    let _ = fs::create_dir_all(fallback.join("downloads"));
+    fallback
 }
 
 fn start_local_audio_server() -> u16 {
@@ -130,11 +160,15 @@ fn start_local_audio_server() -> u16 {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let port = start_local_audio_server();
     tauri::Builder::default()
-        .manage(LocalAudioServerPort(port))
+        .setup(|app| {
+            let storage_root = app_storage_root(&app.handle());
+            app.manage(AppStorage { root: storage_root });
+            Ok(())
+        })
+        .manage(LocalAudioServerPort(start_local_audio_server()))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, validate_audio_directory, list_local_audio_files, probe_local_audio_file, read_local_audio_file, local_audio_server_port])
+        .invoke_handler(tauri::generate_handler![greet, validate_audio_directory, list_local_audio_files, probe_local_audio_file, read_local_audio_file, local_audio_server_port, get_storage_root, load_settings, save_settings])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
