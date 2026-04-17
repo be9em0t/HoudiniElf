@@ -4,6 +4,7 @@ tools_QGIS/dbQGIS/MNR_automation
 tools_QGIS/dbQGIS/dBeaver
 tools_QGIS/dbQGIS/b9QGISdata.ini
 tools_QGIS/dbQGIS/tt-specs
+tools_QGIS/dbQueryMCPLayer/config.json
 
 # Exceptions: Keep these tracked
 !.github/
@@ -103,5 +104,4 @@ secrets.json
 *.pem
 
 # Other
-*.json
 *.code-workspace

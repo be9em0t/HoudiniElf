@@ -1,5 +1,6 @@
 # Next steps:
-- Quality audit of the code, flagging potential problems and listing them in this file
+- Allow custom prompts
+- Periodic quality audit of the code, flagging potential problems and listing them in this file
 - Create a valid extension installation package, compatibe with further development
 
 # Development and update
