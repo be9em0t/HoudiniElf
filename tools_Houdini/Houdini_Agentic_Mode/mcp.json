@@ -1,0 +1,52 @@
+{
+  "servers": {
+    "houdini-mcp1": {
+      "type": "http",
+      "url": "http://127.0.0.1:5007",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "houdini-mcp": {
+      "type": "stdio",
+      "command": "/Users/dunevv/.pyenv/versions/3.13.5/bin/python",
+      "args": ["-u", "/Users/dunevv/WorkLocal/_AI_/HoudiniElf/tools_Houdini/Houdini_Agentic_Mode/mcp_server.py", "--stdio"],
+      "env": {
+        "PYTHONPATH": "/Users/dunevv/WorkLocal/_AI_/HoudiniElf",
+        "MCP_USE_STDIO": "1",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+		"tomtom-mcp": {
+			"toolPrefix": "tomtom",
+			"type": "http",
+			"url": "https://mcp.tomtom.com/maps",
+			"headers": {
+				"tomtom-api-key": "tkiVoiUMbcL4DZg07XdZWja9FboF3PYl"
+			}
+		},
+		"mcp-unity": {
+			"toolPrefix": "unityDirect",
+			"args": [
+				"/Users/dunevv/WorkLocal/Unity3D/MCP-CG-test/Library/PackageCache/com.gamelovers.mcp-unity@5dc92f540190/Server~/build/index.js"
+			],
+			"command": "node"
+		},
+		"uLoopMCP": {
+			"toolPrefix": "unityLoop",
+			"command": "node",
+			"args": [
+				"/Users/dunevv/WorkLocal/Unity3D/MCP-test-Loop/Library/uLoopMCP/server.bundle.js"
+			],
+			"env": {
+				"UNITY_TCP_PORT": "8700"
+			}
+		},
+		 "figma": {
+			"toolPrefix": "figma",
+			"url": "https://mcp.figma.com/mcp",
+			"type": "http"
+		 }
+  }
+}
+

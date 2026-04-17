@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TomTom Vector Map with POI Labels</title>
+
+    <!-- OpenLayers CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.1.0/ol.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+            font-size: 12px;
+        }
+
+        .controls h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            border: 1px solid #999;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+            max-width: 300px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="controls">
+        <h3>Map Layers</h3>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(200, 200, 200, 0.6);"></div>
+                <span>Building Footprints</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(220, 20, 60, 0.8);"></div>
+                <span>Points of Interest</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(30, 144, 255, 0.6);"></div>
+                <span>Water</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(144, 238, 144, 0.4);"></div>
+                <span>Land Use</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>TomTom Vector Map Demo</strong>
+        <p>POI dots and labels are rendered from the TomTom vector tiles.</p>
+        <p style="margin-top: 5px; font-size: 11px; color: #666;">
+            Using OpenLayers + TomTom vector tiles
+        </p>
+    </div>
+
+    <!-- OpenLayers -->
+    <script src="https://cdn.jsdelivr.net/npm/ol@9.1.0/dist/ol.js"></script>
+
+    <script>
+        const TOMTOM_API_KEY = 'GgqZsRtAJ8ANAalBNGneVGqOzPUhjWKL';
+        const vectorTileSource = new ol.source.VectorTile({
+            attributions: '© TomTom',
+            format: new ol.format.MVT(),
+            url: `https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.pbf?key=${TOMTOM_API_KEY}`,
+            projection: 'EPSG:3857',
+            tileGrid: ol.tilegrid.createXYZ({ maxZoom: 22 })
+        });
+
+        const dotStyle = new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 4,
+                fill: new ol.style.Fill({
+                    color: 'rgba(220, 20, 60, 0.88)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(120, 0, 20, 1)',
+                    width: 1
+                })
+            })
+        });
+
+        const labelText = new ol.style.Text({
+            font: '600 12px "Avenir Next", "Segoe UI", sans-serif',
+            offsetY: -12,
+            textBaseline: 'bottom',
+            textAlign: 'center',
+            fill: new ol.style.Fill({
+                color: '#4a4a4a'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'rgba(255, 255, 255, 0.9)',
+                width: 3
+            }),
+            padding: [2, 4, 2, 4],
+            overflow: true,
+            declutterMode: 'declutter'
+        });
+
+        const labelStyle = new ol.style.Style({
+            text: labelText
+        });
+
+        const polygonStyle = new ol.style.Style({
+            fill: new ol.style.Fill({
+                color: 'rgba(200, 200, 200, 0.45)'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'rgba(120, 120, 120, 0.75)',
+                width: 0.75
+            })
+        });
+
+        const lineStyle = new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: 'rgba(95, 95, 95, 0.9)',
+                width: 1.25
+            })
+        });
+
+        function getPoiLabelText(feature) {
+            const properties = feature.getProperties ? feature.getProperties() : {};
+            const candidates = [
+                properties.name,
+                properties.name_en,
+                properties.poi_name,
+                properties.brand,
+                properties.operator,
+                properties.label,
+                properties.text
+            ];
+
+            for (const value of candidates) {
+                if (typeof value === 'string' && value.trim()) {
+                    return value.trim();
+                }
+            }
+
+            return '';
+        }
+
+        function styleFunction(feature) {
+            const geometry = feature.getGeometry();
+            if (!geometry) {
+                return null;
+            }
+
+            const type = geometry.getType();
+            if (type === 'Point' || type === 'MultiPoint') {
+                const label = getPoiLabelText(feature);
+                labelText.setText(label);
+                return label ? [dotStyle, labelStyle] : dotStyle;
+            }
+
+            if (type.includes('Polygon')) {
+                return polygonStyle;
+            }
+
+            if (type.includes('LineString')) {
+                return lineStyle;
+            }
+
+            return dotStyle;
+        }
+
+        const vectorTileLayer = new ol.layer.VectorTile({
+            declutter: true,
+            source: vectorTileSource,
+            style: styleFunction
+        });
+
+        const map = new ol.Map({
+            target: 'map',
+            layers: [vectorTileLayer],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([4.893611, 52.372778]),
+                zoom: 18,
+                maxZoom: 22
+            })
+        });
+
+        console.log('Map loaded with TomTom vector tiles and decluttered POI labels.');
+    </script>
+</body>
+</html>
