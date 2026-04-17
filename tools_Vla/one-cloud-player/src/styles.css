@@ -1,24 +1,57 @@
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: #f6f6f6;
-  background-color: #121a24;
+  background:
+    radial-gradient(circle at top left, rgba(72, 125, 166, 0.3), transparent 30%),
+    linear-gradient(180deg, #15212d 0%, #0b1217 100%);
+  --panel-bg: rgba(255, 255, 255, 0.05);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #b8c2cd;
+  --accent: #5f92ff;
+  --mini-surface: #30526d;
+  --mini-border: #3c6a8d;
+  --mini-icon: #cacaca;
+  --mini-play-active: #ff5d00;
+}
+
+@font-face {
+  font-family: "codicon";
+  src: url("./assets/fonts/codicon.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body {
+  min-height: 100vh;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #15212d 0%, #0b1217 100%);
+  background:
+    radial-gradient(circle at top left, rgba(72, 125, 166, 0.3), transparent 30%),
+    linear-gradient(180deg, #15212d 0%, #0b1217 100%);
+}
+
+body[data-ui-mode="mini"] {
+  min-height: auto;
+  overflow: hidden;
+  background: transparent;
 }
 
 button,
 input {
   font: inherit;
+}
+
+button {
+  border: none;
 }
 
 .app-shell {
@@ -38,21 +71,51 @@ input {
 .app-header h1 {
   margin: 0 0 8px;
   font-size: clamp(2rem, 3vw, 2.5rem);
+  letter-spacing: 0.02em;
 }
 
 .app-header p {
   margin: 0;
-  color: #b8c2cd;
+  color: var(--text-muted);
+}
+
+.mode-switch {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mode-button {
+  min-width: 96px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: transparent;
+  color: #dbe7f3;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.mode-button:hover {
+  transform: translateY(-1px);
+}
+
+.mode-button.is-active {
+  background: rgba(95, 146, 255, 0.22);
+  color: #ffffff;
 }
 
 .folder-panel,
 .player-panel,
 .track-list-panel {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 18px;
   padding: 18px;
   margin-bottom: 20px;
+  backdrop-filter: blur(12px);
 }
 
 .folder-panel label {
@@ -78,9 +141,8 @@ input {
 }
 
 .folder-actions button {
-  border: none;
   color: #0b1217;
-  background: #5f92ff;
+  background: var(--accent);
   padding: 12px 18px;
   border-radius: 12px;
   cursor: pointer;
@@ -91,12 +153,8 @@ input {
   background: #74d0a3;
 }
 
-.folder-actions button#test-sound:hover {
-  filter: brightness(1.05);
-}
-
 .folder-actions button:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
@@ -125,7 +183,7 @@ input {
 
 .debug-panel pre {
   margin: 0;
-  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.88rem;
   line-height: 1.4;
   color: #c8d8ff;
@@ -161,25 +219,52 @@ input {
   flex-wrap: wrap;
 }
 
-.player-controls button {
-  width: 52px;
+.control-button {
+  min-width: 52px;
   height: 52px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: #f6f6f6;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.player-controls button:hover {
+.control-button:hover,
+.mini-icon-button:hover,
+.mini-play-button:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.12);
 }
 
-.player-controls button.active {
-  background: #5f92ff;
+.control-button.is-primary {
+  background: rgba(95, 146, 255, 0.2);
+  border-color: rgba(95, 146, 255, 0.35);
+}
+
+.control-button.active {
+  background: var(--accent);
   color: #0b1217;
+}
+
+.control-button-text {
+  min-width: 72px;
+  padding: 0 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.codicon-button {
+  font-family: "codicon", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
 }
 
 .track-list-panel h2 {
@@ -209,7 +294,7 @@ input {
 }
 
 .track-item.selected {
-  border-color: #5f92ff;
+  border-color: var(--accent);
   background: rgba(95, 146, 255, 0.18);
 }
 
@@ -241,6 +326,106 @@ input {
   padding: 24px 12px;
 }
 
+.mini-player-panel {
+  display: none;
+  margin-top: 28px;
+}
+
+.mini-player-frame {
+  width: 250px;
+  min-height: 107px;
+  padding: 10px 12px 16px;
+  border-radius: 16px;
+  background: var(--mini-surface);
+  border: 1px solid rgba(202, 202, 202, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.mini-player-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mini-track-title {
+  flex: 1;
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--mini-icon);
+  font-size: 0.94rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini-window-controls,
+.mini-player-controls {
+  display: flex;
+  align-items: center;
+}
+
+.mini-window-controls {
+  gap: 6px;
+}
+
+.mini-player-controls {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mini-icon-button,
+.mini-play-button {
+  color: var(--mini-icon);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.mini-icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 1.1rem;
+}
+
+.mini-icon-button.active {
+  color: #ffffff;
+}
+
+.mini-play-button {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-play-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid #ffffff;
+}
+
+.mini-play-button.is-playing .mini-play-ring {
+  border-color: var(--mini-play-active);
+}
+
+.mini-play-glyph {
+  position: relative;
+  z-index: 1;
+  font-size: 1.1rem;
+  color: var(--mini-icon);
+}
+
+.mini-play-button.is-playing .mini-play-glyph {
+  color: var(--mini-play-active);
+}
+
 audio {
   width: 100%;
   outline: none;
@@ -249,12 +434,48 @@ audio {
   background: rgba(255, 255, 255, 0.05);
 }
 
+body[data-ui-mode="mini"] .extended-only {
+  display: none;
+}
+
+body[data-ui-mode="mini"] .mini-player-panel {
+  display: block;
+  margin-top: 0;
+}
+
+body[data-ui-mode="extended"] .mini-only {
+  display: none;
+}
+
+body[data-ui-mode="mini"] .app-shell {
+  width: 250px;
+  max-width: 250px;
+  margin: 0;
+  padding: 0;
+}
+
+body[data-ui-mode="mini"] .app-header {
+  display: none;
+}
+
 @media (max-width: 700px) {
   .app-shell {
     padding: 24px 16px;
   }
 
+  .app-header {
+    flex-direction: column;
+  }
+
   .player-controls {
     justify-content: space-between;
+  }
+
+  .mini-player-panel {
+    display: block;
+  }
+
+  body[data-ui-mode="extended"] .mini-player-panel {
+    display: none;
   }
 }

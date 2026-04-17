@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::{Path, PathBuf}};
-use tauri::State;
+use tauri::{LogicalSize, State, Window};
 
 #[derive(Serialize)]
 pub struct AudioTrack {
@@ -24,6 +24,7 @@ pub struct AudioProbe {
 pub struct AppSettings {
     pub last_open_folder: Option<String>,
     pub last_played_track: Option<String>,
+    pub ui_mode: Option<String>,
     pub window_position: Option<[i32; 2]>,
     pub window_size: Option<[u32; 2]>,
 }
@@ -167,4 +168,34 @@ pub struct LocalAudioServerPort(pub u16);
 #[tauri::command]
 pub fn local_audio_server_port(state: tauri::State<'_, LocalAudioServerPort>) -> u16 {
     state.0
+}
+
+#[tauri::command]
+pub fn set_ui_window_mode(mode: &str, window: Window) -> Result<(), String> {
+    match mode {
+        "mini" => {
+            window
+                .set_decorations(false)
+                .map_err(|e| format!("Failed to disable window decorations: {}", e))?;
+            window
+                .set_resizable(false)
+                .map_err(|e| format!("Failed to lock mini window resize: {}", e))?;
+            window
+                .set_size(LogicalSize::new(282.0, 146.0))
+                .map_err(|e| format!("Failed to resize mini window: {}", e))?;
+        }
+        _ => {
+            window
+                .set_decorations(true)
+                .map_err(|e| format!("Failed to enable window decorations: {}", e))?;
+            window
+                .set_resizable(true)
+                .map_err(|e| format!("Failed to unlock window resize: {}", e))?;
+            window
+                .set_size(LogicalSize::new(960.0, 760.0))
+                .map_err(|e| format!("Failed to resize extended window: {}", e))?;
+        }
+    }
+
+    Ok(())
 }
