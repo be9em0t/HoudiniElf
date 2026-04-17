@@ -4,6 +4,12 @@
   "description": "Pi agent sidebar powered by pi SDK",
   "version": "0.0.1",
   "publisher": "local",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/be9em0t/HoudiniElf.git",
+    "directory": "tools_Vla/pi-vscode/pi-vscode-extension"
+  },
   "type": "module",
   "engines": {
     "vscode": "^1.90.0"
