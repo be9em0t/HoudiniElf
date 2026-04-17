@@ -2,7 +2,7 @@ mod commands;
 
 use commands::{greet, get_storage_root, load_settings, list_local_audio_files, local_audio_server_port, probe_local_audio_file, read_local_audio_file, save_settings, validate_audio_directory, AppStorage, LocalAudioServerPort};
 use std::{fs, fs::File, io::{Cursor, Read, Seek, SeekFrom}, path::PathBuf, thread};
-use tauri::{Manager, path::BaseDirectory};
+use tauri::Manager;
 use tiny_http::{Header, Response, Server, StatusCode};
 use url::Url;
 
@@ -59,33 +59,18 @@ fn parse_range_header(range_header: &str, file_size: u64) -> Option<(u64, u64)> 
     }
 }
 
-fn app_storage_root(app: &tauri::AppHandle) -> PathBuf {
-    let portable = std::env::current_exe()
-        .ok()
-        .and_then(|exe_path| exe_path.parent().map(|dir| dir.join("one-cloud-player-data")));
+fn app_storage_root(_app: &tauri::AppHandle) -> PathBuf {
+    let exe_path = std::env::current_exe().expect("failed to resolve current executable path");
+    let root = exe_path
+        .parent()
+        .expect("failed to get executable directory")
+        .join("one-cloud-player-data");
 
-    if let Some(root) = portable {
-        if fs::create_dir_all(&root).is_ok() {
-            let test_file = root.join(".portable_write_test");
-            if fs::write(&test_file, b"").is_ok() {
-                let _ = fs::remove_file(&test_file);
-                let _ = fs::create_dir_all(root.join("cache"));
-                let _ = fs::create_dir_all(root.join("auth"));
-                let _ = fs::create_dir_all(root.join("downloads"));
-                return root;
-            }
-        }
-    }
-
-    let fallback = app
-        .path()
-        .resolve("OneCloudPlayer", BaseDirectory::AppLocalData)
-        .unwrap_or_else(|_| std::env::temp_dir().join("OneCloudPlayer"));
-    let _ = fs::create_dir_all(&fallback);
-    let _ = fs::create_dir_all(fallback.join("cache"));
-    let _ = fs::create_dir_all(fallback.join("auth"));
-    let _ = fs::create_dir_all(fallback.join("downloads"));
-    fallback
+    fs::create_dir_all(&root).expect("failed to create portable storage root");
+    let _ = fs::create_dir_all(root.join("cache"));
+    let _ = fs::create_dir_all(root.join("auth"));
+    let _ = fs::create_dir_all(root.join("downloads"));
+    root
 }
 
 fn start_local_audio_server() -> u16 {
