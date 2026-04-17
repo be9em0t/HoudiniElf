@@ -6,6 +6,7 @@ const statusEl = document.querySelector("#status");
 const tracksEl = document.querySelector("#tracks");
 const trackTitleEl = document.querySelector("#track-title");
 const miniTrackTitleEl = document.querySelector("#mini-track-title");
+const miniDragArea = document.querySelector("#mini-drag-area");
 const trackMetaEl = document.querySelector("#track-meta");
 const audioPlayer = document.querySelector("#audio-player");
 const btnLoop = document.querySelector("#btn-loop");
@@ -51,6 +52,23 @@ function getCurrentWindow() {
     return window.__TAURI__?.window?.getCurrentWindow?.() || null;
   } catch {
     return null;
+  }
+}
+
+async function startMiniWindowDrag(event) {
+  if (event.button !== 0) {
+    return;
+  }
+
+  const currentWindow = getCurrentWindow();
+  if (!currentWindow?.startDragging) {
+    return;
+  }
+
+  try {
+    await currentWindow.startDragging();
+  } catch (error) {
+    appendDebug(`Window drag skipped: ${error?.message || String(error)}`);
   }
 }
 
@@ -127,7 +145,7 @@ async function applyWindowPreset(mode) {
 
     try {
       if (mode === UI_MODE_MINI) {
-        await currentWindow.setSize(new window.__TAURI__.dpi.LogicalSize(282, 146));
+        await currentWindow.setSize(new window.__TAURI__.dpi.LogicalSize(250, 107));
         await currentWindow.setResizable(false);
       } else {
         await currentWindow.setResizable(true);
@@ -160,6 +178,15 @@ async function closeWindow() {
 
   clearSelection();
   setStatus("Window API unavailable, selection cleared instead.", false);
+}
+
+async function exitApplication() {
+  try {
+    await invoke("exit_application");
+  } catch (error) {
+    appendDebug(`App exit failed: ${error?.message || String(error)}`);
+    await closeWindow();
+  }
 }
 
 async function loadAppSettings() {
@@ -394,7 +421,10 @@ window.addEventListener("DOMContentLoaded", () => {
   miniPlaylistButton.addEventListener("click", () => setUiMode(UI_MODE_EXTENDED));
 
   btnClose.addEventListener("click", () => closeWindow());
-  miniCloseButton.addEventListener("click", () => closeWindow());
+  miniCloseButton.addEventListener("click", () => exitApplication());
+  miniDragArea.addEventListener("mousedown", (event) => {
+    startMiniWindowDrag(event).catch(() => {});
+  });
 
   audioPlayer.addEventListener("ended", () => {
     if (!loopMode) {

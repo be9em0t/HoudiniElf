@@ -1,6 +1,6 @@
 mod commands;
 
-use commands::{greet, get_storage_root, load_settings, list_local_audio_files, local_audio_server_port, probe_local_audio_file, read_local_audio_file, save_settings, set_ui_window_mode, validate_audio_directory, AppStorage, LocalAudioServerPort};
+use commands::{exit_application, greet, get_storage_root, load_settings, list_local_audio_files, local_audio_server_port, probe_local_audio_file, read_local_audio_file, save_settings, set_ui_window_mode, validate_audio_directory, AppStorage, LocalAudioServerPort};
 use std::{fs, fs::File, io::{Cursor, Read, Seek, SeekFrom}, path::PathBuf, thread};
 use tauri::Manager;
 use tiny_http::{Header, Response, Server, StatusCode};
@@ -153,7 +153,7 @@ pub fn run() {
         })
         .manage(LocalAudioServerPort(start_local_audio_server()))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, validate_audio_directory, list_local_audio_files, probe_local_audio_file, read_local_audio_file, local_audio_server_port, get_storage_root, load_settings, save_settings, set_ui_window_mode])
+        .invoke_handler(tauri::generate_handler![greet, validate_audio_directory, list_local_audio_files, probe_local_audio_file, read_local_audio_file, local_audio_server_port, get_storage_root, load_settings, save_settings, set_ui_window_mode, exit_application])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

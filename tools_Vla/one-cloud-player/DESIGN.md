@@ -23,8 +23,8 @@ MVP1 Local Scope
 - [x] Play individual audio files
 - [x] Fix local HTTP audio server transient stalled handling and user-facing playback status
 - [x] Settings storage (last open folder, last played track)
-- [ ] Window UI: track name, expand (placeholder), close
-- [ ] Player UI controls: loop (placeholder), previous, play/pause, next, track selection.
+- [x] Window UI: track name, expand (placeholder), close
+- [x] Player UI controls: loop (placeholder), previous, play/pause, next, track selection.
 
 Settings storage strategy
 ---------

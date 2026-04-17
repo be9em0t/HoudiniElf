@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::{Path, PathBuf}};
-use tauri::{LogicalSize, State, Window};
+use tauri::{AppHandle, LogicalSize, State, Window};
 
 #[derive(Serialize)]
 pub struct AudioTrack {
@@ -181,7 +181,13 @@ pub fn set_ui_window_mode(mode: &str, window: Window) -> Result<(), String> {
                 .set_resizable(false)
                 .map_err(|e| format!("Failed to lock mini window resize: {}", e))?;
             window
-                .set_size(LogicalSize::new(282.0, 146.0))
+                .set_min_size(Some(LogicalSize::new(250.0, 107.0)))
+                .map_err(|e| format!("Failed to set mini min size: {}", e))?;
+            window
+                .set_max_size(Some(LogicalSize::new(250.0, 107.0)))
+                .map_err(|e| format!("Failed to set mini max size: {}", e))?;
+            window
+                .set_size(LogicalSize::new(250.0, 107.0))
                 .map_err(|e| format!("Failed to resize mini window: {}", e))?;
         }
         _ => {
@@ -192,10 +198,21 @@ pub fn set_ui_window_mode(mode: &str, window: Window) -> Result<(), String> {
                 .set_resizable(true)
                 .map_err(|e| format!("Failed to unlock window resize: {}", e))?;
             window
+                .set_min_size(None::<LogicalSize<f64>>)
+                .map_err(|e| format!("Failed to clear min size: {}", e))?;
+            window
+                .set_max_size(None::<LogicalSize<f64>>)
+                .map_err(|e| format!("Failed to clear max size: {}", e))?;
+            window
                 .set_size(LogicalSize::new(960.0, 760.0))
                 .map_err(|e| format!("Failed to resize extended window: {}", e))?;
         }
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn exit_application(app: AppHandle) {
+    app.exit(0);
 }
